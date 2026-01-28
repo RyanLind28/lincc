@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 // DEV_MODE flag - matches AuthContext
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 // Mock engagement data for development
 const MOCK_ENGAGEMENT: Record<string, number> = {

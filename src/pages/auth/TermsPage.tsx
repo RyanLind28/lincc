@@ -51,14 +51,10 @@ export default function TermsPage() {
 
     const { error } = await supabase
       .from('profiles')
-      .upsert({
-        id: user.id,
-        email: user.email,
+      .update({
         terms_accepted_at: new Date().toISOString(),
-        first_name: '', // Required field, will be filled in onboarding
-        dob: '2000-01-01', // Placeholder, will be filled in onboarding
-        gender: 'non-binary' as const, // Placeholder, will be filled in onboarding
-      });
+      })
+      .eq('id', user.id);
 
     if (error) {
       showToast('Something went wrong. Please try again.', 'error');

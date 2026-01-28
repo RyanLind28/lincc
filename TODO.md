@@ -59,6 +59,7 @@ Last updated: 2026-01-27
 
 > Secure the app and manage users properly
 
+- [ ] **Custom auth emails** - Design branded Supabase email templates (signup, reset, magic link)
 - [ ] **Email verification** - Require email verification for new accounts
 - [ ] **Password reset flow** - Implement forgot password functionality
 - [ ] **Social login** - Add Google/Apple sign-in options

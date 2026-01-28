@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SlidersHorizontal, MapPin, Navigation, Sparkles, MapPinned } from 'lucide-react';
+import { SlidersHorizontal, MapPin, Navigation } from 'lucide-react';
 import {
   SearchBar,
   FilterPills,
@@ -37,8 +37,6 @@ export default function HomePage() {
   const {
     events,
     isLoading,
-    fallbackUsed,
-    fallbackMessage,
     totalAvailable,
     filters,
     updateFilter,
@@ -103,18 +101,6 @@ export default function HomePage() {
         {viewMode === 'list' ? (
           /* List View - Grid of cards */
           <div className="h-full overflow-y-auto scrollbar-hide p-4 pb-24">
-            {/* Fallback message when not showing interest-matched events */}
-            {fallbackMessage && !isLoading && (
-              <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-coral/10 rounded-xl text-sm">
-                {fallbackUsed === 'distance' ? (
-                  <MapPinned className="h-4 w-4 text-coral flex-shrink-0" />
-                ) : (
-                  <Sparkles className="h-4 w-4 text-coral flex-shrink-0" />
-                )}
-                <span className="text-text-muted">{fallbackMessage}</span>
-              </div>
-            )}
-
             {/* Loading state */}
             {isLoading ? (
               <div className="grid grid-cols-2 gap-3">

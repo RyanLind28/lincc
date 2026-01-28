@@ -6,7 +6,7 @@ import { DEMO_EVENTS, refreshDemoEventTimes, type DemoEvent } from '../../data/d
 import type { EventWithDetails, Audience } from '../../types';
 
 // DEV_MODE flag - matches AuthContext
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 export interface FetchEventsOptions {
   status?: string[];

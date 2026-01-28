@@ -62,8 +62,21 @@ CREATE TABLE events (
     audience audience_type NOT NULL DEFAULT 'everyone',
     status event_status DEFAULT 'active',
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    expires_at TIMESTAMPTZ GENERATED ALWAYS AS (start_time + INTERVAL '2 hours') STORED
+    expires_at TIMESTAMPTZ
 );
+
+-- Trigger to auto-set expires_at
+CREATE OR REPLACE FUNCTION set_event_expires_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.expires_at = NEW.start_time + INTERVAL '2 hours';
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_event_expires
+    BEFORE INSERT OR UPDATE OF start_time ON events
+    FOR EACH ROW EXECUTE FUNCTION set_event_expires_at();
 
 -- Event participants table
 CREATE TABLE event_participants (

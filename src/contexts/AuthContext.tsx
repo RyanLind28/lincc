@@ -6,7 +6,7 @@ import type { Profile } from '../types';
 // ===========================================
 // DEV MODE - Set to true to bypass auth
 // ===========================================
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 const MOCK_USER: User = {
   id: 'dev-user-123',
@@ -94,16 +94,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          console.error('Auth session error:', error);
+        }
+        setSession(session);
+        setUser(session?.user ?? null);
 
-      if (session?.user) {
-        fetchProfile(session.user.id).then(setProfile);
-      }
+        if (session?.user) {
+          fetchProfile(session.user.id).then(setProfile);
+        }
 
-      setIsLoading(false);
-    });
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error('Auth failed:', err);
+        setIsLoading(false);
+      });
 
     // Listen for auth changes
     const {
