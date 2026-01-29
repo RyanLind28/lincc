@@ -87,7 +87,7 @@ export default function OnboardingPage() {
           return false;
         }
         return true;
-      case 2:
+      case 2: {
         if (!firstName.trim()) {
           showToast('Please enter your name', 'error');
           return false;
@@ -113,6 +113,7 @@ export default function OnboardingPage() {
           return false;
         }
         return true;
+      }
       case 3:
         if (tags.length === 0) {
           showToast('Please select at least one interest', 'error');
@@ -163,7 +164,7 @@ export default function OnboardingPage() {
       showToast('Failed to save profile', 'error');
       console.error(error);
     } else {
-      await refreshProfile();
+      await refreshProfile(user.id);
       navigate('/');
     }
 

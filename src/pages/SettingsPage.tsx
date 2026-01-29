@@ -31,7 +31,7 @@ export default function SettingsPage() {
       showToast('Failed to update setting', 'error');
       setIsGhostMode(!newValue);
     } else {
-      await refreshProfile();
+      await refreshProfile(user.id);
     }
   };
 
@@ -49,7 +49,7 @@ export default function SettingsPage() {
       showToast('Failed to update setting', 'error');
       setIsWomenOnlyMode(!newValue);
     } else {
-      await refreshProfile();
+      await refreshProfile(user.id);
     }
   };
 
@@ -65,7 +65,7 @@ export default function SettingsPage() {
     if (error) {
       showToast('Failed to update setting', 'error');
     } else {
-      await refreshProfile();
+      await refreshProfile(user.id);
     }
   };
 

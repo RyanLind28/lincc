@@ -48,7 +48,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: (userId?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,13 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data as Profile;
   }, []);
 
-  const refreshProfile = useCallback(async () => {
+  const refreshProfile = useCallback(async (userId?: string) => {
     if (DEV_MODE) {
       setProfile(MOCK_PROFILE);
       return;
     }
-    if (!user) return;
-    const profileData = await fetchProfile(user.id);
+    const id = userId || user?.id;
+    if (!id) return;
+    const profileData = await fetchProfile(id);
     setProfile(profileData);
   }, [user, fetchProfile]);
 
@@ -93,27 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Get initial session
-    supabase.auth.getSession()
-      .then(({ data: { session }, error }) => {
-        if (error) {
-          console.error('Auth session error:', error);
-        }
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          fetchProfile(session.user.id).then(setProfile);
-        }
-
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error('Auth failed:', err);
-        setIsLoading(false);
-      });
-
-    // Listen for auth changes
+    // Set up auth state listener - this handles initial session and all changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -121,13 +102,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        const profileData = await fetchProfile(session.user.id);
-        setProfile(profileData);
+        // Use setTimeout to avoid Supabase deadlock issue with nested calls
+        setTimeout(async () => {
+          const profileData = await fetchProfile(session.user.id);
+          setProfile(profileData);
+          setIsLoading(false);
+        }, 0);
       } else {
         setProfile(null);
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();

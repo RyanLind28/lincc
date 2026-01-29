@@ -5,7 +5,8 @@ import { GradientButton, Input } from '../components/ui';
 import { Send } from 'lucide-react';
 
 export default function ChatRoomPage() {
-  const { id: _roomId } = useParams();
+  const { id: roomId } = useParams();
+  console.debug('Chat room:', roomId); // Will be used for Supabase integration
   const [message, setMessage] = useState('');
 
   const handleSend = () => {

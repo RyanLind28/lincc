@@ -90,7 +90,7 @@ export default function EditProfilePage() {
     if (error) {
       showToast('Failed to save profile', 'error');
     } else {
-      await refreshProfile();
+      await refreshProfile(user.id);
       showToast('Profile updated', 'success');
       navigate('/profile');
     }

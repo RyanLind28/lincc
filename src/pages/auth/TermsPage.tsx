@@ -60,7 +60,7 @@ export default function TermsPage() {
       showToast('Something went wrong. Please try again.', 'error');
       console.error(error);
     } else {
-      await refreshProfile();
+      await refreshProfile(user.id);
       navigate('/onboarding');
     }
 

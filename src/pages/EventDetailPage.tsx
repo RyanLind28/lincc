@@ -22,7 +22,7 @@ export default function EventDetailPage() {
     venue_name: 'Blue Bottle Coffee',
     venue_address: '123 Main St, San Francisco',
     distance_km: 0.5,
-    start_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    start_time: '2026-02-01T10:00:00Z', // Placeholder - will be fetched from Supabase
     capacity: 2,
     participant_count: 1,
     participants: [

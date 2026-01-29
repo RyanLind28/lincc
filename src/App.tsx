@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ViewModeProvider } from './contexts/ViewModeContext';
@@ -37,6 +38,7 @@ import DemoPage from './pages/DemoPage';
 
 function App() {
   return (
+    <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
     <AuthProvider>
       <ToastProvider>
         <ViewModeProvider>
@@ -189,6 +191,24 @@ function App() {
         </ViewModeProvider>
       </ToastProvider>
     </AuthProvider>
+    </Sentry.ErrorBoundary>
+  );
+}
+
+function ErrorFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-text mb-2">Something went wrong</h1>
+        <p className="text-text-muted mb-4">We've been notified and are working on it.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-primary text-white rounded-lg"
+        >
+          Reload page
+        </button>
+      </div>
+    </div>
   );
 }
 
