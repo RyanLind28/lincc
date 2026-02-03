@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { useNavigate } from 'react-router-dom';
 import type { Coordinates } from '../../types';
-import { CategoryIcon } from './CategoryIcon';
 
 // Set access token
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
