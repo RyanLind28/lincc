@@ -9,8 +9,10 @@ import {
   Slider,
   DatePicker,
   CategoryIcon,
+  MapView,
   QUICK_DATE_OPTIONS,
 } from '../components/ui';
+import { useUserLocation } from '../hooks/useUserLocation';
 import { Header } from '../components/layout';
 import { useRecommendedEvents } from '../hooks/useRecommendedEvents';
 import { useViewMode } from '../contexts/ViewModeContext';
@@ -36,6 +38,7 @@ export default function HomePage() {
   // Use the recommendation hook
   const {
     events,
+    scoredEvents,
     isLoading,
     totalAvailable,
     filters,
@@ -46,6 +49,9 @@ export default function HomePage() {
     hasLocation,
     refreshLocation,
   } = useRecommendedEvents({ maxDistance: distance });
+
+  // Get user location for map
+  const { location: userLocation } = useUserLocation();
 
   // Result count
   const resultCount = events.length;
@@ -136,33 +142,35 @@ export default function HomePage() {
           </div>
         ) : (
           /* Map View */
-          <div className="h-full bg-gray-200 relative">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center p-8">
-                <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="h-8 w-8 text-white" />
-                </div>
-                <h2 className="text-xl font-semibold text-text mb-2">
-                  {hasLocation ? 'Map Coming Soon' : 'Enable Location'}
-                </h2>
-                <p className="text-text-muted mb-4 max-w-xs">
-                  {hasLocation
-                    ? 'The map will display events near you. Configure Mapbox to enable.'
-                    : 'Allow location access to discover events near you.'}
-                </p>
-                {!hasLocation && (
+          <div className="h-full relative">
+            {!hasLocation ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+                <div className="text-center p-8">
+                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MapPin className="h-8 w-8 text-white" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-text mb-2">Enable Location</h2>
+                  <p className="text-text-muted mb-4 max-w-xs">
+                    Allow location access to discover events near you.
+                  </p>
                   <GradientButton onClick={refreshLocation}>Enable Location</GradientButton>
-                )}
+                </div>
               </div>
-            </div>
-
-            {hasLocation && (
-              <button
-                className="absolute bottom-24 right-4 p-3 bg-surface rounded-full shadow-lg border border-border hover:shadow-xl transition-shadow"
-                aria-label="Recenter map"
-              >
-                <Navigation className="h-5 w-5 text-text" />
-              </button>
+            ) : (
+              <>
+                <MapView
+                  events={scoredEvents}
+                  userLocation={userLocation}
+                  className="absolute inset-0"
+                />
+                <button
+                  onClick={refreshLocation}
+                  className="absolute bottom-24 right-4 p-3 bg-surface rounded-full shadow-lg border border-border hover:shadow-xl transition-shadow z-10"
+                  aria-label="Recenter map"
+                >
+                  <Navigation className="h-5 w-5 text-text" />
+                </button>
+              </>
             )}
           </div>
         )}
