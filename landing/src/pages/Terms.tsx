@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import Footer from '../components/Footer';
 
 function Logo({ className = "text-2xl" }: { className?: string }) {
   return (
@@ -120,21 +121,7 @@ export default function Terms() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-200">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <Link to="/" className="flex items-center">
-            <Logo className="text-2xl" />
-          </Link>
-          <div className="flex items-center gap-6 text-gray-600 text-sm">
-            <Link to="/about" className="hover:text-purple transition-colors">About</Link>
-            <Link to="/privacy" className="hover:text-purple transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-purple transition-colors">Terms</Link>
-            <Link to="/contact" className="hover:text-purple transition-colors">Contact</Link>
-          </div>
-          <p className="text-gray-500 text-sm">© 2026 Lincc</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

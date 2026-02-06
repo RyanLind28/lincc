@@ -104,7 +104,7 @@ export default function Home() {
                   icon={<Coffee className="h-5 w-5 text-white" />}
                   category="Coffee"
                   title="Morning Coffee Chat"
-                  venue="Blue Bottle Coffee, SoHo"
+                  venue="Local Coffee Shop"
                   time="Starting in 30 min"
                   spots={2}
                   host="Sarah"
@@ -115,7 +115,7 @@ export default function Home() {
                   icon={<Dumbbell className="h-5 w-5 text-white" />}
                   category="Fitness"
                   title="Evening Gym Session"
-                  venue="Equinox, Flatiron"
+                  venue="Downtown Gym"
                   time="Today at 6 PM"
                   spots={3}
                   host="Mike"
@@ -127,7 +127,7 @@ export default function Home() {
                   icon={<Gamepad2 className="h-5 w-5 text-white" />}
                   category="Gaming"
                   title="Board Game Night"
-                  venue="Hex & Co, Upper West"
+                  venue="The Game Cafe"
                   time="Tomorrow at 7 PM"
                   spots={5}
                   host="Alex"
@@ -146,18 +146,18 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16 text-center">
             <div>
-              <p className="text-3xl sm:text-4xl font-bold gradient-text">2,500+</p>
-              <p className="text-gray-600 text-sm mt-1">On the waitlist</p>
-            </div>
-            <div className="hidden sm:block w-px h-12 bg-gray-200" />
-            <div>
               <p className="text-3xl sm:text-4xl font-bold gradient-text">15+</p>
               <p className="text-gray-600 text-sm mt-1">Activity categories</p>
             </div>
             <div className="hidden sm:block w-px h-12 bg-gray-200" />
             <div>
-              <p className="text-3xl sm:text-4xl font-bold gradient-text">NYC</p>
-              <p className="text-gray-600 text-sm mt-1">Launching first</p>
+              <p className="text-3xl sm:text-4xl font-bold gradient-text">24hrs</p>
+              <p className="text-gray-600 text-sm mt-1">Spontaneous events</p>
+            </div>
+            <div className="hidden sm:block w-px h-12 bg-gray-200" />
+            <div>
+              <p className="text-3xl sm:text-4xl font-bold gradient-text">2-8</p>
+              <p className="text-gray-600 text-sm mt-1">People per group</p>
             </div>
           </div>
         </div>
@@ -329,13 +329,13 @@ export default function Home() {
                     <Globe className="h-7 w-7 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-lg">Launching in NYC</h3>
-                    <p className="text-gray-500">More cities coming soon</p>
+                    <h3 className="font-semibold text-gray-900 text-lg">Launching Soon</h3>
+                    <p className="text-gray-500">Be the first to know</p>
                   </div>
                 </div>
                 <p className="text-gray-600 mb-6">
-                  We're starting in New York City and expanding based on demand.
-                  Join the waitlist to bring Lincc to your city.
+                  We're building something special and launching soon.
+                  Join the waitlist to get early access.
                 </p>
                 <a
                   href="#waitlist"
