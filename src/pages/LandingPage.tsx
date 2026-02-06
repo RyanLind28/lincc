@@ -12,6 +12,18 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
+// Logo component - uses the official Lincc logo (2 circles + "lincc" text)
+// Path: /public/icons/lincc-logo.webp (or .png)
+function Logo({ className = "h-9" }: { className?: string }) {
+  return (
+    <img
+      src="/icons/lincc-logo.webp"
+      alt="Lincc"
+      className={className}
+    />
+  );
+}
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
@@ -19,12 +31,9 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-coral to-coral-dark flex items-center justify-center">
-                <span className="text-white font-bold text-lg">L</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Lincc</span>
-            </div>
+            <Link to="/" className="flex items-center">
+              <Logo className="h-10" />
+            </Link>
             <div className="flex items-center gap-4">
               <Link
                 to="/login"
@@ -34,7 +43,7 @@ export default function LandingPage() {
               </Link>
               <Link
                 to="/signup"
-                className="px-4 py-2 rounded-full bg-gradient-to-r from-coral to-coral-dark text-white font-medium hover:shadow-lg hover:shadow-coral/25 transition-all"
+                className="px-4 py-2 rounded-full gradient-primary text-white font-medium hover:shadow-lg hover:shadow-purple/25 transition-all"
               >
                 Get Started
               </Link>
@@ -44,17 +53,20 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Background gradient decoration */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-br from-coral/10 via-purple/10 to-blue/10 rounded-full blur-3xl -z-10" />
+
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-coral/10 text-coral font-medium text-sm mb-6">
-              <Sparkles className="h-4 w-4" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-coral/10 to-purple/10 text-purple font-medium text-sm mb-6">
+              <Sparkles className="h-4 w-4 text-coral" />
               The spontaneous way to meet people
             </div>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
               Real connections,
               <br />
-              <span className="bg-gradient-to-r from-coral to-coral-dark bg-clip-text text-transparent">
+              <span className="gradient-text">
                 real moments
               </span>
             </h1>
@@ -65,14 +77,14 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 to="/signup"
-                className="w-full sm:w-auto px-8 py-4 rounded-full bg-gradient-to-r from-coral to-coral-dark text-white font-semibold text-lg hover:shadow-xl hover:shadow-coral/30 transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-xl hover:shadow-purple/30 transition-all flex items-center justify-center gap-2"
               >
                 Start Meeting People
                 <ChevronRight className="h-5 w-5" />
               </Link>
               <Link
                 to="/demo"
-                className="w-full sm:w-auto px-8 py-4 rounded-full border-2 border-gray-200 text-gray-700 font-semibold text-lg hover:border-coral hover:text-coral transition-all"
+                className="w-full sm:w-auto px-8 py-4 rounded-full border-2 border-gray-200 text-gray-700 font-semibold text-lg hover:border-purple hover:text-purple transition-all"
               >
                 See Demo
               </Link>
@@ -82,7 +94,7 @@ export default function LandingPage() {
           {/* App Preview */}
           <div className="mt-16 relative">
             <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent z-10 pointer-events-none" />
-            <div className="bg-gradient-to-br from-coral/5 to-coral/10 rounded-3xl p-8 sm:p-12">
+            <div className="bg-gradient-to-br from-coral/5 via-purple/5 to-blue/10 rounded-3xl p-8 sm:p-12 border border-gray-100">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Sample Event Cards */}
                 <EventCard
@@ -141,13 +153,13 @@ export default function LandingPage() {
             />
             <StepCard
               number="2"
-              icon={<Users className="h-8 w-8 text-coral" />}
+              icon={<Users className="h-8 w-8 text-purple" />}
               title="Join or Host"
               description="Request to join events that interest you, or create your own and invite others along."
             />
             <StepCard
               number="3"
-              icon={<MessageCircle className="h-8 w-8 text-coral" />}
+              icon={<MessageCircle className="h-8 w-8 text-blue" />}
               title="Connect & Meet"
               description="Chat with participants, coordinate details, and show up to make real connections."
             />
@@ -222,7 +234,7 @@ export default function LandingPage() {
             ].map((category) => (
               <span
                 key={category}
-                className="px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-700 font-medium hover:border-coral hover:text-coral transition-colors cursor-default"
+                className="px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-700 font-medium hover:border-purple hover:text-purple transition-colors cursor-default"
               >
                 {category}
               </span>
@@ -234,27 +246,34 @@ export default function LandingPage() {
       {/* Social Proof */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-br from-coral to-coral-dark rounded-3xl p-8 sm:p-12 text-white text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Stop scrolling. Start living.
-            </h2>
-            <p className="text-lg text-white/80 mb-8 max-w-xl mx-auto">
-              Join thousands of people who've made real friends through spontaneous meetups.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
-              <Stat value="10k+" label="Active Users" />
-              <div className="hidden sm:block w-px h-12 bg-white/20" />
-              <Stat value="5k+" label="Events Created" />
-              <div className="hidden sm:block w-px h-12 bg-white/20" />
-              <Stat value="50k+" label="Connections Made" />
+          <div className="gradient-primary rounded-3xl p-8 sm:p-12 text-white text-center relative overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+
+            <div className="relative z-10">
+              <Logo className="w-16 h-16 mx-auto mb-6 opacity-90" />
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+                Stop scrolling. Start living.
+              </h2>
+              <p className="text-lg text-white/80 mb-8 max-w-xl mx-auto">
+                Join thousands of people who've made real friends through spontaneous meetups.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
+                <Stat value="10k+" label="Active Users" />
+                <div className="hidden sm:block w-px h-12 bg-white/20" />
+                <Stat value="5k+" label="Events Created" />
+                <div className="hidden sm:block w-px h-12 bg-white/20" />
+                <Stat value="50k+" label="Connections Made" />
+              </div>
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-purple font-semibold text-lg hover:shadow-xl transition-all"
+              >
+                Join Lincc Today
+                <ChevronRight className="h-5 w-5" />
+              </Link>
             </div>
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-coral font-semibold text-lg hover:shadow-xl transition-all"
-            >
-              Join Lincc Today
-              <ChevronRight className="h-5 w-5" />
-            </Link>
           </div>
         </div>
       </section>
@@ -263,7 +282,7 @@ export default function LandingPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Ready to make real connections?
+            Ready to make <span className="gradient-text">real connections</span>?
           </h2>
           <p className="text-lg text-gray-600 mb-8">
             Sign up in 30 seconds and start discovering activities near you.
@@ -271,7 +290,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/signup"
-              className="w-full sm:w-auto px-8 py-4 rounded-full bg-gradient-to-r from-coral to-coral-dark text-white font-semibold text-lg hover:shadow-xl hover:shadow-coral/30 transition-all"
+              className="w-full sm:w-auto px-8 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-xl hover:shadow-purple/30 transition-all"
             >
               Get Started Free
             </Link>
@@ -286,20 +305,17 @@ export default function LandingPage() {
       <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-200">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-coral to-coral-dark flex items-center justify-center">
-                <span className="text-white font-bold text-lg">L</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Lincc</span>
-            </div>
+            <Link to="/" className="flex items-center">
+              <Logo className="h-10" />
+            </Link>
             <div className="flex items-center gap-6 text-gray-600">
-              <a href="#" className="hover:text-coral transition-colors">About</a>
-              <a href="#" className="hover:text-coral transition-colors">Privacy</a>
-              <a href="#" className="hover:text-coral transition-colors">Terms</a>
-              <a href="#" className="hover:text-coral transition-colors">Contact</a>
+              <a href="#" className="hover:text-purple transition-colors">About</a>
+              <a href="#" className="hover:text-purple transition-colors">Privacy</a>
+              <a href="#" className="hover:text-purple transition-colors">Terms</a>
+              <a href="#" className="hover:text-purple transition-colors">Contact</a>
             </div>
             <p className="text-gray-500 text-sm">
-              © 2024 Lincc. All rights reserved.
+              © 2026 Lincc. All rights reserved.
             </p>
           </div>
         </div>
@@ -332,21 +348,21 @@ function EventCard({
   return (
     <div className={`bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow ${className}`}>
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-coral to-coral-dark flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
           {icon}
         </div>
-        <span className="px-2 py-1 rounded-full bg-coral/10 text-coral text-xs font-medium">
+        <span className="px-2 py-1 rounded-full bg-gradient-to-r from-coral/10 to-purple/10 text-purple text-xs font-medium">
           {category}
         </span>
       </div>
       <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
       <p className="text-sm text-gray-500 mb-3">{venue}</p>
       <div className="flex items-center justify-between text-sm">
-        <span className="text-coral font-medium">{time}</span>
+        <span className="text-purple font-medium">{time}</span>
         <span className="text-gray-500">{spots} spots left</span>
       </div>
       <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-coral/20 to-coral/30 flex items-center justify-center text-xs font-medium text-coral">
+        <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-xs font-medium text-white">
           {host[0]}
         </div>
         <span className="text-sm text-gray-600">Hosted by {host}</span>
@@ -368,10 +384,10 @@ function StepCard({
 }) {
   return (
     <div className="bg-white rounded-2xl p-6 text-center relative">
-      <div className="absolute top-4 left-4 w-8 h-8 rounded-full bg-coral/10 text-coral font-bold flex items-center justify-center">
+      <div className="absolute top-4 left-4 w-8 h-8 rounded-full gradient-primary text-white font-bold flex items-center justify-center text-sm">
         {number}
       </div>
-      <div className="w-16 h-16 rounded-2xl bg-coral/10 flex items-center justify-center mx-auto mb-4">
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-coral/10 to-purple/10 flex items-center justify-center mx-auto mb-4">
         {icon}
       </div>
       <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
@@ -390,8 +406,8 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="bg-gray-50 rounded-2xl p-6 hover:bg-coral/5 transition-colors group">
-      <div className="w-12 h-12 rounded-xl bg-coral/10 text-coral flex items-center justify-center mb-4 group-hover:bg-coral group-hover:text-white transition-colors">
+    <div className="bg-gray-50 rounded-2xl p-6 hover:bg-gradient-to-br hover:from-coral/5 hover:to-purple/5 transition-all group">
+      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-coral/10 to-purple/10 text-purple flex items-center justify-center mb-4 group-hover:from-coral group-hover:to-purple group-hover:text-white transition-all">
         {icon}
       </div>
       <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>

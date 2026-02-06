@@ -289,6 +289,15 @@ Last updated: 2026-01-27
 
 ---
 
+## Backlog
+
+> Items to address when time permits
+
+- [ ] **Create style sheet document** - Document the design system (colors, gradients, typography, spacing, components) for consistent styling across the app. Work with designer to finalize.
+- [ ] **Update logo references** - Replace lincc-logo.webp across app once final asset is ready
+
+---
+
 ## Bugs & Issues
 
 > Track bugs as they're discovered
