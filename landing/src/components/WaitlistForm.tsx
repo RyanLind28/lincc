@@ -30,7 +30,8 @@ export default function WaitlistForm() {
         .insert([{ email, name }]);
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase error:', JSON.stringify(error, null, 2));
+        alert('Debug: ' + JSON.stringify(error));
         if (error.code === '23505') {
           setErrorMessage('This email is already on the waitlist!');
         } else {
