@@ -18,6 +18,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
+    const userId = user.id;
 
     async function fetchUserEvents() {
       setIsLoading(true);
@@ -30,7 +31,7 @@ export default function ProfilePage() {
           category:categories!category_id(name, icon),
           host:profiles!host_id(first_name, avatar_url)
         `)
-        .eq('host_id', user.id)
+        .eq('host_id', userId)
         .in('status', ['active', 'full'])
         .gte('start_time', new Date().toISOString())
         .order('start_time', { ascending: true });
@@ -45,10 +46,11 @@ export default function ProfilePage() {
             host:profiles!host_id(first_name, avatar_url)
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('status', 'approved');
 
-      const mapEvent = (e: Record<string, unknown>): EventCardEvent => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mapEvent = (e: any): EventCardEvent => ({
         id: e.id as string,
         title: e.title as string,
         venue_name: e.venue_name as string,
@@ -63,9 +65,9 @@ export default function ProfilePage() {
       setHosting((hostedData || []).map(mapEvent));
       setJoined(
         (joinedData || [])
-          .map((p) => p.event)
+          .map((p: any) => p.event)
           .filter(Boolean)
-          .map((e) => mapEvent(e as Record<string, unknown>))
+          .map(mapEvent)
       );
       setIsLoading(false);
     }
