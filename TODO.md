@@ -1,6 +1,6 @@
 # LINCC Project TODO List
 
-Last updated: 2026-01-27
+Last updated: 2026-02-07
 
 ---
 
@@ -8,12 +8,12 @@ Last updated: 2026-01-27
 
 > Get the foundation in place before building features
 
-- [ ] **Environment variables** - Set up .env.local, .env.staging, .env.production
-- [ ] **Supabase project** - Create Supabase project, get API keys
-- [ ] **Configure Supabase client** - Update `src/lib/supabase.ts` with real credentials
+- [x] **Environment variables** - ~~Set up .env.local, .env.staging, .env.production~~ Done — .env.local configured, Vercel env vars set
+- [x] **Supabase project** - ~~Create Supabase project, get API keys~~ Done — project `srrubyupwiiqnehshszd`
+- [x] **Configure Supabase client** - ~~Update `src/lib/supabase.ts` with real credentials~~ Done
 - [ ] **CI/CD pipeline** - GitHub Actions for build and lint on PR
-- [ ] **Staging environment** - Deploy to Vercel/Netlify staging branch
-- [ ] **Error monitoring** - Set up Sentry for error tracking
+- [x] **Staging environment** - ~~Deploy to Vercel/Netlify staging branch~~ Done — `lincc-six.vercel.app` with auto-deploy from main
+- [x] **Error monitoring** - ~~Set up Sentry for error tracking~~ Done
 - [ ] **Analytics setup** - Set up Mixpanel/Amplitude for user analytics
 
 ---
@@ -22,19 +22,19 @@ Last updated: 2026-01-27
 
 > Build the data layer - everything depends on this
 
-- [ ] **Create profiles table** - User profiles with all fields from types
-- [ ] **Create categories table** - Event categories (seed with CATEGORIES data)
-- [ ] **Create events table** - Events with all fields, foreign keys
-- [ ] **Create event_participants table** - Track who joined which events
-- [ ] **Create messages table** - Event chat messages
-- [ ] **Create reports table** - User/event reports
-- [ ] **Create blocks table** - User blocks
-- [ ] **Create notifications table** - Push notification records
-- [ ] **Database indexes** - Add indexes for: events by location, by category, by time, by host
-- [ ] **Row Level Security (RLS)** - Configure RLS policies for all tables
-- [ ] **Database functions** - Stored procedures for nearby events query, participant counts
-- [ ] **Database triggers** - Auto-update timestamps, participant counts
-- [ ] **Seed data** - Create seed script for categories and test data
+- [x] **Create profiles table** - ~~User profiles with all fields from types~~ Done
+- [x] **Create categories table** - ~~Event categories (seed with CATEGORIES data)~~ Done — 21 categories
+- [x] **Create events table** - ~~Events with all fields, foreign keys~~ Done
+- [x] **Create event_participants table** - ~~Track who joined which events~~ Done
+- [x] **Create messages table** - ~~Event chat messages~~ Done
+- [x] **Create reports table** - ~~User/event reports~~ Done
+- [x] **Create blocks table** - ~~User blocks~~ Done
+- [x] **Create notifications table** - ~~Push notification records~~ Done
+- [x] **Database indexes** - ~~Add indexes for: events by location, by category, by time, by host~~ Done
+- [x] **Row Level Security (RLS)** - ~~Configure RLS policies for all tables~~ Done (except spatial_ref_sys — see backlog)
+- [x] **Database functions** - ~~Stored procedures for nearby events query, participant counts~~ Done
+- [x] **Database triggers** - ~~Auto-update timestamps, participant counts~~ Done
+- [x] **Seed data** - ~~Create seed script for categories and test data~~ Done — 32 London demo events
 
 ---
 
@@ -42,10 +42,10 @@ Last updated: 2026-01-27
 
 > Connect frontend to backend
 
-- [ ] **Disable DEV_MODE** - Set DEV_MODE = false in AuthContext.tsx and eventService.ts
-- [ ] **Auth flow testing** - Test sign up, sign in, magic link with real Supabase
-- [ ] **Profile CRUD** - Create, read, update profile via Supabase
-- [ ] **Event fetching** - Test `fetchProductionEvents()` with real data
+- [x] **Disable DEV_MODE** - ~~Set DEV_MODE = false in AuthContext.tsx and eventService.ts~~ Done — OFF in all files
+- [x] **Auth flow testing** - ~~Test sign up, sign in, magic link with real Supabase~~ Done — auth loading loop fixed
+- [x] **Profile CRUD** - ~~Create, read, update profile via Supabase~~ Done
+- [x] **Event fetching** - ~~Test `fetchProductionEvents()` with real data~~ Done
 - [ ] **Event CRUD** - Create, update, delete events via Supabase
 - [ ] **Participant management** - Join/leave events, approve/reject join requests
 - [ ] **Real engagement tracking** - Replace mock data in useUserEngagement.ts
@@ -91,9 +91,9 @@ Last updated: 2026-01-27
 
 > Location-based discovery
 
-- [ ] **Mapbox setup** - Get API key, install Mapbox GL JS
-- [ ] **Basic map render** - Display map centered on user location
-- [ ] **Event markers** - Display events as pins on map
+- [x] **Mapbox setup** - ~~Get API key, install Mapbox GL JS~~ Done — token configured
+- [x] **Basic map render** - ~~Display map centered on user location~~ Done
+- [x] **Event markers** - ~~Display events as pins on map~~ Done
 - [ ] **Marker clustering** - Group nearby events into clusters
 - [ ] **Event preview** - Show event card when tapping marker
 - [ ] **User location marker** - Show user's current location
@@ -307,7 +307,12 @@ Last updated: 2026-01-27
 
 > Track bugs as they're discovered
 
-- [ ] (Add bugs here)
+- [x] **Auth loading loop** - ~~App stuck in loading spinner forever. Caused by race condition between `getSession()` and `onAuthStateChange` in React StrictMode.~~ Fixed — split into two separate effects
+- [x] **ProfilePage mock data** - ~~ProfilePage used hardcoded demo data instead of real Supabase queries~~ Fixed
+- [x] **Vercel SPA routing 404s** - ~~Clicking links on deployed Vercel app returned 404~~ Fixed — added `vercel.json` with SPA rewrites
+- [x] **Vercel build: unused Shield import** - ~~`TS6133: 'Shield' is declared but never read` in LandingPage.tsx~~ Fixed
+- [x] **Vercel build: ProfilePage TS errors** - ~~`TS18047: 'user' possibly null` and type mismatch on joined events~~ Fixed
+- [x] **Vercel env var typo** - ~~`VITE_SUPABASE_UR` was missing the L~~ Fixed by user
 
 ---
 
@@ -316,8 +321,12 @@ Last updated: 2026-01-27
 ### Current State
 - DEV_MODE is **OFF** in all files — app uses real Supabase data
 - 32 demo events loaded in Supabase (London locations)
+- Deployed to Vercel: `lincc-six.vercel.app` (auto-deploy from main)
+- Vercel env vars configured: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MAPBOX_TOKEN`
+- SPA routing via `vercel.json` rewrite rules
 - Mapbox token configured
 - Sentry configured
+- Auth flow working (login, signup, magic link)
 - Owner account: ryanlindie@gmail.com
 
 ### Key Files
@@ -325,6 +334,8 @@ Last updated: 2026-01-27
 - Tag mappings: `src/data/tagToCategoryMap.ts`
 - Demo events: `src/data/demoEvents.ts` (fallback only)
 - Recommendation service: `src/services/events/recommendationService.ts`
+- Auth context: `src/contexts/AuthContext.tsx` (two-effect pattern — do not add getSession race)
+- Vercel config: `vercel.json` (SPA rewrites)
 
 ### Dependencies Needed
 - Google Places API key (for venue autocomplete)

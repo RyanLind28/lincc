@@ -6,7 +6,7 @@ Lincc is a **local events and discovery platform** — everything happening arou
 
 **Target users**: Both regular people (creating events like coffee meetups, co-working, sports) and businesses (promoting deals, openings, offers, limited-time promotions).
 
-**Current status**: Pre-launch. The app is in development with a waitlist landing page live. DEV_MODE is enabled in several files for local testing.
+**Current status**: Pre-launch, demo-ready. The app is deployed on Vercel (`lincc-six.vercel.app`) with real Supabase data. DEV_MODE is OFF in all files. Landing page with waitlist is live.
 
 ## Tech Stack
 
@@ -61,12 +61,19 @@ landing/
 └── package.json       # Separate dependencies
 ```
 
+## Deployment
+
+- **Vercel URL**: `https://lincc-six.vercel.app`
+- **SPA routing**: `vercel.json` rewrites all non-asset routes to `index.html`
+- **Vercel env vars**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MAPBOX_TOKEN` (set in Vercel dashboard)
+
 ## Supabase Access
 
 - **Project ref**: `srrubyupwiiqnehshszd`
 - **Project URL**: `https://srrubyupwiiqnehshszd.supabase.co`
 - **Management API token**: stored in `.env.local` as `SUPABASE_ACCESS_TOKEN` (expires 2026-03-09)
 - **Anon key**: stored in `.env.local` as `VITE_SUPABASE_ANON_KEY`
+- **Mapbox token**: stored in `.env.local` as `VITE_MAPBOX_TOKEN`
 - **Owner account**: `ryanlindie@gmail.com` (profile ID: `0b39d573-f7da-41d7-8db8-49025ea326f1`)
 
 To run SQL against the database:
@@ -146,10 +153,14 @@ Coffee, Utensils, Dumbbell, Trophy, TreePine, Heart, Film, Gamepad2, Palette, Bo
 3. Profile fetched from `profiles` table
 4. Route protection checks: auth → profile complete → terms accepted → admin role
 
-**DEV_MODE** is currently enabled in:
+**DEV_MODE** exists (set to `false`) in:
 - `src/contexts/AuthContext.tsx` — mock user/profile
 - `src/services/events/eventService.ts` — demo events
 - `src/hooks/useUserEngagement.ts` — mock engagement data
+
+**Auth architecture**: Two separate effects to avoid race conditions:
+- Effect 1: `onAuthStateChange` listener (synchronous state updates only, no async)
+- Effect 2: Watches `user` state, fetches profile when user changes (with cancellation)
 
 ## Database (Supabase)
 
@@ -168,6 +179,8 @@ Coffee, Utensils, Dumbbell, Trophy, TreePine, Heart, Film, Gamepad2, Palette, Bo
 - `002_enhancements.sql` — additional enhancements
 - `003_fixes.sql` — bug fixes
 - `004_example_events.sql` — seed data
+- `005_demo_events_london.sql` — 30 London demo events, removed capacity cap
+- `006_security_fixes.sql` — function search_path fixes, waitlist RLS tightening
 
 ### Real-time subscriptions
 Enabled for: messages, notifications, event_participants
@@ -191,7 +204,7 @@ Fallback cascade: nearby → category → any (never returns empty)
 - The landing page is **waitlist-only** — no login/signup buttons
 - Use `cn()` from `src/lib/utils.ts` for className merging (wraps clsx)
 - Service functions typically return `{ success, error, data }` pattern
-- Event capacity constraint: 1-3 people (small group focus)
+- Event capacity constraint: minimum 1, no upper limit
 - Bio max: 140 chars, tags max: 3
 - Events auto-expire 2 hours after start_time
 - Twitter is referred to as **X** everywhere
