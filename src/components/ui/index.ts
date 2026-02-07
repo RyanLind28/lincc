@@ -19,3 +19,4 @@ export { Spinner, FullPageSpinner, InlineSpinner, type SpinnerProps } from './Sp
 export { Modal, type ModalProps } from './Modal';
 export { BottomSheet, type BottomSheetProps } from './BottomSheet';
 export { CategoryIcon, iconMap } from './CategoryIcon';
+export { MapView, type MapViewProps, type MapEvent } from './MapView';

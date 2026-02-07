@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import App from './App';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import './index.css';
 
 // Unregister any stale service workers in development

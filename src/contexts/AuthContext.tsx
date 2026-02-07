@@ -88,33 +88,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile]);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Skip Supabase auth in dev mode
     if (DEV_MODE) {
       console.log('🔓 DEV MODE: Authentication bypassed with mock user');
+      setIsLoading(false);
       return;
     }
 
-    // Set up auth state listener - this handles initial session and all changes
+    // Get initial session
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          console.error('Auth session error:', error);
+        }
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          fetchProfile(session.user.id).then(setProfile);
+        }
+
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error('Auth failed:', err);
+        setIsLoading(false);
+      });
+
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return;
+
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        // Use setTimeout to avoid Supabase deadlock issue with nested calls
-        setTimeout(async () => {
-          const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
-          setIsLoading(false);
-        }, 0);
+        const profileData = await fetchProfile(session.user.id);
+        setProfile(profileData);
       } else {
         setProfile(null);
         setIsLoading(false);
       }
+
+      setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [fetchProfile]);
 
   const signUp = async (email: string, password: string) => {

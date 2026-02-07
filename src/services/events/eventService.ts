@@ -3,7 +3,7 @@
 
 import { supabase } from '../../lib/supabase';
 import { DEMO_EVENTS, refreshDemoEventTimes, type DemoEvent } from '../../data/demoEvents';
-import type { EventWithDetails, Audience } from '../../types';
+import type { EventWithDetails, Audience, Event } from '../../types';
 
 // DEV_MODE flag - matches AuthContext
 const DEV_MODE = false;
@@ -72,10 +72,12 @@ export async function fetchProductionEvents(
     .order('start_time', { ascending: true });
 
   // Filter by audience
+  // Women see: 'everyone' + 'women' events
+  // Men see: 'everyone' only (never women-only events)
   if (options.audience === 'women') {
     query = query.in('audience', ['everyone', 'women']);
   } else if (options.audience === 'men') {
-    query = query.in('audience', ['everyone', 'men']);
+    query = query.eq('audience', 'everyone');
   }
 
   // Apply limit
@@ -102,4 +104,131 @@ export async function fetchProductionEvents(
  */
 export function isDevMode(): boolean {
   return DEV_MODE;
+}
+
+export interface CreateEventResult {
+  success: boolean;
+  error?: string;
+  data?: Event;
+}
+
+export interface CreateEventData {
+  category_name: string; // Category name to look up
+  title: string;
+  description?: string;
+  venue_name: string;
+  venue_address: string;
+  venue_lat?: number;
+  venue_lng?: number;
+  venue_place_id?: string;
+  start_time: string;
+  capacity: number;
+  join_mode: 'request' | 'auto';
+  audience: Audience;
+}
+
+/**
+ * Create a new event
+ */
+export async function createEvent(
+  eventData: CreateEventData,
+  hostId: string
+): Promise<CreateEventResult> {
+  try {
+    // Look up category by name
+    const { data: categoryData, error: categoryError } = await supabase
+      .from('categories')
+      .select('id')
+      .ilike('name', eventData.category_name)
+      .single();
+
+    if (categoryError || !categoryData) {
+      // Try to find by partial match
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('is_active', true);
+
+      // Find closest match
+      const lowerName = eventData.category_name.toLowerCase();
+      const matchedCategory = categoriesData?.find(
+        (c) => c.name.toLowerCase().includes(lowerName) || lowerName.includes(c.name.toLowerCase())
+      );
+
+      if (!matchedCategory) {
+        console.error('Category not found:', eventData.category_name);
+        return { success: false, error: 'Category not found. Please try again.' };
+      }
+
+      eventData.category_name = matchedCategory.id;
+    } else {
+      eventData.category_name = categoryData.id;
+    }
+
+    // Calculate expires_at (24 hours after start_time)
+    const startTime = new Date(eventData.start_time);
+    const expiresAt = new Date(startTime.getTime() + 24 * 60 * 60 * 1000);
+
+    // Create the event
+    const { data, error } = await supabase
+      .from('events')
+      .insert({
+        host_id: hostId,
+        category_id: eventData.category_name, // Now contains the ID
+        title: eventData.title,
+        description: eventData.description || null,
+        venue_name: eventData.venue_name,
+        venue_address: eventData.venue_address,
+        venue_lat: eventData.venue_lat || 0,
+        venue_lng: eventData.venue_lng || 0,
+        venue_place_id: eventData.venue_place_id || null,
+        start_time: eventData.start_time,
+        capacity: eventData.capacity,
+        join_mode: eventData.join_mode,
+        audience: eventData.audience,
+        status: 'active',
+        expires_at: expiresAt.toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating event:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data as Event };
+  } catch (err) {
+    console.error('Error creating event:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to create event',
+    };
+  }
+}
+
+/**
+ * Get a single event by ID
+ */
+export async function getEventById(eventId: string): Promise<EventWithDetails | null> {
+  const { data, error } = await supabase
+    .from('events')
+    .select(`
+      *,
+      host:profiles!host_id(*),
+      category:categories!category_id(*),
+      participant_count:event_participants(count)
+    `)
+    .eq('id', eventId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching event:', error);
+    return null;
+  }
+
+  return {
+    ...data,
+    participant_count: data.participant_count?.[0]?.count || 0,
+  } as EventWithDetails;
 }

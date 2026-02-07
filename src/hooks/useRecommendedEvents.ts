@@ -1,13 +1,13 @@
 // Main recommendation hook
 // Combines all data sources and returns scored, filtered events
 
-import { useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useFilters, type Filters } from './useFilters';
 import { useUserLocation } from './useUserLocation';
 import { useUserEngagement } from './useUserEngagement';
 import {
-  getRecommendations,
+  getRecommendationsAsync,
   getFallbackMessage,
   toGridEventDataArray,
   type ScoredEvent,
@@ -39,6 +39,9 @@ interface UseRecommendedEventsResult {
   hasLocation: boolean;
   locationError: string | null;
   refreshLocation: () => void;
+
+  // Refresh
+  refresh: () => void;
 }
 
 interface UseRecommendedEventsOptions {
@@ -60,25 +63,49 @@ export function useRecommendedEvents(
   const { engagementByCategory, isLoading: isEngagementLoading } = useUserEngagement();
   const filterState = useFilters(options.initialFilters);
 
-  // Get recommendations using memoization
-  const recommendationResult = useMemo(() => {
+  // State for async recommendation results
+  const [scoredEvents, setScoredEvents] = useState<ScoredEvent[]>([]);
+  const [gridEvents, setGridEvents] = useState<GridEventData[]>([]);
+  const [fallbackUsed, setFallbackUsed] = useState<FallbackType>('any');
+  const [totalAvailable, setTotalAvailable] = useState(0);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Fetch recommendations
+  const fetchRecommendations = useCallback(async () => {
     if (!profile) {
-      return {
-        events: [],
-        fallbackUsed: 'any' as FallbackType,
-        totalAvailable: 0,
-      };
+      setScoredEvents([]);
+      setGridEvents([]);
+      setFallbackUsed('any');
+      setTotalAvailable(0);
+      setIsLoadingEvents(false);
+      return;
     }
 
-    return getRecommendations({
-      userProfile: profile,
-      userLocation: location,
-      engagementByCategory,
-      filterCategories: filterState.filters.categories,
-      filterTimeRange: filterState.filters.timeRange,
-      filterSearch: filterState.filters.search,
-      maxDistance: options.maxDistance,
-    });
+    setIsLoadingEvents(true);
+
+    try {
+      const result = await getRecommendationsAsync({
+        userProfile: profile,
+        userLocation: location,
+        engagementByCategory,
+        filterCategories: filterState.filters.categories,
+        filterTimeRange: filterState.filters.timeRange,
+        filterSearch: filterState.filters.search,
+        maxDistance: options.maxDistance,
+      });
+
+      setScoredEvents(result.events);
+      setGridEvents(toGridEventDataArray(result.events));
+      setFallbackUsed(result.fallbackUsed);
+      setTotalAvailable(result.totalAvailable);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      setScoredEvents([]);
+      setGridEvents([]);
+    } finally {
+      setIsLoadingEvents(false);
+    }
   }, [
     profile,
     location,
@@ -87,30 +114,35 @@ export function useRecommendedEvents(
     filterState.filters.timeRange,
     filterState.filters.search,
     options.maxDistance,
+    refreshTrigger,
   ]);
 
-  // Transform to GridEventData
-  const gridEvents = useMemo(
-    () => toGridEventDataArray(recommendationResult.events),
-    [recommendationResult.events]
-  );
+  // Fetch on mount and when dependencies change
+  useEffect(() => {
+    fetchRecommendations();
+  }, [fetchRecommendations]);
+
+  // Manual refresh function
+  const refresh = useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
 
   // Generate fallback message
-  const fallbackMessage = getFallbackMessage(recommendationResult.fallbackUsed);
+  const fallbackMessage = getFallbackMessage(fallbackUsed);
 
   // Combined loading state
-  const isLoading = isLocationLoading || isEngagementLoading;
+  const isLoading = isLocationLoading || isEngagementLoading || isLoadingEvents;
 
   return {
     // Event data
     events: gridEvents,
-    scoredEvents: recommendationResult.events,
+    scoredEvents,
 
     // Status
     isLoading,
-    fallbackUsed: recommendationResult.fallbackUsed,
+    fallbackUsed,
     fallbackMessage,
-    totalAvailable: recommendationResult.totalAvailable,
+    totalAvailable,
 
     // Filter controls
     filters: filterState.filters,
@@ -125,5 +157,8 @@ export function useRecommendedEvents(
     hasLocation: hasPermission,
     locationError,
     refreshLocation,
+
+    // Refresh
+    refresh,
   };
 }

@@ -29,91 +29,134 @@ interface UseUserLocationResult {
 // In-memory cache (persists across re-renders)
 let cachedLocation: CachedLocation | null = null;
 
+// Check if cache is valid
+const isCacheValid = (): boolean =>
+  !!cachedLocation && Date.now() - cachedLocation.timestamp < CACHE_DURATION_MS;
+
 export function useUserLocation(): UseUserLocationResult {
   const [location, setLocation] = useState<Coordinates | null>(
     cachedLocation?.coords || null
   );
-  const [isLoading, setIsLoading] = useState(true);
+  // Start with isLoading=false if we have valid cache
+  const [isLoading, setIsLoading] = useState(!isCacheValid());
   const [error, setError] = useState<string | null>(null);
-  const [hasPermission, setHasPermission] = useState(false);
+  const [hasPermission, setHasPermission] = useState(isCacheValid());
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const fetchLocation = useCallback(() => {
-    // Check if we have a valid cached location
-    if (cachedLocation && Date.now() - cachedLocation.timestamp < CACHE_DURATION_MS) {
-      setLocation(cachedLocation.coords);
-      setHasPermission(true);
-      setIsLoading(false);
-      return;
-    }
-
-    // Check if geolocation is available
-    if (!('geolocation' in navigator)) {
-      setError('Geolocation not supported');
-      setLocation(DEFAULT_LOCATION);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords: Coordinates = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        };
-
-        // Update cache
-        cachedLocation = {
-          coords,
-          timestamp: Date.now(),
-        };
-
-        setLocation(coords);
-        setHasPermission(true);
-        setIsLoading(false);
-      },
-      (err) => {
-        let errorMessage: string;
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            errorMessage = 'Location permission denied';
-            setHasPermission(false);
-            break;
-          case err.POSITION_UNAVAILABLE:
-            errorMessage = 'Location unavailable';
-            break;
-          case err.TIMEOUT:
-            errorMessage = 'Location request timed out';
-            break;
-          default:
-            errorMessage = 'Unknown location error';
-        }
-
-        setError(errorMessage);
-        // Use default location as fallback
-        setLocation(DEFAULT_LOCATION);
-        setIsLoading(false);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: CACHE_DURATION_MS,
-      }
-    );
-  }, []);
-
-  // Fetch location on mount
+  // Fetch location on mount and when refresh is triggered
   useEffect(() => {
+    let isMounted = true;
+    let safetyTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const fetchLocation = () => {
+      // Check if we have a valid cached location
+      if (cachedLocation && Date.now() - cachedLocation.timestamp < CACHE_DURATION_MS) {
+        if (isMounted) {
+          setLocation(cachedLocation.coords);
+          setHasPermission(true);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // Check if geolocation is available
+      if (!('geolocation' in navigator)) {
+        if (isMounted) {
+          setError('Geolocation not supported');
+          setLocation(DEFAULT_LOCATION);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      if (isMounted) {
+        setIsLoading(true);
+        setError(null);
+      }
+
+      // Safety timeout in case geolocation API hangs
+      let resolved = false;
+      safetyTimeout = setTimeout(() => {
+        if (!resolved && isMounted) {
+          resolved = true;
+          setError('Location request timed out');
+          setLocation(DEFAULT_LOCATION);
+          setIsLoading(false);
+        }
+      }, 15000); // 15s safety timeout (longer than the 10s API timeout)
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          if (resolved || !isMounted) return;
+          resolved = true;
+          if (safetyTimeout) clearTimeout(safetyTimeout);
+
+          const coords: Coordinates = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+
+          // Update cache
+          cachedLocation = {
+            coords,
+            timestamp: Date.now(),
+          };
+
+          setLocation(coords);
+          setHasPermission(true);
+          setIsLoading(false);
+        },
+        (err) => {
+          if (resolved || !isMounted) return;
+          resolved = true;
+          if (safetyTimeout) clearTimeout(safetyTimeout);
+
+          let errorMessage: string;
+          let permissionDenied = false;
+          switch (err.code) {
+            case err.PERMISSION_DENIED:
+              errorMessage = 'Location permission denied';
+              permissionDenied = true;
+              break;
+            case err.POSITION_UNAVAILABLE:
+              errorMessage = 'Location unavailable';
+              break;
+            case err.TIMEOUT:
+              errorMessage = 'Location request timed out';
+              break;
+            default:
+              errorMessage = 'Unknown location error';
+          }
+
+          if (permissionDenied) {
+            setHasPermission(false);
+          }
+          setError(errorMessage);
+          // Use default location as fallback
+          setLocation(DEFAULT_LOCATION);
+          setIsLoading(false);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: CACHE_DURATION_MS,
+        }
+      );
+    };
+
     fetchLocation();
-  }, [fetchLocation]);
+
+    return () => {
+      isMounted = false;
+      if (safetyTimeout) clearTimeout(safetyTimeout);
+    };
+  }, [refreshTrigger]);
 
   // Refresh function to force re-fetch
   const refresh = useCallback(() => {
     cachedLocation = null;
-    fetchLocation();
-  }, [fetchLocation]);
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
 
   return {
     location,

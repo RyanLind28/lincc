@@ -1,12 +1,11 @@
 // Event Recommendation Service
 // Applies scoring algorithm and fallback cascade
 
+import { supabase } from '../../lib/supabase';
 import { calculateDistance } from '../../lib/utils';
 import { calculateTotalScore, hasInterestMatch } from '../../lib/algorithm';
-import { fetchDemoEvents } from './eventService';
-import { toScoredEvent, type ScoredEvent } from './transformers';
-import type { DemoEvent } from '../../data/demoEvents';
-import type { Coordinates, Profile } from '../../types';
+import type { ScoredEvent } from './transformers';
+import type { Coordinates, Profile, EventWithDetails } from '../../types';
 
 // ===========================================
 // TYPES
@@ -31,14 +30,59 @@ export interface RecommendationOptions {
 }
 
 // ===========================================
-// MAIN RECOMMENDATION FUNCTION
+// FETCH EVENTS FROM SUPABASE
+// ===========================================
+
+/**
+ * Fetch active events from Supabase
+ */
+export async function fetchActiveEvents(audience?: string): Promise<EventWithDetails[]> {
+  let query = supabase
+    .from('events')
+    .select(`
+      *,
+      host:profiles!host_id(*),
+      category:categories!category_id(*),
+      participant_count:event_participants(count)
+    `)
+    .eq('status', 'active')
+    .gte('start_time', new Date().toISOString())
+    .order('start_time', { ascending: true });
+
+  // Filter by audience
+  // Women see: 'everyone' + 'women' events
+  // Men see: 'everyone' only (never women-only events)
+  if (audience === 'women') {
+    query = query.in('audience', ['everyone', 'women']);
+  } else if (audience === 'men') {
+    query = query.eq('audience', 'everyone');
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching events:', error);
+    return [];
+  }
+
+  // Transform the count format
+  return (data || []).map((event) => ({
+    ...event,
+    participant_count: event.participant_count?.[0]?.count || 0,
+  })) as EventWithDetails[];
+}
+
+// ===========================================
+// MAIN RECOMMENDATION FUNCTION (ASYNC)
 // ===========================================
 
 /**
  * Get recommended events with fallback cascade
  * Never returns empty - always shows something
  */
-export function getRecommendations(options: RecommendationOptions): RecommendationResult {
+export async function getRecommendationsAsync(
+  options: RecommendationOptions
+): Promise<RecommendationResult> {
   const {
     userProfile,
     userLocation,
@@ -49,15 +93,23 @@ export function getRecommendations(options: RecommendationOptions): Recommendati
     maxDistance,
   } = options;
 
-  // Fetch all active events
-  const allEvents = fetchDemoEvents({ status: ['active'] });
+  // Determine audience filter based on user profile
+  // Women can see: 'everyone' + 'women' events
+  // Men can see: 'everyone' events only (never women-only)
+  let audienceFilter: 'women' | 'men' | undefined;
+  if (userProfile.gender === 'woman') {
+    audienceFilter = 'women';
+  } else if (userProfile.gender === 'man') {
+    audienceFilter = 'men';
+  }
+  // Note: 'men' filter shows only 'everyone' events (no women-only)
 
-  // Apply audience filter based on user's women-only mode
-  const audienceFiltered = filterByAudience(allEvents, userProfile);
+  // Fetch active events from Supabase
+  const allEvents = await fetchActiveEvents(audienceFilter);
 
   // Score all events
   const scored = scoreEvents(
-    audienceFiltered,
+    allEvents,
     userProfile,
     userLocation,
     engagementByCategory
@@ -76,6 +128,19 @@ export function getRecommendations(options: RecommendationOptions): Recommendati
   return applyFallbackCascade(filtered, scored);
 }
 
+/**
+ * Synchronous version for backwards compatibility (uses cached/empty data)
+ * @deprecated Use getRecommendationsAsync instead
+ */
+export function getRecommendations(_options: RecommendationOptions): RecommendationResult {
+  // Return empty result - actual data comes from async version
+  return {
+    events: [],
+    fallbackUsed: 'any',
+    totalAvailable: 0,
+  };
+}
+
 // ===========================================
 // SCORING
 // ===========================================
@@ -84,7 +149,7 @@ export function getRecommendations(options: RecommendationOptions): Recommendati
  * Score all events based on user preferences
  */
 function scoreEvents(
-  events: DemoEvent[],
+  events: EventWithDetails[],
   userProfile: Profile,
   userLocation: Coordinates | null,
   engagementByCategory: Record<string, number>
@@ -101,47 +166,56 @@ function scoreEvents(
       event.venue_lng
     );
 
+    // Get category value from the category object (cast to access value property from DB)
+    const categoryObj = event.category as { name?: string; icon?: string; value?: string } | null;
+    const categoryValue = categoryObj?.value || categoryObj?.name?.toLowerCase() || '';
+
     // Get engagement count for this category
-    const categoryEventCount = engagementByCategory[event.category_value] || 0;
+    const categoryEventCount = engagementByCategory[categoryValue] || 0;
 
     // Calculate scores
     const { total, breakdown } = calculateTotalScore({
       userTags: userProfile.tags,
-      eventCategory: event.category_value,
+      eventCategory: categoryValue,
       distanceKm: distance_km,
       userRadius: userProfile.settings_radius,
       startTime: event.start_time,
       categoryEventCount,
     });
 
-    return toScoredEvent(event, total, breakdown, distance_km);
+    // Transform to ScoredEvent format
+    return {
+      id: event.id,
+      title: event.title,
+      category: {
+        name: categoryObj?.name || 'Event',
+        icon: categoryObj?.icon || 'Calendar',
+      },
+      category_value: categoryValue,
+      subcategory: undefined,
+      venue_name: event.venue_name,
+      venue_short: event.venue_address?.split(',')[0] || event.venue_name,
+      venue_lat: event.venue_lat,
+      venue_lng: event.venue_lng,
+      start_time: event.start_time,
+      capacity: event.capacity,
+      participant_count: event.participant_count || 0,
+      host: {
+        first_name: event.host?.first_name || 'Host',
+        avatar_url: event.host?.avatar_url || null,
+      },
+      audience: event.audience,
+      status: event.status,
+      score: total,
+      scoreBreakdown: breakdown,
+      distance_km,
+    };
   });
 }
 
 // ===========================================
 // FILTERING
 // ===========================================
-
-/**
- * Filter events by audience restrictions
- */
-function filterByAudience(events: DemoEvent[], userProfile: Profile): DemoEvent[] {
-  // If user has women-only mode, show only women-only and everyone events
-  if (userProfile.is_women_only_mode) {
-    return events.filter((e) => e.audience === 'everyone' || e.audience === 'women');
-  }
-
-  // Filter based on user's gender
-  if (userProfile.gender === 'woman') {
-    return events.filter((e) => e.audience === 'everyone' || e.audience === 'women');
-  }
-  if (userProfile.gender === 'man') {
-    return events.filter((e) => e.audience === 'everyone' || e.audience === 'men');
-  }
-
-  // Non-binary or unspecified: show "everyone" events only
-  return events.filter((e) => e.audience === 'everyone');
-}
 
 interface FilterOptions {
   categories: string[];

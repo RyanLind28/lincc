@@ -25,6 +25,8 @@ import NotificationsPage from './pages/NotificationsPage';
 // Event pages (placeholder)
 import CreateEventPage from './pages/CreateEventPage';
 import EventDetailPage from './pages/EventDetailPage';
+import ManageParticipantsPage from './pages/ManageParticipantsPage';
+import UserProfilePage from './pages/UserProfilePage';
 
 // Admin pages (placeholder)
 import AdminDashboard from './pages/admin/DashboardPage';
@@ -35,6 +37,7 @@ import AdminCategoriesPage from './pages/admin/CategoriesPage';
 
 // Demo page (no auth required)
 import DemoPage from './pages/DemoPage';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
@@ -45,6 +48,9 @@ function App() {
         <Routes>
           {/* Demo route (no auth required) */}
           <Route path="/demo" element={<DemoPage />} />
+
+          {/* Landing page (no auth required) */}
+          <Route path="/landing" element={<LandingPage />} />
 
           {/* Public routes */}
           <Route
@@ -118,6 +124,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <ChatRoomPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/event/:id/manage"
+            element={
+              <ProtectedRoute>
+                <ManageParticipantsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/user/:id"
+            element={
+              <ProtectedRoute>
+                <UserProfilePage />
               </ProtectedRoute>
             }
           />

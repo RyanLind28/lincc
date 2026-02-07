@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell, Settings, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 
 // Lincc Logo component with gradient branding
 function LinccLogo({ className, size = 'md' }: { className?: string; size?: 'sm' | 'md' | 'lg' }) {
@@ -64,6 +65,7 @@ export function Header({
   transparent = false,
 }: HeaderProps) {
   const navigate = useNavigate();
+  const unreadCount = useUnreadNotificationCount();
 
   return (
     <header
@@ -117,8 +119,11 @@ export function Header({
               aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
-              {/* Notification badge - uncomment when implementing notifications */}
-              {/* <span className="absolute top-1 right-1 h-2 w-2 bg-error rounded-full" /> */}
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-error rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
           )}
           {showSettings && (

@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
 import { Input, TextArea, GradientButton, Slider, DatePicker, CategoryIcon } from '../components/ui';
 import { CATEGORIES, type Category, type SubCategory } from '../data/categories';
+import { createEvent } from '../services/events';
 import { cn } from '../lib/utils';
-import type { JoinMode } from '../types';
+import type { JoinMode, Audience } from '../types';
 
 type Step = 'category' | 'subcategory' | 'details' | 'when' | 'guests';
 
@@ -15,6 +17,7 @@ const STEPS: Step[] = ['category', 'subcategory', 'details', 'when', 'guests'];
 export default function CreateEventPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user, profile } = useAuth();
 
   const [step, setStep] = useState<Step>('category');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -24,10 +27,12 @@ export default function CreateEventPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [venueName, setVenueName] = useState('');
+  const [venueAddress, setVenueAddress] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState('12:00');
   const [capacity, setCapacity] = useState(4);
   const [joinMode, setJoinMode] = useState<JoinMode>('request');
+  const [audience, setAudience] = useState<Audience>('everyone');
   const [isLoading, setIsLoading] = useState(false);
 
   // Date constraints - up to 1 month in the future
@@ -88,30 +93,51 @@ export default function CreateEventPage() {
   };
 
   const handleSubmit = async () => {
+    if (!user?.id) {
+      showToast('Please log in to create an event', 'error');
+      return;
+    }
+
+    if (!selectedCategory) {
+      showToast('Please select a category', 'error');
+      return;
+    }
+
     setIsLoading(true);
 
-    // Combine date and time
-    const eventDateTime = new Date(selectedDate!);
-    const [hours, minutes] = selectedTime.split(':').map(Number);
-    eventDateTime.setHours(hours, minutes, 0, 0);
+    try {
+      // Combine date and time
+      const eventDateTime = new Date(selectedDate!);
+      const [hours, minutes] = selectedTime.split(':').map(Number);
+      eventDateTime.setHours(hours, minutes, 0, 0);
 
-    // TODO: Create event in Supabase
-    // If customSubcategory is used, track it for potential future addition
-    console.log('Creating event:', {
-      category: selectedCategory?.value,
-      subcategory: selectedSubcategory?.value || customSubcategory,
-      isCustomSubcategory: !!customSubcategory,
-      title,
-      description,
-      venueName,
-      dateTime: eventDateTime.toISOString(),
-      capacity,
-      joinMode,
-    });
+      const result = await createEvent(
+        {
+          category_name: selectedCategory.label,
+          title: title.trim(),
+          description: description.trim() || undefined,
+          venue_name: venueName.trim(),
+          venue_address: venueAddress.trim() || venueName.trim(), // Use venue name as address fallback
+          start_time: eventDateTime.toISOString(),
+          capacity,
+          join_mode: joinMode,
+          audience,
+        },
+        user.id
+      );
 
-    showToast('Event created successfully!', 'success');
-    setIsLoading(false);
-    navigate('/');
+      if (result.success && result.data) {
+        showToast('Event created successfully!', 'success');
+        navigate(`/event/${result.data.id}`);
+      } else {
+        showToast(result.error || 'Failed to create event', 'error');
+      }
+    } catch (err) {
+      console.error('Error creating event:', err);
+      showToast('An unexpected error occurred', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Filter subcategories based on search
@@ -319,7 +345,13 @@ export default function CreateEventPage() {
               <Input
                 value={venueName}
                 onChange={(e) => setVenueName(e.target.value)}
-                placeholder="Search for a place..."
+                placeholder="Venue name (e.g., Blue Bottle Coffee)"
+                className="mb-2"
+              />
+              <Input
+                value={venueAddress}
+                onChange={(e) => setVenueAddress(e.target.value)}
+                placeholder="Address (e.g., 123 Main St)"
               />
               <p className="text-xs text-text-muted mt-1">
                 Google Places integration coming soon
@@ -428,6 +460,39 @@ export default function CreateEventPage() {
               </div>
             </div>
 
+            {/* Audience - Only women can create women-only events */}
+            {profile?.gender === 'woman' && (
+              <div>
+                <label className="block text-sm font-medium text-text mb-3">
+                  Who can see this event?
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setAudience('everyone')}
+                    className={cn(
+                      'p-3 rounded-xl border-2 transition-all text-center',
+                      audience === 'everyone'
+                        ? 'border-coral bg-coral/5'
+                        : 'border-border hover:border-coral/50'
+                    )}
+                  >
+                    <p className="font-medium text-text text-sm">Everyone</p>
+                  </button>
+                  <button
+                    onClick={() => setAudience('women')}
+                    className={cn(
+                      'p-3 rounded-xl border-2 transition-all text-center',
+                      audience === 'women'
+                        ? 'border-coral bg-coral/5'
+                        : 'border-border hover:border-coral/50'
+                    )}
+                  >
+                    <p className="font-medium text-text text-sm">Women Only</p>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Summary */}
             <div className="bg-surface rounded-2xl border border-border p-4 space-y-3">
               <h3 className="font-semibold text-text">Event Summary</h3>
@@ -459,6 +524,16 @@ export default function CreateEventPage() {
                 <div className="flex justify-between">
                   <span className="text-text-muted">Guests</span>
                   <span className="text-text">{capacity} max</span>
+                </div>
+                {profile?.gender === 'woman' && (
+                  <div className="flex justify-between">
+                    <span className="text-text-muted">Visible to</span>
+                    <span className="text-text">{audience === 'women' ? 'Women only' : 'Everyone'}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Join mode</span>
+                  <span className="text-text">{joinMode === 'request' ? 'Request' : 'Open'}</span>
                 </div>
               </div>
             </div>
