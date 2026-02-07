@@ -1,23 +1,36 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import {
-  Users,
   MapPin,
-  Calendar,
-  MessageCircle,
   Shield,
   Sparkles,
   Coffee,
-  Dumbbell,
-  Gamepad2,
+  Music,
+  Store,
   ChevronRight,
+  Clock,
+  Tag,
+  PartyPopper,
+  Utensils,
+  Dumbbell,
+  Heart,
+  Palette,
+  TreePine,
+  Trophy,
+  Wine,
+  ShoppingBag,
+  Drama,
+  ArrowRight,
+  Check,
+  Loader2,
+  type LucideIcon,
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-// Logo component - uses the official Lincc logo (2 circles + "lincc" text)
-// Path: /public/icons/lincc-logo.webp (or .png)
 function Logo({ className = "h-9" }: { className?: string }) {
   return (
     <img
-      src="/icons/lincc-logo.webp"
+      src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp"
       alt="Lincc"
       className={className}
     />
@@ -34,20 +47,12 @@ export default function LandingPage() {
             <Link to="/" className="flex items-center">
               <Logo className="h-10" />
             </Link>
-            <div className="flex items-center gap-4">
-              <Link
-                to="/login"
-                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-              >
-                Log in
-              </Link>
-              <Link
-                to="/signup"
-                className="px-4 py-2 rounded-full gradient-primary text-white font-medium hover:shadow-lg hover:shadow-purple/25 transition-all"
-              >
-                Get Started
-              </Link>
-            </div>
+            <a
+              href="#waitlist"
+              className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all"
+            >
+              Join Waitlist
+            </a>
           </div>
         </div>
       </nav>
@@ -59,36 +64,32 @@ export default function LandingPage() {
 
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-coral/10 to-purple/10 text-purple font-medium text-sm mb-6">
-              <Sparkles className="h-4 w-4 text-coral" />
-              The spontaneous way to meet people
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-coral/10 to-purple/10 text-purple font-medium text-sm mb-6">
+              Everything local, in one place
             </div>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              Real connections,
+              Your area,
               <br />
               <span className="gradient-text">
-                real moments
+                at your fingertips
               </span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Lincc helps you discover and join spontaneous activities happening around you.
-              Coffee chats, gym sessions, hiking trips — find your people doing what you love.
+              Events, deals, openings, and happenings near you — all live, all in one place.
+              No more endless scrolling. Just open Lincc and go.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                to="/signup"
-                className="w-full sm:w-auto px-8 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-xl hover:shadow-purple/30 transition-all flex items-center justify-center gap-2"
+              <a
+                href="#waitlist"
+                className="w-full sm:w-auto px-8 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-xl hover:shadow-purple/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group"
               >
-                Start Meeting People
-                <ChevronRight className="h-5 w-5" />
-              </Link>
-              <Link
-                to="/demo"
-                className="w-full sm:w-auto px-8 py-4 rounded-full border-2 border-gray-200 text-gray-700 font-semibold text-lg hover:border-purple hover:text-purple transition-all"
-              >
-                See Demo
-              </Link>
+                Get Early Access
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </a>
             </div>
+            <p className="text-sm text-gray-500 mt-4">
+              Be first to know when we launch.
+            </p>
           </div>
 
           {/* App Preview */}
@@ -100,30 +101,27 @@ export default function LandingPage() {
                 <EventCard
                   icon={<Coffee className="h-5 w-5 text-white" />}
                   category="Coffee"
-                  title="Morning Coffee Chat"
-                  venue="Blue Bottle Coffee"
-                  time="Starting in 30 min"
-                  spots={2}
-                  host="Sarah"
+                  title="Morning Coffee & Chat"
+                  venue="Brew & Co, Shoreditch"
+                  time="Today at 10 AM"
+                  detail="2 spots left"
                 />
                 <EventCard
-                  icon={<Dumbbell className="h-5 w-5 text-white" />}
-                  category="Fitness"
-                  title="Evening Gym Session"
-                  venue="Equinox Fitness"
-                  time="Today at 6 PM"
-                  spots={3}
-                  host="Mike"
+                  icon={<Tag className="h-5 w-5 text-white" />}
+                  category="Offer"
+                  title="50% Off Brunch Menu"
+                  venue="The Garden Kitchen"
+                  time="This weekend"
+                  detail="Use code LINCC50"
                   className="hidden sm:block"
                 />
                 <EventCard
-                  icon={<Gamepad2 className="h-5 w-5 text-white" />}
-                  category="Gaming"
-                  title="Board Game Night"
-                  venue="Game Parlour"
-                  time="Tomorrow at 7 PM"
-                  spots={5}
-                  host="Alex"
+                  icon={<PartyPopper className="h-5 w-5 text-white" />}
+                  category="Nightlife"
+                  title="Grand Opening Night"
+                  venue="Club Paradiso"
+                  time="Tonight at 10 PM"
+                  detail="Free entry before 11"
                   className="hidden lg:block"
                 />
               </div>
@@ -140,28 +138,25 @@ export default function LandingPage() {
               How Lincc Works
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Three simple steps to start making real connections
+              Three steps to never miss what's happening again
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <StepCard
               number="1"
-              icon={<Calendar className="h-8 w-8 text-coral" />}
-              title="Discover Events"
-              description="Browse spontaneous activities happening near you, from coffee meetups to hiking adventures."
+              title="See what's on"
+              description="Open Lincc and instantly see everything happening around you — events, deals, openings, meetups, and more."
             />
             <StepCard
               number="2"
-              icon={<Users className="h-8 w-8 text-purple" />}
-              title="Join or Host"
-              description="Request to join events that interest you, or create your own and invite others along."
+              title="Find your vibe"
+              description="Narrow it down to what suits you — by time, place, or interest. From tonight's plans to this weekend's events."
             />
             <StepCard
               number="3"
-              icon={<MessageCircle className="h-8 w-8 text-blue" />}
-              title="Connect & Meet"
-              description="Chat with participants, coordinate details, and show up to make real connections."
+              title="Get out there"
+              description="Grab a deal, join an event, or try something new. Everything you need to go is right here."
             />
           </div>
         </div>
@@ -172,43 +167,43 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Built for Real Life
+              Your social life, <span className="gradient-text">sorted.</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Features designed to help you make genuine connections
+              One place for everything going on around you. No more FOMO.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <FeatureCard
-              icon={<MapPin className="h-6 w-6" />}
-              title="Location-Based Discovery"
-              description="Find activities happening within your preferred radius, from right next door to across the city."
+              icon={<Heart className="h-6 w-6" />}
+              title="New connections"
+              description="Find a coffee buddy, a running partner, a co-working crew, or a whole new circle. Meet people doing what you love."
             />
             <FeatureCard
               icon={<Sparkles className="h-6 w-6" />}
-              title="Smart Recommendations"
-              description="Our algorithm learns your interests and suggests events you'll actually want to attend."
+              title="New things to do"
+              description="Pop-up markets, open mic nights, food festivals, club openings — discover things you never knew were happening."
             />
             <FeatureCard
-              icon={<Shield className="h-6 w-6" />}
-              title="Safe Spaces"
-              description="Women-only events available. Hosts can approve participants before they join."
+              icon={<Tag className="h-6 w-6" />}
+              title="Exclusive deals"
+              description="Offers and discounts from local restaurants, bars, and shops — only on Lincc."
             />
             <FeatureCard
-              icon={<Users className="h-6 w-6" />}
-              title="Small Groups"
-              description="Events are capped at small sizes to encourage meaningful conversations, not crowds."
+              icon={<Clock className="h-6 w-6" />}
+              title="Always something on"
+              description="Live, real-time events updated around the clock. Whether it's tonight or this weekend, there's always a plan."
             />
             <FeatureCard
-              icon={<MessageCircle className="h-6 w-6" />}
-              title="Group Chat"
-              description="Coordinate with other participants before, during, and after the event."
+              icon={<MapPin className="h-6 w-6" />}
+              title="Right on your doorstep"
+              description="See what's within walking distance or explore further out. Your area is more interesting than you think."
             />
             <FeatureCard
-              icon={<Calendar className="h-6 w-6" />}
-              title="Spontaneous by Design"
-              description="Events happen soon — usually within 24 hours. No planning, just doing."
+              icon={<Store className="h-6 w-6" />}
+              title="Support local"
+              description="Discover independent restaurants, shops, and venues in your neighbourhood. Keep it local."
             />
           </div>
         </div>
@@ -219,31 +214,44 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Every Interest, Every Vibe
+              Whatever You're Looking For
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              From chill hangouts to active adventures
+              From nightlife to brunch deals — it's all here
             </p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-3">
-            {[
-              'Coffee', 'Food & Drinks', 'Fitness', 'Sports', 'Hiking',
-              'Gaming', 'Movies', 'Yoga', 'Art & Culture', 'Pets',
-              'Study & Work', 'Language Exchange', 'Music', 'Photography'
-            ].map((category) => (
+            {([
+              { name: 'Nightlife & Clubs', Icon: PartyPopper },
+              { name: 'Food & Dining', Icon: Utensils },
+              { name: 'Live Music', Icon: Music },
+              { name: 'Happy Hour', Icon: Wine },
+              { name: 'Fitness & Wellness', Icon: Dumbbell },
+              { name: 'Markets & Pop-ups', Icon: ShoppingBag },
+              { name: 'Coffee & Brunch', Icon: Coffee },
+              { name: 'Art & Exhibitions', Icon: Palette },
+              { name: 'Comedy & Shows', Icon: Drama },
+              { name: 'Outdoor & Adventure', Icon: TreePine },
+              { name: 'Sports & Recreation', Icon: Trophy },
+              { name: 'Restaurant Deals', Icon: Tag },
+              { name: 'Shop Promotions', Icon: Store },
+              { name: 'Grand Openings', Icon: Sparkles },
+              { name: 'Community Events', Icon: Heart },
+            ] as { name: string; Icon: LucideIcon }[]).map((category) => (
               <span
-                key={category}
-                className="px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-700 font-medium hover:border-purple hover:text-purple transition-colors cursor-default"
+                key={category.name}
+                className="px-4 py-2.5 rounded-full bg-white border border-gray-200 text-gray-700 font-medium hover:border-purple hover:text-purple hover:bg-purple/5 transition-all cursor-default flex items-center gap-2"
               >
-                {category}
+                <category.Icon className="h-4 w-4" />
+                {category.name}
               </span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Social Proof */}
+      {/* For Businesses */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="gradient-primary rounded-3xl p-8 sm:p-12 text-white text-center relative overflow-hidden">
@@ -252,52 +260,39 @@ export default function LandingPage() {
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
 
             <div className="relative z-10">
-              <Logo className="w-16 h-16 mx-auto mb-6 opacity-90" />
+              <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
+                <Store className="h-8 w-8 text-white" />
+              </div>
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-                Stop scrolling. Start living.
+                Got a business?
               </h2>
               <p className="text-lg text-white/80 mb-8 max-w-xl mx-auto">
-                Join thousands of people who've made real friends through spontaneous meetups.
+                Reach local customers instantly. Post events, share offers, and drive
+                foot traffic — all from one dashboard.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
-                <Stat value="10k+" label="Active Users" />
-                <div className="hidden sm:block w-px h-12 bg-white/20" />
-                <Stat value="5k+" label="Events Created" />
-                <div className="hidden sm:block w-px h-12 bg-white/20" />
-                <Stat value="50k+" label="Connections Made" />
-              </div>
-              <Link
-                to="/signup"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-purple font-semibold text-lg hover:shadow-xl transition-all"
+              <a
+                href="#waitlist"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-purple font-semibold text-lg hover:shadow-xl transition-all group"
               >
-                Join Lincc Today
-                <ChevronRight className="h-5 w-5" />
-              </Link>
+                Register Interest
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-3xl mx-auto text-center">
+      {/* Waitlist */}
+      <section id="waitlist" className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-xl mx-auto text-center">
+          <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Join the waitlist</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Ready to make <span className="gradient-text">real connections</span>?
+            Be first in line
           </h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Sign up in 30 seconds and start discovering activities near you.
+          <p className="text-lg text-gray-600 mb-10">
+            We're launching soon. Get early access and never miss what's happening around you again.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              to="/signup"
-              className="w-full sm:w-auto px-8 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-xl hover:shadow-purple/30 transition-all"
-            >
-              Get Started Free
-            </Link>
-          </div>
-          <p className="mt-4 text-sm text-gray-500">
-            No credit card required. Free forever.
-          </p>
+          <WaitlistForm />
         </div>
       </section>
 
@@ -309,13 +304,13 @@ export default function LandingPage() {
               <Logo className="h-10" />
             </Link>
             <div className="flex items-center gap-6 text-gray-600">
-              <a href="#" className="hover:text-purple transition-colors">About</a>
-              <a href="#" className="hover:text-purple transition-colors">Privacy</a>
-              <a href="#" className="hover:text-purple transition-colors">Terms</a>
-              <a href="#" className="hover:text-purple transition-colors">Contact</a>
+              <Link to="/landing/about" className="hover:text-purple transition-colors">About</Link>
+              <Link to="/landing/privacy" className="hover:text-purple transition-colors">Privacy</Link>
+              <Link to="/landing/terms" className="hover:text-purple transition-colors">Terms</Link>
+              <Link to="/landing/contact" className="hover:text-purple transition-colors">Contact</Link>
             </div>
             <p className="text-gray-500 text-sm">
-              © 2026 Lincc. All rights reserved.
+              &copy; 2026 Lincc. All rights reserved.
             </p>
           </div>
         </div>
@@ -332,8 +327,7 @@ function EventCard({
   title,
   venue,
   time,
-  spots,
-  host,
+  detail,
   className = '',
 }: {
   icon: React.ReactNode;
@@ -341,8 +335,7 @@ function EventCard({
   title: string;
   venue: string;
   time: string;
-  spots: number;
-  host: string;
+  detail: string;
   className?: string;
 }) {
   return (
@@ -359,13 +352,7 @@ function EventCard({
       <p className="text-sm text-gray-500 mb-3">{venue}</p>
       <div className="flex items-center justify-between text-sm">
         <span className="text-purple font-medium">{time}</span>
-        <span className="text-gray-500">{spots} spots left</span>
-      </div>
-      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
-        <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-xs font-medium text-white">
-          {host[0]}
-        </div>
-        <span className="text-sm text-gray-600">Hosted by {host}</span>
+        <span className="text-coral font-medium">{detail}</span>
       </div>
     </div>
   );
@@ -373,22 +360,17 @@ function EventCard({
 
 function StepCard({
   number,
-  icon,
   title,
   description,
 }: {
   number: string;
-  icon: React.ReactNode;
   title: string;
   description: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl p-6 text-center relative">
-      <div className="absolute top-4 left-4 w-8 h-8 rounded-full gradient-primary text-white font-bold flex items-center justify-center text-sm">
-        {number}
-      </div>
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-coral/10 to-purple/10 flex items-center justify-center mx-auto mb-4">
-        {icon}
+    <div className="bg-white rounded-2xl p-6 text-center">
+      <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mx-auto mb-4">
+        <span className="text-2xl font-bold text-white">{number}</span>
       </div>
       <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-600">{description}</p>
@@ -416,11 +398,110 @@ function FeatureCard({
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function WaitlistForm() {
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    setErrorMessage('');
+
+    try {
+      const { error } = await supabase
+        .from('waitlist')
+        .insert([{ email, name }]);
+
+      if (error) {
+        if (error.code === '23505') {
+          setErrorMessage('This email is already on the waitlist!');
+        } else {
+          setErrorMessage(error.message || 'Something went wrong. Please try again.');
+        }
+        setStatus('error');
+        return;
+      }
+
+      setStatus('success');
+      setEmail('');
+      setName('');
+    } catch {
+      setErrorMessage('Something went wrong. Please try again.');
+      setStatus('error');
+    }
+  };
+
+  if (status === 'success') {
+    return (
+      <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md mx-auto text-center border border-gray-100">
+        <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5">
+          <Check className="h-7 w-7 text-green-600" />
+        </div>
+        <h3 className="text-2xl font-semibold text-gray-900 mb-2">You're on the list!</h3>
+        <p className="text-gray-600">
+          We'll notify you as soon as Lincc is ready.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <p className="text-3xl font-bold">{value}</p>
-      <p className="text-white/70 text-sm">{label}</p>
-    </div>
+    <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 shadow-lg max-w-md mx-auto border border-gray-100">
+      <div className="space-y-5">
+        <div>
+          <label htmlFor="wl-name" className="block text-sm font-medium text-gray-700 mb-2">
+            Name
+          </label>
+          <input
+            type="text"
+            id="wl-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            required
+            className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-purple focus:ring-2 focus:ring-purple/20 outline-none transition-all text-gray-900 placeholder:text-gray-400"
+          />
+        </div>
+        <div>
+          <label htmlFor="wl-email" className="block text-sm font-medium text-gray-700 mb-2">
+            Email
+          </label>
+          <input
+            type="email"
+            id="wl-email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
+            className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-purple focus:ring-2 focus:ring-purple/20 outline-none transition-all text-gray-900 placeholder:text-gray-400"
+          />
+        </div>
+        {status === 'error' && (
+          <p className="text-red-500 text-sm bg-red-50 px-4 py-2 rounded-lg">{errorMessage}</p>
+        )}
+        <button
+          type="submit"
+          disabled={status === 'loading'}
+          className="w-full px-6 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:translate-y-0"
+        >
+          {status === 'loading' ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Joining...
+            </>
+          ) : (
+            <>
+              Join Waitlist
+              <ChevronRight className="h-5 w-5" />
+            </>
+          )}
+        </button>
+      </div>
+      <p className="mt-5 text-xs text-gray-500 text-center">
+        We'll only email you when we launch.
+      </p>
+    </form>
   );
 }

@@ -1,26 +1,38 @@
 import { Link } from 'react-router-dom';
 import {
-  Users,
   MapPin,
-  MessageCircle,
-  Shield,
   Sparkles,
   Coffee,
-  Dumbbell,
-  Gamepad2,
-  Heart,
-  Zap,
+  Music,
+  Store,
   Globe,
   ArrowRight,
   Check,
+  Clock,
+  Tag,
+  PartyPopper,
+  Utensils,
+  Dumbbell,
+  Heart,
+  Palette,
+  TreePine,
+  Trophy,
+  Wine,
+  ShoppingBag,
+  Drama,
+  type LucideIcon,
 } from 'lucide-react';
 import WaitlistForm from '../components/WaitlistForm';
 
-function Logo({ className = "text-2xl", white = false }: { className?: string; white?: boolean }) {
+const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
+
+function Logo({ className = "h-8", white = false }: { className?: string; white?: boolean }) {
   return (
-    <span className={`font-bold ${white ? 'text-white' : 'gradient-text'} ${className}`}>
-      lincc
-    </span>
+    <img
+      src={LOGO_URL}
+      alt="Lincc"
+      className={`${className} ${white ? 'brightness-0 invert' : ''}`}
+    />
   );
 }
 
@@ -32,11 +44,12 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
-              <Logo className="text-3xl" />
+              <Logo className="h-10" />
             </Link>
             <div className="hidden sm:flex items-center gap-8 text-sm font-medium text-gray-600">
               <a href="#how-it-works" className="hover:text-purple transition-colors">How it works</a>
               <a href="#features" className="hover:text-purple transition-colors">Features</a>
+              <a href="#businesses" className="hover:text-purple transition-colors">For Businesses</a>
               <Link to="/about" className="hover:text-purple transition-colors">About</Link>
             </div>
             <a
@@ -66,16 +79,16 @@ export default function Home() {
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight">
-              Meet people who
+              Everything happening
               <br />
-              <span className="gradient-text">actually show up</span>
+              <span className="gradient-text">right around you</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg sm:text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-              Lincc connects you with real people for spontaneous activities —
-              coffee chats, gym sessions, hikes, and more. No endless swiping.
-              Just real moments with real people.
+              Events, deals, openings, and happenings — all in one place.
+              No more endless scrolling or searching. Just open Lincc and see
+              what's going on near you, right now.
             </p>
 
             {/* CTA */}
@@ -89,7 +102,7 @@ export default function Home() {
               </a>
             </div>
             <p className="text-sm text-gray-500">
-              Be first to know when we launch. No spam, ever.
+              Be first to know when we launch.
             </p>
           </div>
 
@@ -103,36 +116,30 @@ export default function Home() {
                 <EventCard
                   icon={<Coffee className="h-5 w-5 text-white" />}
                   category="Coffee"
-                  title="Morning Coffee Chat"
-                  venue="Local Coffee Shop"
-                  time="Starting in 30 min"
-                  spots={2}
-                  host="Sarah"
-                  hostImage="S"
+                  title="Morning Coffee & Chat"
+                  venue="Brew & Co, Shoreditch"
+                  time="Today at 10 AM"
+                  detail="2 spots left"
                   gradient="from-amber-500 to-orange-500"
                 />
                 <EventCard
-                  icon={<Dumbbell className="h-5 w-5 text-white" />}
-                  category="Fitness"
-                  title="Evening Gym Session"
-                  venue="Downtown Gym"
-                  time="Today at 6 PM"
-                  spots={3}
-                  host="Mike"
-                  hostImage="M"
-                  gradient="from-purple to-blue"
+                  icon={<Tag className="h-5 w-5 text-white" />}
+                  category="Offer"
+                  title="50% Off Brunch Menu"
+                  venue="The Garden Kitchen"
+                  time="This weekend"
+                  detail="Use code LINCC50"
+                  gradient="from-coral to-purple"
                   className="hidden sm:block"
                 />
                 <EventCard
-                  icon={<Gamepad2 className="h-5 w-5 text-white" />}
-                  category="Gaming"
-                  title="Board Game Night"
-                  venue="The Game Cafe"
-                  time="Tomorrow at 7 PM"
-                  spots={5}
-                  host="Alex"
-                  hostImage="A"
-                  gradient="from-coral to-purple"
+                  icon={<PartyPopper className="h-5 w-5 text-white" />}
+                  category="Nightlife"
+                  title="Grand Opening Night"
+                  venue="Club Paradiso"
+                  time="Tonight at 10 PM"
+                  detail="Free entry before 11"
+                  gradient="from-purple to-blue"
                   className="hidden lg:block"
                 />
               </div>
@@ -146,18 +153,18 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16 text-center">
             <div>
-              <p className="text-3xl sm:text-4xl font-bold gradient-text">15+</p>
-              <p className="text-gray-600 text-sm mt-1">Activity categories</p>
+              <p className="text-3xl sm:text-4xl font-bold gradient-text">Live</p>
+              <p className="text-gray-600 text-sm mt-1">Real-time updates</p>
             </div>
             <div className="hidden sm:block w-px h-12 bg-gray-200" />
             <div>
-              <p className="text-3xl sm:text-4xl font-bold gradient-text">24hrs</p>
-              <p className="text-gray-600 text-sm mt-1">Spontaneous events</p>
+              <p className="text-3xl sm:text-4xl font-bold gradient-text">Local</p>
+              <p className="text-gray-600 text-sm mt-1">Everything near you</p>
             </div>
             <div className="hidden sm:block w-px h-12 bg-gray-200" />
             <div>
-              <p className="text-3xl sm:text-4xl font-bold gradient-text">2-8</p>
-              <p className="text-gray-600 text-sm mt-1">People per group</p>
+              <p className="text-3xl sm:text-4xl font-bold gradient-text">Now</p>
+              <p className="text-gray-600 text-sm mt-1">Happening today</p>
             </div>
           </div>
         </div>
@@ -169,30 +176,27 @@ export default function Home() {
           <div className="text-center mb-16">
             <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">How it works</p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              From stranger to friend
+              Your area, at your
               <br />
-              <span className="gradient-text">in three steps</span>
+              <span className="gradient-text">fingertips</span>
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
             <StepCard
-              number="01"
-              icon={<MapPin className="h-7 w-7" />}
-              title="Discover"
-              description="Browse activities happening near you right now. Coffee, fitness, hikes, games — find what excites you."
+              number="1"
+              title="See what's on"
+              description="Open Lincc and instantly see everything happening around you — events, deals, openings, meetups, and more."
             />
             <StepCard
-              number="02"
-              icon={<Users className="h-7 w-7" />}
-              title="Join"
-              description="Request to join with one tap. Hosts review requests to keep groups small and compatible."
+              number="2"
+              title="Find your vibe"
+              description="Narrow it down to what suits you — by time, place, or interest. From tonight's plans to this weekend's events."
             />
             <StepCard
-              number="03"
-              icon={<Heart className="h-7 w-7" />}
-              title="Connect"
-              description="Show up, have fun, make friends. Real connections happen when you share real experiences."
+              number="3"
+              title="Get out there"
+              description="Grab a deal, join an event, or try something new. Everything you need to go is right here."
             />
           </div>
         </div>
@@ -202,86 +206,149 @@ export default function Home() {
       <section id="features" className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Features</p>
+            <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Why Lincc</p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Built different.
+              Your social life,
               <br />
-              <span className="gradient-text">Built for real life.</span>
+              <span className="gradient-text">sorted.</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mt-4">
-              Everything you need to find your people and make genuine connections.
+              One place for everything going on around you. No more FOMO.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <FeatureCard
-              icon={<Zap className="h-6 w-6" />}
-              title="Spontaneous"
-              description="Events happen within 24 hours. No more 'let's hang out sometime' that never happens."
-            />
-            <FeatureCard
-              icon={<Shield className="h-6 w-6" />}
-              title="Safe & Vetted"
-              description="Hosts approve participants. Women-only events available. Real profiles, real people."
-            />
-            <FeatureCard
-              icon={<Users className="h-6 w-6" />}
-              title="Small Groups"
-              description="Capped at 2-8 people. Intimate enough for real conversation, not lost in a crowd."
-            />
-            <FeatureCard
-              icon={<MapPin className="h-6 w-6" />}
-              title="Hyperlocal"
-              description="Find activities within walking distance or across the city. You set the radius."
-            />
-            <FeatureCard
-              icon={<MessageCircle className="h-6 w-6" />}
-              title="Group Chat"
-              description="Coordinate details, share updates, and keep the conversation going after."
+              icon={<Heart className="h-6 w-6" />}
+              title="New connections"
+              description="Find a coffee buddy, a running partner, a co-working crew, or a whole new circle. Meet people doing what you love."
             />
             <FeatureCard
               icon={<Sparkles className="h-6 w-6" />}
-              title="Smart Matching"
-              description="Our algorithm learns your interests and suggests events you'll actually love."
+              title="New things to do"
+              description="Pop-up markets, open mic nights, food festivals, club openings — discover things you never knew were happening."
+            />
+            <FeatureCard
+              icon={<Tag className="h-6 w-6" />}
+              title="Exclusive deals"
+              description="Offers and discounts from local restaurants, bars, and shops — only on Lincc."
+            />
+            <FeatureCard
+              icon={<Clock className="h-6 w-6" />}
+              title="Always something on"
+              description="Live, real-time events updated around the clock. Whether it's tonight or this weekend, there's always a plan."
+            />
+            <FeatureCard
+              icon={<MapPin className="h-6 w-6" />}
+              title="Right on your doorstep"
+              description="See what's within walking distance or explore further out. Your area is more interesting than you think."
+            />
+            <FeatureCard
+              icon={<Store className="h-6 w-6" />}
+              title="Support local"
+              description="Discover independent restaurants, shops, and venues in your neighbourhood. Keep it local."
             />
           </div>
         </div>
       </section>
 
+      {/* For Businesses */}
+      <section id="businesses" className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div>
+              <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">For Businesses</p>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+                Reach customers
+                <br />
+                <span className="gradient-text">when it matters</span>
+              </h2>
+              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                Whether you're a restaurant, bar, shop, or venue — Lincc puts your events,
+                offers, and promotions in front of people who are nearby and ready to go.
+              </p>
+              <div className="space-y-4">
+                {[
+                  'Post events, offers & promotions instantly',
+                  'Reach people within walking distance',
+                  'Drive foot traffic with time-limited deals',
+                  'Track engagement and redemptions',
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+                      <Check className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="text-gray-700">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 gradient-primary rounded-3xl blur-3xl opacity-20" />
+              <div className="relative bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                {/* Business card examples */}
+                <div className="p-6 space-y-4">
+                  <BusinessCard
+                    icon={<Utensils className="h-5 w-5 text-white" />}
+                    name="The Garden Kitchen"
+                    type="Restaurant"
+                    offer="50% off lunch menu — Today only"
+                    gradient="from-amber-500 to-orange-500"
+                  />
+                  <BusinessCard
+                    icon={<Coffee className="h-5 w-5 text-white" />}
+                    name="Brew & Co"
+                    type="Coffee Shop"
+                    offer="Free pastry with any coffee before 10am"
+                    gradient="from-coral to-purple"
+                  />
+                  <BusinessCard
+                    icon={<Store className="h-5 w-5 text-white" />}
+                    name="Urban Threads"
+                    type="Boutique"
+                    offer="New collection launch — 20% off this weekend"
+                    gradient="from-purple to-blue"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Categories */}
-      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
+      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Categories</p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
-              Whatever you're into
+              Whatever you're looking for
             </h2>
           </div>
 
           <div className="flex flex-wrap justify-center gap-3">
-            {[
-              { name: 'Coffee & Tea', icon: '☕' },
-              { name: 'Food & Drinks', icon: '🍜' },
-              { name: 'Fitness', icon: '💪' },
-              { name: 'Running', icon: '🏃' },
-              { name: 'Hiking', icon: '🥾' },
-              { name: 'Yoga', icon: '🧘' },
-              { name: 'Gaming', icon: '🎮' },
-              { name: 'Board Games', icon: '🎲' },
-              { name: 'Movies', icon: '🎬' },
-              { name: 'Art & Museums', icon: '🎨' },
-              { name: 'Music', icon: '🎵' },
-              { name: 'Photography', icon: '📸' },
-              { name: 'Dog Walking', icon: '🐕' },
-              { name: 'Study & Work', icon: '💻' },
-              { name: 'Language Exchange', icon: '🗣️' },
-              { name: 'Book Club', icon: '📚' },
-            ].map((category) => (
+            {([
+              { name: 'Nightlife & Clubs', Icon: PartyPopper },
+              { name: 'Food & Dining', Icon: Utensils },
+              { name: 'Live Music', Icon: Music },
+              { name: 'Happy Hour', Icon: Wine },
+              { name: 'Fitness & Wellness', Icon: Dumbbell },
+              { name: 'Markets & Pop-ups', Icon: ShoppingBag },
+              { name: 'Coffee & Brunch', Icon: Coffee },
+              { name: 'Art & Exhibitions', Icon: Palette },
+              { name: 'Comedy & Shows', Icon: Drama },
+              { name: 'Outdoor & Adventure', Icon: TreePine },
+              { name: 'Sports & Recreation', Icon: Trophy },
+              { name: 'Community Events', Icon: Heart },
+              { name: 'Restaurant Deals', Icon: Tag },
+              { name: 'Shop Promotions', Icon: Store },
+              { name: 'Grand Openings', Icon: Sparkles },
+            ] as { name: string; Icon: LucideIcon }[]).map((category) => (
               <span
                 key={category.name}
                 className="px-4 py-2.5 rounded-full bg-white border border-gray-200 text-gray-700 font-medium hover:border-purple hover:text-purple hover:bg-purple/5 transition-all cursor-default flex items-center gap-2"
               >
-                <span>{category.icon}</span>
+                <category.Icon className="h-4 w-4" />
                 {category.name}
               </span>
             ))}
@@ -290,27 +357,27 @@ export default function Home() {
       </section>
 
       {/* Why Lincc */}
-      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
               <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Why Lincc?</p>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-                Because scrolling
+                Stop searching.
                 <br />
-                <span className="gradient-text">isn't living</span>
+                <span className="gradient-text">Start discovering.</span>
               </h2>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                We spend hours online but feel more disconnected than ever. Lincc is different.
-                We help you put down the phone and show up — to a coffee shop, a trail, a gym,
-                wherever life happens.
+                How do you find out what's happening tonight? You check Instagram, Google,
+                maybe five different apps — and still miss half of it. Lincc brings it all
+                together. One place. Always up to date. Always local.
               </p>
               <div className="space-y-4">
                 {[
-                  'No endless swiping or messaging',
-                  'Meet in person within 24 hours',
-                  'Small groups for real conversation',
-                  'Built-in safety features',
+                  'No more searching across multiple apps',
+                  'Live events, deals, and happenings in real time',
+                  'Filter by exactly when and where you want',
+                  'Discover places and events you never knew existed',
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
@@ -334,8 +401,8 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-600 mb-6">
-                  We're building something special and launching soon.
-                  Join the waitlist to get early access.
+                  We're building the go-to app for discovering everything happening
+                  in your area. Join the waitlist to get early access.
                 </p>
                 <a
                   href="#waitlist"
@@ -360,14 +427,14 @@ export default function Home() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-32 bg-white/5 rotate-12" />
 
             <div className="relative z-10">
-              <Logo className="text-5xl mb-6" white />
+              <Logo className="h-14 mb-6" white />
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-                Stop scrolling.
+                Your city. Your scene.
                 <br />
-                Start living.
+                All in one place.
               </h2>
               <p className="text-lg sm:text-xl text-white/80 mb-8 max-w-xl mx-auto">
-                Real connections are waiting. Be the first to experience Lincc when we launch.
+                Events, offers, openings, happenings — everything that matters, right at your fingertips.
               </p>
               <a
                 href="#waitlist"
@@ -389,7 +456,7 @@ export default function Home() {
             Be first in line
           </h2>
           <p className="text-lg text-gray-600 mb-10">
-            We're launching soon. Get early access and be among the first to make real connections.
+            We're launching soon. Get early access and never miss what's happening around you again.
           </p>
           <WaitlistForm />
         </div>
@@ -400,11 +467,11 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             <div className="col-span-2 md:col-span-1">
-              <Logo className="text-3xl mb-4" />
+              <Logo className="h-10 mb-4" />
               <p className="text-gray-500 text-sm">
-                Real connections,
+                Everything local,
                 <br />
-                real moments.
+                at your fingertips.
               </p>
             </div>
             <div>
@@ -412,6 +479,7 @@ export default function Home() {
               <ul className="space-y-3 text-gray-600">
                 <li><a href="#how-it-works" className="hover:text-purple transition-colors">How it works</a></li>
                 <li><a href="#features" className="hover:text-purple transition-colors">Features</a></li>
+                <li><a href="#businesses" className="hover:text-purple transition-colors">For Businesses</a></li>
                 <li><a href="#waitlist" className="hover:text-purple transition-colors">Join waitlist</a></li>
               </ul>
             </div>
@@ -432,11 +500,11 @@ export default function Home() {
           </div>
           <div className="pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-gray-500 text-sm">
-              © 2026 Lincc. All rights reserved.
+              &copy; 2026 Lincc. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <a href="#" className="text-gray-400 hover:text-purple transition-colors">
-                <span className="sr-only">Twitter</span>
+                <span className="sr-only">X</span>
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               </a>
               <a href="#" className="text-gray-400 hover:text-purple transition-colors">
@@ -459,9 +527,7 @@ function EventCard({
   title,
   venue,
   time,
-  spots,
-  host,
-  hostImage,
+  detail,
   gradient = "from-coral to-purple",
   className = '',
 }: {
@@ -470,9 +536,7 @@ function EventCard({
   title: string;
   venue: string;
   time: string;
-  spots: number;
-  host: string;
-  hostImage: string;
+  detail: string;
   gradient?: string;
   className?: string;
 }) {
@@ -488,15 +552,38 @@ function EventCard({
       </div>
       <h3 className="font-semibold text-gray-900 text-lg mb-1">{title}</h3>
       <p className="text-sm text-gray-500 mb-4">{venue}</p>
-      <div className="flex items-center justify-between text-sm mb-4">
+      <div className="flex items-center justify-between text-sm">
         <span className="text-purple font-medium">{time}</span>
-        <span className="text-gray-400">{spots} spots left</span>
+        <span className="text-coral font-medium">{detail}</span>
       </div>
-      <div className="pt-4 border-t border-gray-100 flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-xs font-semibold text-white`}>
-          {hostImage}
+    </div>
+  );
+}
+
+function BusinessCard({
+  icon,
+  name,
+  type,
+  offer,
+  gradient = "from-coral to-purple",
+}: {
+  icon: React.ReactNode;
+  name: string;
+  type: string;
+  offer: string;
+  gradient?: string;
+}) {
+  return (
+    <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-purple/20 transition-colors">
+      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0`}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="font-semibold text-gray-900 truncate">{name}</p>
+          <span className="px-2 py-0.5 rounded-full bg-purple/10 text-purple text-xs font-medium flex-shrink-0">{type}</span>
         </div>
-        <span className="text-sm text-gray-600">Hosted by <span className="font-medium text-gray-900">{host}</span></span>
+        <p className="text-sm text-gray-600 truncate">{offer}</p>
       </div>
     </div>
   );
@@ -504,24 +591,17 @@ function EventCard({
 
 function StepCard({
   number,
-  icon,
   title,
   description,
 }: {
   number: string;
-  icon: React.ReactNode;
   title: string;
   description: string;
 }) {
   return (
     <div className="text-center">
-      <div className="relative inline-flex mb-6">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-coral/10 to-purple/10 flex items-center justify-center text-purple">
-          {icon}
-        </div>
-        <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full gradient-primary text-white text-sm font-bold flex items-center justify-center">
-          {number}
-        </span>
+      <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mx-auto mb-6">
+        <span className="text-2xl font-bold text-white">{number}</span>
       </div>
       <h3 className="text-xl font-semibold text-gray-900 mb-3">{title}</h3>
       <p className="text-gray-600 leading-relaxed">{description}</p>

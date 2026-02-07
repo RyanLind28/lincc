@@ -2,12 +2,10 @@ import { Link } from 'react-router-dom';
 import { Mail, MapPin, ArrowRight } from 'lucide-react';
 import Footer from '../components/Footer';
 
-function Logo({ className = "text-2xl" }: { className?: string }) {
-  return (
-    <span className={`font-bold gradient-text ${className}`}>
-      lincc
-    </span>
-  );
+const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
+
+function Logo({ className = "h-8" }: { className?: string }) {
+  return <img src={LOGO_URL} alt="Lincc" className={className} />;
 }
 
 export default function Contact() {
@@ -18,7 +16,7 @@ export default function Contact() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
-              <Logo className="text-3xl" />
+              <Logo className="h-10" />
             </Link>
             <a
               href="/#waitlist"
@@ -65,7 +63,7 @@ export default function Contact() {
                 Stay updated on our launch
               </p>
               <div className="flex gap-4">
-                <a href="#" className="text-purple font-semibold hover:underline">Twitter</a>
+                <a href="#" className="text-purple font-semibold hover:underline">X</a>
                 <a href="#" className="text-purple font-semibold hover:underline">Instagram</a>
               </div>
             </div>

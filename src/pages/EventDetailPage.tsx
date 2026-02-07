@@ -7,41 +7,68 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useEventParticipants } from '../hooks/useEventParticipants';
 import { supabase } from '../lib/supabase';
-import { calculateAge } from '../lib/utils';
+import { calculateAge, calculateDistance } from '../lib/utils';
+import { useUserLocation } from '../hooks/useUserLocation';
 import type { EventWithDetails } from '../types';
 
 export default function EventDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const { location: userLocation } = useUserLocation();
 
-  // Placeholder data - will be fetched from Supabase
-  const event = {
-    id,
-    title: 'Morning Coffee Chat',
-    category: { name: 'Coffee', icon: 'Coffee' },
-    host: {
-      id: 'host-1',
-      first_name: 'Sarah',
-      age: 28,
-      avatar_url: null,
-      bio: 'Coffee enthusiast, always up for a good conversation!',
-      tags: ['coffee', 'books', 'yoga'],
-    },
-    venue_name: 'Blue Bottle Coffee',
-    venue_address: '123 Main St, San Francisco',
-    distance_km: 0.5,
-    start_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    capacity: 2,
-    participant_count: 1,
-    participants: [
-      { id: 'p1', first_name: 'Mike', avatar_url: null },
-    ],
-    join_mode: 'request',
-    audience: 'everyone',
-    description: 'Looking for someone to chat with over coffee! I come here every Tuesday morning to read and relax. Would love some company.',
-  };
+  const [event, setEvent] = useState<EventWithDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const spotsLeft = event.capacity - event.participant_count;
-  const totalSpots = event.capacity + 1; // +1 for host
+  const {
+    participants,
+    userStatus,
+    pendingCount,
+    isJoining,
+    join,
+    leave,
+  } = useEventParticipants(id, event?.join_mode);
+
+  const isHost = user?.id === event?.host_id;
+  const approvedParticipants = participants.filter(p => p.status === 'approved');
+  const spotsLeft = event ? event.capacity - approvedParticipants.length : 0;
+  const totalSpots = event ? event.capacity + 1 : 0; // +1 for host
+  const isFull = spotsLeft <= 0;
+  const hostAge = event?.host?.dob ? calculateAge(event.host.dob) : null;
+
+  // Calculate distance from user to event
+  const distanceKm = event && userLocation
+    ? calculateDistance(userLocation.latitude, userLocation.longitude, event.venue_lat, event.venue_lng)
+    : 0;
+
+  // Fetch event details
+  useEffect(() => {
+    const fetchEvent = async () => {
+      if (!id) return;
+
+      setIsLoading(true);
+      const { data, error: fetchError } = await supabase
+        .from('events')
+        .select(`
+          *,
+          host:profiles!host_id(*),
+          category:categories!category_id(*)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        setError(fetchError.message);
+      } else if (data) {
+        setEvent(data as EventWithDetails);
+      }
+      setIsLoading(false);
+    };
+
+    fetchEvent();
+  }, [id]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);

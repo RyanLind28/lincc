@@ -3,38 +3,21 @@ import { ArrowLeft, Bell, Settings, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 
-// Lincc Logo component with gradient branding
+// Lincc Logo component using the official brand logo
 function LinccLogo({ className, size = 'md' }: { className?: string; size?: 'sm' | 'md' | 'lg' }) {
-  const sizes = {
-    sm: { svg: 24, text: 'text-lg' },
-    md: { svg: 28, text: 'text-xl' },
-    lg: { svg: 32, text: 'text-2xl' },
+  const heights = {
+    sm: 'h-7',
+    md: 'h-8',
+    lg: 'h-10',
   };
 
   return (
-    <Link to="/" className={cn('flex items-center gap-1', className)}>
-      {/* Icon: Two interlocking circles */}
-      <svg
-        width={sizes[size].svg}
-        height={sizes[size].svg}
-        viewBox="0 0 28 28"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="flex-shrink-0"
-      >
-        <defs>
-          <linearGradient id="lincc-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FF6B6B" />
-            <stop offset="100%" stopColor="#845EF7" />
-          </linearGradient>
-        </defs>
-        {/* Left circle */}
-        <circle cx="10" cy="14" r="7" stroke="url(#lincc-gradient)" strokeWidth="2.5" fill="none" />
-        {/* Right circle */}
-        <circle cx="18" cy="14" r="7" stroke="url(#lincc-gradient)" strokeWidth="2.5" fill="none" />
-      </svg>
-      {/* Wordmark */}
-      <span className={cn('font-bold gradient-text', sizes[size].text)}>Lincc</span>
+    <Link to="/" className={cn('flex items-center', className)}>
+      <img
+        src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp"
+        alt="Lincc"
+        className={heights[size]}
+      />
     </Link>
   );
 }

@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom';
 
-function Logo({ className = "text-2xl" }: { className?: string }) {
-  return (
-    <span className={`font-bold gradient-text ${className}`}>
-      lincc
-    </span>
-  );
+const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
+
+function Logo({ className = "h-8" }: { className?: string }) {
+  return <img src={LOGO_URL} alt="Lincc" className={className} />;
 }
 
 export default function Footer() {
@@ -14,11 +12,11 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           <div className="col-span-2 md:col-span-1">
-            <Logo className="text-3xl mb-4" />
+            <Logo className="h-10 mb-4" />
             <p className="text-gray-500 text-sm">
-              Real connections,
+              Everything local,
               <br />
-              real moments.
+              at your fingertips.
             </p>
           </div>
           <div>
@@ -50,7 +48,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-gray-400 hover:text-purple transition-colors">
-              <span className="sr-only">Twitter</span>
+              <span className="sr-only">X</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </a>
             <a href="#" className="text-gray-400 hover:text-purple transition-colors">

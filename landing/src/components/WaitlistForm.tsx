@@ -58,7 +58,7 @@ export default function WaitlistForm() {
         </div>
         <h3 className="text-2xl font-semibold text-gray-900 mb-2">You're on the list!</h3>
         <p className="text-gray-600">
-          We'll notify you when Lincc is ready. Get excited to make real connections!
+          We'll notify you as soon as Lincc is ready.
         </p>
       </div>
     );
@@ -117,7 +117,7 @@ export default function WaitlistForm() {
         </button>
       </div>
       <p className="mt-5 text-xs text-gray-500 text-center">
-        We'll only email you when we launch. No spam, ever.
+        We'll only email you when we launch.
       </p>
     </form>
   );

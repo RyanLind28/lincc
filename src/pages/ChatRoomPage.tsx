@@ -9,7 +9,10 @@ import { supabase } from '../lib/supabase';
 import type { EventWithDetails } from '../types';
 
 export default function ChatRoomPage() {
-  const { id: _roomId } = useParams();
+  const { id: eventId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState('');
   const [event, setEvent] = useState<EventWithDetails | null>(null);
   const [eventLoading, setEventLoading] = useState(true);

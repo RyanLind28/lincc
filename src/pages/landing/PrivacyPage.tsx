@@ -1,33 +1,10 @@
 import { Link } from 'react-router-dom';
-import Footer from '../components/Footer';
 
-const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
-
-function Logo({ className = "h-8" }: { className?: string }) {
-  return <img src={LOGO_URL} alt="Lincc" className={className} />;
-}
-
-export default function Privacy() {
+export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100/50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center">
-              <Logo className="h-10" />
-            </Link>
-            <a
-              href="/#waitlist"
-              className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 transition-all"
-            >
-              Join Waitlist
-            </a>
-          </div>
-        </div>
-      </nav>
+      <LandingNav />
 
-      {/* Content */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Legal</p>
@@ -57,7 +34,7 @@ export default function Privacy() {
               <ul className="list-disc pl-6 space-y-2">
                 <li>To provide and improve Lincc's services</li>
                 <li>To send you updates about our launch (you can opt out)</li>
-                <li>To match you with relevant events and people</li>
+                <li>To match you with relevant events near you</li>
                 <li>To ensure safety and prevent abuse</li>
                 <li>To respond to your questions and support requests</li>
               </ul>
@@ -107,7 +84,48 @@ export default function Privacy() {
         </div>
       </section>
 
-      <Footer />
+      <LandingFooter />
     </div>
+  );
+}
+
+function LandingNav() {
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <Link to="/landing" className="flex items-center">
+            <img src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp" alt="Lincc" className="h-10" />
+          </Link>
+          <Link
+            to="/landing#waitlist"
+            className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all"
+          >
+            Join Waitlist
+          </Link>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function LandingFooter() {
+  return (
+    <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-200">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <Link to="/landing" className="flex items-center">
+            <img src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp" alt="Lincc" className="h-10" />
+          </Link>
+          <div className="flex items-center gap-6 text-gray-600">
+            <Link to="/landing/about" className="hover:text-purple transition-colors">About</Link>
+            <Link to="/landing/privacy" className="hover:text-purple transition-colors">Privacy</Link>
+            <Link to="/landing/terms" className="hover:text-purple transition-colors">Terms</Link>
+            <Link to="/landing/contact" className="hover:text-purple transition-colors">Contact</Link>
+          </div>
+          <p className="text-gray-500 text-sm">&copy; 2026 Lincc. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
   );
 }

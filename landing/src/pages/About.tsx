@@ -1,13 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Heart, Users, Shield, Zap, ArrowRight } from 'lucide-react';
+import { Zap, MapPin, Shield, Eye, ArrowRight } from 'lucide-react';
 import Footer from '../components/Footer';
 
-function Logo({ className = "text-2xl" }: { className?: string }) {
-  return (
-    <span className={`font-bold gradient-text ${className}`}>
-      lincc
-    </span>
-  );
+const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
+
+function Logo({ className = "h-8" }: { className?: string }) {
+  return <img src={LOGO_URL} alt="Lincc" className={className} />;
 }
 
 export default function About() {
@@ -18,7 +16,7 @@ export default function About() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
-              <Logo className="text-3xl" />
+              <Logo className="h-10" />
             </Link>
             <a
               href="/#waitlist"
@@ -35,12 +33,12 @@ export default function About() {
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">About Us</p>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
-            We're building the
+            We're building your
             <br />
-            <span className="gradient-text">anti-social network</span>
+            <span className="gradient-text">local pulse</span>
           </h1>
           <p className="text-xl text-gray-600 leading-relaxed">
-            A place that gets you off your phone and into the world.
+            One place to discover everything happening around you.
           </p>
         </div>
       </section>
@@ -50,21 +48,23 @@ export default function About() {
         <div className="max-w-3xl mx-auto">
           <div className="prose prose-lg text-gray-600">
             <p className="text-xl leading-relaxed">
-              We started Lincc because we noticed something broken. Despite being more
-              "connected" than ever, people are lonelier than ever. We have thousands of
-              online friends but struggle to find someone to grab coffee with.
+              We started Lincc because finding out what's happening around you shouldn't
+              be this hard. You check Instagram, Google, maybe five different apps — and
+              you still miss half of it. There had to be a better way.
             </p>
 
             <p className="leading-relaxed">
-              The problem isn't technology — it's how we use it. Social apps keep us
-              scrolling, swiping, and messaging, but rarely meeting. Lincc flips the script.
-              We're designed to get you offline and into real experiences with real people.
+              Lincc brings everything together in one place. Events, deals, openings,
+              happenings — all live, all local, all at your fingertips. Whether it's a
+              nightclub opening, a restaurant running a limited-time offer, a pop-up market,
+              or a community event — if it's happening near you, it's on Lincc.
             </p>
 
             <p className="leading-relaxed">
-              No infinite feeds. No vanity metrics. No endless chat threads that go nowhere.
-              Just spontaneous activities happening near you, right now, with people who
-              actually want to show up.
+              We're not just another events app. We're building the go-to destination for
+              discovering your area — a real-time feed of everything worth knowing about,
+              filtered to exactly when and where you want. No endless scrolling. No searching
+              for hours. Just open the app and see what's on.
             </p>
           </div>
         </div>
@@ -78,34 +78,34 @@ export default function About() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white rounded-2xl p-8 border border-gray-100">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-coral/10 to-purple/10 text-purple flex items-center justify-center mb-4">
-                <Heart className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Real over digital</h3>
-              <p className="text-gray-600">
-                The best connections happen face-to-face. We optimize for in-person
-                experiences, not screen time.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-8 border border-gray-100">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-coral/10 to-purple/10 text-purple flex items-center justify-center mb-4">
                 <Zap className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Spontaneity wins</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Real-time or nothing</h3>
               <p className="text-gray-600">
-                "Let's hang out sometime" never happens. Events on Lincc happen within
-                24 hours — because the best plans are made now.
+                Stale information is useless. Everything on Lincc is live and current —
+                if it's expired, it's gone. You only see what's actually happening.
               </p>
             </div>
 
             <div className="bg-white rounded-2xl p-8 border border-gray-100">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-coral/10 to-purple/10 text-purple flex items-center justify-center mb-4">
-                <Users className="h-6 w-6" />
+                <MapPin className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Small is beautiful</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Local first</h3>
               <p className="text-gray-600">
-                You can't have a real conversation with 50 people. Our events are
-                capped at small sizes for meaningful connections.
+                Your area is full of amazing things — you just don't know about them yet.
+                Lincc surfaces what's nearby so you can stop searching and start exploring.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-8 border border-gray-100">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-coral/10 to-purple/10 text-purple flex items-center justify-center mb-4">
+                <Eye className="h-6 w-6" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Everything in one place</h3>
+              <p className="text-gray-600">
+                No more jumping between apps, websites, and social feeds. One app for events,
+                deals, openings, and everything else worth knowing about.
               </p>
             </div>
 
@@ -113,10 +113,10 @@ export default function About() {
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-coral/10 to-purple/10 text-purple flex items-center justify-center mb-4">
                 <Shield className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Safety first</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Trust & quality</h3>
               <p className="text-gray-600">
-                Real-world meetups need trust. Hosts approve participants, and we
-                offer women-only events and other safety features.
+                Verified businesses and vetted listings mean you can trust what you see.
+                No spam, no clickbait — just genuine events and offers.
               </p>
             </div>
           </div>
@@ -130,7 +130,7 @@ export default function About() {
             Ready to join us?
           </h2>
           <p className="text-lg text-gray-600 mb-8">
-            We're launching soon. Be the first to experience a new way to connect.
+            We're launching soon. Be the first to discover everything happening around you.
           </p>
           <a
             href="/#waitlist"

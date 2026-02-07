@@ -39,6 +39,12 @@ import AdminCategoriesPage from './pages/admin/CategoriesPage';
 import DemoPage from './pages/DemoPage';
 import LandingPage from './pages/LandingPage';
 
+// Landing sub-pages (no auth required)
+import LandingAboutPage from './pages/landing/AboutPage';
+import LandingPrivacyPage from './pages/landing/PrivacyPage';
+import LandingTermsPage from './pages/landing/TermsPage';
+import LandingContactPage from './pages/landing/ContactPage';
+
 function App() {
   return (
     <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
@@ -49,8 +55,12 @@ function App() {
           {/* Demo route (no auth required) */}
           <Route path="/demo" element={<DemoPage />} />
 
-          {/* Landing page (no auth required) */}
+          {/* Landing pages (no auth required) */}
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/landing/about" element={<LandingAboutPage />} />
+          <Route path="/landing/privacy" element={<LandingPrivacyPage />} />
+          <Route path="/landing/terms" element={<LandingTermsPage />} />
+          <Route path="/landing/contact" element={<LandingContactPage />} />
 
           {/* Public routes */}
           <Route
