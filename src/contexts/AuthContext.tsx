@@ -31,12 +31,14 @@ const MOCK_PROFILE: Profile = {
   is_ghost_mode: false,
   is_women_only_mode: false,
   terms_accepted_at: new Date().toISOString(),
-  role: 'admin', // Admin access for testing
+  role: 'admin',
   status: 'active',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
 // ===========================================
+
+const LOG = '[Auth]';
 
 interface AuthContextType {
   user: User | null;
@@ -59,127 +61,129 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(!DEV_MODE);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  // Fetch profile — standalone, no race conditions
+  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     if (DEV_MODE) return MOCK_PROFILE;
+    console.log(LOG, 'Fetching profile for', userId);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching profile:', error);
+      if (error) {
+        console.error(LOG, 'Profile fetch error:', error.message, error.code);
+        return null;
+      }
+      console.log(LOG, 'Profile loaded:', data?.first_name, '| terms:', !!data?.terms_accepted_at);
+      return data as Profile;
+    } catch (err) {
+      console.error(LOG, 'Profile fetch exception:', err);
       return null;
     }
-
-    return data as Profile;
   }, []);
 
   const refreshProfile = useCallback(async (userId?: string) => {
-    if (DEV_MODE) {
-      setProfile(MOCK_PROFILE);
-      return;
-    }
+    if (DEV_MODE) { setProfile(MOCK_PROFILE); return; }
     const id = userId || user?.id;
     if (!id) return;
-    const profileData = await fetchProfile(id);
-    setProfile(profileData);
+    const p = await fetchProfile(id);
+    setProfile(p);
   }, [user, fetchProfile]);
 
+  // Effect 1: Listen for auth state changes (session/user only, no async work)
   useEffect(() => {
-    let isMounted = true;
-
-    // Skip Supabase auth in dev mode
     if (DEV_MODE) {
-      console.log('🔓 DEV MODE: Authentication bypassed with mock user');
+      console.log(LOG, 'DEV MODE active');
       setIsLoading(false);
       return;
     }
 
-    // Get initial session
-    supabase.auth.getSession()
-      .then(({ data: { session }, error }) => {
-        if (error) {
-          console.error('Auth session error:', error);
-        }
-        setSession(session);
-        setUser(session?.user ?? null);
+    console.log(LOG, 'Setting up auth listener...');
 
-        if (session?.user) {
-          fetchProfile(session.user.id).then(setProfile);
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(LOG, 'onAuthStateChange:', event, session?.user?.email || 'no user');
 
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error('Auth failed:', err);
-        setIsLoading(false);
-      });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!isMounted) return;
-
+      // Synchronously update session and user — no async work here
       setSession(session);
       setUser(session?.user ?? null);
 
-      if (session?.user) {
-        const profileData = await fetchProfile(session.user.id);
-        setProfile(profileData);
-      } else {
+      if (!session?.user) {
         setProfile(null);
         setIsLoading(false);
       }
-
-      setIsLoading(false);
     });
 
     return () => {
-      isMounted = false;
+      console.log(LOG, 'Cleanup: unsubscribing auth listener');
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, []);
+
+  // Effect 2: When user changes, fetch their profile
+  useEffect(() => {
+    if (DEV_MODE) return;
+
+    if (!user) {
+      // No user — we're done loading
+      console.log(LOG, 'No user, done loading');
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    console.log(LOG, 'User changed, fetching profile for', user.email);
+
+    fetchProfile(user.id).then((profileData) => {
+      if (cancelled) {
+        console.log(LOG, 'Profile fetch cancelled (stale)');
+        return;
+      }
+      setProfile(profileData);
+      setIsLoading(false);
+      console.log(LOG, 'Auth ready:', {
+        email: user.email,
+        name: profileData?.first_name,
+        terms: !!profileData?.terms_accepted_at,
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, fetchProfile]);
 
   const signUp = async (email: string, password: string) => {
     if (DEV_MODE) return { error: null };
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
+    console.log(LOG, 'signUp:', email);
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) console.error(LOG, 'signUp error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };
 
   const signIn = async (email: string, password: string) => {
     if (DEV_MODE) return { error: null };
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    console.log(LOG, 'signIn:', email);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) console.error(LOG, 'signIn error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };
 
   const signInWithMagicLink = async (email: string) => {
     if (DEV_MODE) return { error: null };
+    console.log(LOG, 'magicLink:', email);
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-      },
+      options: { emailRedirectTo: `${window.location.origin}/` },
     });
-
+    if (error) console.error(LOG, 'magicLink error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };
 
   const signOut = async () => {
-    if (DEV_MODE) {
-      console.log('🔓 DEV MODE: Sign out simulated');
-      return;
-    }
+    if (DEV_MODE) return;
+    console.log(LOG, 'Signing out');
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
@@ -198,6 +202,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     refreshProfile,
   };
+
+  console.log(LOG, 'State:', { isLoading, auth: !!user, profile: !!profile, name: profile?.first_name || null });
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

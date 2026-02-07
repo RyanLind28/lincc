@@ -1,51 +1,84 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, EventCardMini, type EventCardEvent } from '../components/ui';
 import { Edit2, Calendar, Users, Ghost, Lock } from 'lucide-react';
 import { calculateAge } from '../lib/utils';
-
-// Demo events for testing
-const DEMO_HOSTING: EventCardEvent[] = [
-  {
-    id: '1',
-    title: 'Morning Coffee Chat',
-    category: { name: 'Coffee', icon: 'Coffee' },
-    host: { first_name: 'You' },
-    venue_name: 'Blue Bottle Coffee',
-    start_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    capacity: 2,
-    participant_count: 1,
-    join_mode: 'request',
-  },
-];
-
-const DEMO_JOINED: EventCardEvent[] = [
-  {
-    id: '2',
-    title: 'Park Yoga Session',
-    category: { name: 'Yoga', icon: 'Heart' },
-    host: { first_name: 'Emma', age: 32 },
-    venue_name: 'Golden Gate Park',
-    start_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    capacity: 4,
-    participant_count: 3,
-    join_mode: 'instant',
-  },
-];
+import { supabase } from '../lib/supabase';
 
 type EventTab = 'hosting' | 'joined';
 
 export default function ProfilePage() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [activeTab, setActiveTab] = useState<EventTab>('hosting');
+  const [hosting, setHosting] = useState<EventCardEvent[]>([]);
+  const [joined, setJoined] = useState<EventCardEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    async function fetchUserEvents() {
+      setIsLoading(true);
+
+      // Fetch events hosted by user
+      const { data: hostedData } = await supabase
+        .from('events')
+        .select(`
+          id, title, venue_name, start_time, capacity, join_mode, participant_count,
+          category:categories!category_id(name, icon),
+          host:profiles!host_id(first_name, avatar_url)
+        `)
+        .eq('host_id', user.id)
+        .in('status', ['active', 'full'])
+        .gte('start_time', new Date().toISOString())
+        .order('start_time', { ascending: true });
+
+      // Fetch events user has joined (approved participant)
+      const { data: joinedData } = await supabase
+        .from('event_participants')
+        .select(`
+          event:events!event_id(
+            id, title, venue_name, start_time, capacity, join_mode, participant_count,
+            category:categories!category_id(name, icon),
+            host:profiles!host_id(first_name, avatar_url)
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'approved');
+
+      const mapEvent = (e: Record<string, unknown>): EventCardEvent => ({
+        id: e.id as string,
+        title: e.title as string,
+        venue_name: e.venue_name as string,
+        start_time: e.start_time as string,
+        capacity: e.capacity as number,
+        participant_count: (e.participant_count as number) || 0,
+        join_mode: e.join_mode as 'instant' | 'request',
+        category: e.category as { name: string; icon: string },
+        host: e.host as { first_name: string; avatar_url?: string | null },
+      });
+
+      setHosting((hostedData || []).map(mapEvent));
+      setJoined(
+        (joinedData || [])
+          .map((p) => p.event)
+          .filter(Boolean)
+          .map((e) => mapEvent(e as Record<string, unknown>))
+      );
+      setIsLoading(false);
+    }
+
+    fetchUserEvents();
+  }, [user]);
 
   if (!profile) {
     return null;
   }
 
   const age = calculateAge(profile.dob);
+  const activeEvents = activeTab === 'hosting' ? hosting : joined;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -115,11 +148,11 @@ export default function ProfilePage() {
         <div className="flex gap-4 justify-center">
           <div className="flex items-center gap-2 px-4 py-2 bg-surface rounded-xl border border-border">
             <Calendar className="h-4 w-4 text-coral" />
-            <span className="text-sm font-medium text-text">{DEMO_HOSTING.length} hosted</span>
+            <span className="text-sm font-medium text-text">{hosting.length} hosted</span>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-surface rounded-xl border border-border">
             <Users className="h-4 w-4 text-purple" />
-            <span className="text-sm font-medium text-text">{DEMO_JOINED.length} joined</span>
+            <span className="text-sm font-medium text-text">{joined.length} joined</span>
           </div>
         </div>
       </div>
@@ -160,23 +193,22 @@ export default function ProfilePage() {
 
         {/* Event list */}
         <div className="space-y-3">
-          {activeTab === 'hosting' ? (
-            DEMO_HOSTING.length > 0 ? (
-              DEMO_HOSTING.map((event) => (
-                <EventCardMini key={event.id} event={event} />
-              ))
-            ) : (
-              <EmptyState
-                title="No events yet"
-                description="Create your first event and meet new people!"
-                actionLabel="Create Event"
-                actionHref="/event/new"
-              />
-            )
-          ) : DEMO_JOINED.length > 0 ? (
-            DEMO_JOINED.map((event) => (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="w-8 h-8 border-2 border-coral border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-sm text-text-muted">Loading events...</p>
+            </div>
+          ) : activeEvents.length > 0 ? (
+            activeEvents.map((event) => (
               <EventCardMini key={event.id} event={event} />
             ))
+          ) : activeTab === 'hosting' ? (
+            <EmptyState
+              title="No events yet"
+              description="Create your first event and meet new people!"
+              actionLabel="Create Event"
+              actionHref="/event/new"
+            />
           ) : (
             <EmptyState
               title="No events joined"

@@ -294,7 +294,12 @@ Last updated: 2026-01-27
 > Items to address when time permits
 
 - [ ] **Create style sheet document** - Document the design system (colors, gradients, typography, spacing, components) for consistent styling across the app. Work with designer to finalize.
-- [ ] **Update logo references** - Replace lincc-logo.webp across app once final asset is ready
+- [x] **Update logo references** - ~~Replace lincc-logo.webp across app once final asset is ready~~ Done — using Vercel blob URL
+- [ ] **Supabase: spatial_ref_sys RLS** - PostGIS system table can't have RLS enabled (owned by supabase_admin). Known platform limitation — contact Supabase support or ignore.
+- [ ] **Supabase: PostGIS in public schema** - Linter warns about postgis extension in public schema. Moving it risks breaking geo queries. Safe to ignore.
+- [ ] **Supabase: Enable leaked password protection** - Dashboard → Authentication → Attack Protection → Enable leaked password protection (HaveIBeenPwned check)
+- [ ] **Google Places API integration** - Wire up VITE_GOOGLE_PLACES_API_KEY for venue search/autocomplete in event creation
+- [ ] **Mapbox improvements** - Improve map UX: clustering, event preview on marker tap, user location marker, radius circle
 
 ---
 
@@ -309,20 +314,18 @@ Last updated: 2026-01-27
 ## Notes
 
 ### Current State
-- DEV_MODE is enabled in:
-  - `src/contexts/AuthContext.tsx`
-  - `src/services/events/eventService.ts`
-  - `src/hooks/useUserEngagement.ts`
-- Mock user has tags: `['coffee', 'hiking', 'yoga']`
-- Default location: Central London (51.5074, -0.1278)
+- DEV_MODE is **OFF** in all files — app uses real Supabase data
+- 32 demo events loaded in Supabase (London locations)
+- Mapbox token configured
+- Sentry configured
+- Owner account: ryanlindie@gmail.com
 
 ### Key Files
 - Algorithm weights: `src/lib/algorithm.ts`
 - Tag mappings: `src/data/tagToCategoryMap.ts`
-- Demo events: `src/data/demoEvents.ts`
+- Demo events: `src/data/demoEvents.ts` (fallback only)
 - Recommendation service: `src/services/events/recommendationService.ts`
 
 ### Dependencies Needed
-- Mapbox GL JS (for map view)
-- Sentry (for error monitoring)
+- Google Places API key (for venue autocomplete)
 - Analytics SDK (Mixpanel/Amplitude)

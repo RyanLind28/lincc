@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import {
   MapPin,
-  Shield,
   Sparkles,
   Coffee,
   Music,
