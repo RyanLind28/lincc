@@ -26,12 +26,15 @@ import WaitlistForm from '../components/WaitlistForm';
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
-function Logo({ className = "h-8", white = false }: { className?: string; white?: boolean }) {
+function Logo({ className = "h-8", white = false, priority = false }: { className?: string; white?: boolean; priority?: boolean }) {
   return (
     <img
       src={LOGO_URL}
       alt="Lincc"
       className={`${className} ${white ? 'brightness-0 invert' : ''}`}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
+      decoding="async"
     />
   );
 }
@@ -44,7 +47,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
-              <Logo className="h-10" />
+              <Logo className="h-10" priority />
             </Link>
             <div className="hidden sm:flex items-center gap-8 text-sm font-medium text-gray-600">
               <a href="#how-it-works" className="hover:text-purple transition-colors">How it works</a>
@@ -79,16 +82,14 @@ export default function Home() {
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-[1.1] tracking-tight">
-              Everything happening
+              No Algorithms.
               <br />
-              <span className="gradient-text">right around you</span>
+              <span className="gradient-text">Just what's happening now</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg sm:text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-              Events, deals, openings, and happenings — all in one place.
-              No more endless scrolling or searching. Just open Lincc and see
-              what's going on near you, right now.
+              Tired of Instagram showing you last week's posts when you want to know what's on tonight? Lincc is different. Everything you see is happening now or soon, in the order it was posted. No algorithms choosing for you.
             </p>
 
             {/* CTA */}
@@ -114,32 +115,32 @@ export default function Home() {
             <div className="bg-gradient-to-br from-gray-50 to-white rounded-3xl p-6 sm:p-10 border border-gray-200/60 shadow-2xl shadow-gray-200/50">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <EventCard
-                  icon={<Coffee className="h-5 w-5 text-white" />}
-                  category="Coffee"
-                  title="Morning Coffee & Chat"
-                  venue="Brew & Co, Shoreditch"
-                  time="Today at 10 AM"
-                  detail="2 spots left"
-                  gradient="from-amber-500 to-orange-500"
-                />
-                <EventCard
-                  icon={<Tag className="h-5 w-5 text-white" />}
-                  category="Offer"
-                  title="50% Off Brunch Menu"
-                  venue="The Garden Kitchen"
-                  time="This weekend"
-                  detail="Use code LINCC50"
+                  icon={<Wine className="h-5 w-5 text-white" />}
+                  category="Flash Sale"
+                  title="Half-price cocktails"
+                  venue="Skybar"
+                  time="Next 2 hours only"
+                  detail="50% off"
                   gradient="from-coral to-purple"
-                  className="hidden sm:block"
                 />
                 <EventCard
                   icon={<PartyPopper className="h-5 w-5 text-white" />}
-                  category="Nightlife"
-                  title="Grand Opening Night"
-                  venue="Club Paradiso"
-                  time="Tonight at 10 PM"
-                  detail="Free entry before 11"
+                  category="Social"
+                  title="Board games night at mine"
+                  venue="Hackney"
+                  time="7pm tonight"
+                  detail="3 spots left"
                   gradient="from-purple to-blue"
+                  className="hidden sm:block"
+                />
+                <EventCard
+                  icon={<Coffee className="h-5 w-5 text-white" />}
+                  category="Meetup"
+                  title="Morning run & coffee"
+                  venue="Victoria Park"
+                  time="Tomorrow 7am"
+                  detail="All levels welcome"
+                  gradient="from-amber-500 to-orange-500"
                   className="hidden lg:block"
                 />
               </div>
@@ -148,25 +149,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Social Proof Bar */}
+      {/* Why Lincc - The Problem */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 border-y border-gray-100 bg-gray-50/50">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16 text-center">
-            <div>
-              <p className="text-3xl sm:text-4xl font-bold gradient-text">Live</p>
-              <p className="text-gray-600 text-sm mt-1">Real-time updates</p>
-            </div>
-            <div className="hidden sm:block w-px h-12 bg-gray-200" />
-            <div>
-              <p className="text-3xl sm:text-4xl font-bold gradient-text">Local</p>
-              <p className="text-gray-600 text-sm mt-1">Everything near you</p>
-            </div>
-            <div className="hidden sm:block w-px h-12 bg-gray-200" />
-            <div>
-              <p className="text-3xl sm:text-4xl font-bold gradient-text">Now</p>
-              <p className="text-gray-600 text-sm mt-1">Happening today</p>
-            </div>
-          </div>
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Why Lincc</p>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+            Real-Time. Chronological. Unfiltered.
+          </h2>
+          <p className="text-xl sm:text-2xl font-semibold gradient-text">
+            Your social life, sorted.
+          </p>
         </div>
       </section>
 
@@ -206,14 +198,14 @@ export default function Home() {
       <section id="features" className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Why Lincc</p>
+            <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Features</p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Your social life,
+              Everything you need,
               <br />
-              <span className="gradient-text">sorted.</span>
+              <span className="gradient-text">one place.</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mt-4">
-              One place for everything going on around you. No more FOMO.
+              Events, deals, meetups, and local happenings — all in your pocket.
             </p>
           </div>
 
@@ -356,12 +348,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Lincc */}
+      {/* The Problem */}
       <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
-              <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Why Lincc?</p>
+              <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">The Problem</p>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
                 Stop searching.
                 <br />
@@ -374,10 +366,10 @@ export default function Home() {
               </p>
               <div className="space-y-4">
                 {[
-                  'No more searching across multiple apps',
-                  'Live events, deals, and happenings in real time',
-                  'Filter by exactly when and where you want',
-                  'Discover places and events you never knew existed',
+                  'Posted in order, not by engagement',
+                  "See what's on now, not last week",
+                  'Local first — your area, your feed',
+                  'No algorithm deciding what you see',
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
