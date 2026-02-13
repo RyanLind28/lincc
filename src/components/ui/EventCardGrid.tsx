@@ -122,7 +122,7 @@ function EventCardTile({ event }: { event: GridEventData }) {
 
 export function EventCardGrid({ events, className }: EventCardGridProps) {
   return (
-    <div className={cn('grid grid-cols-2 gap-3', className)}>
+    <div className={cn('grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4', className)}>
       {events.map((event) => (
         <EventCardTile key={event.id} event={event} />
       ))}

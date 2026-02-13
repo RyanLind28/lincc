@@ -59,7 +59,7 @@ export default function Home() {
               href="#waitlist"
               className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all"
             >
-              Join Waitlist
+              Get Early Access
             </a>
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple/5 to-transparent rounded-3xl" />
 
             <div className="bg-gradient-to-br from-gray-50 to-white rounded-3xl p-6 sm:p-10 border border-gray-200/60 shadow-2xl shadow-gray-200/50">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-x-visible sm:snap-none sm:pb-0 sm:-mb-0">
                 <EventCard
                   icon={<Wine className="h-5 w-5 text-white" />}
                   category="Flash Sale"
@@ -122,6 +122,7 @@ export default function Home() {
                   time="Next 2 hours only"
                   detail="50% off"
                   gradient="from-coral to-purple"
+                  className="min-w-[280px] snap-center sm:min-w-0"
                 />
                 <EventCard
                   icon={<PartyPopper className="h-5 w-5 text-white" />}
@@ -131,7 +132,7 @@ export default function Home() {
                   time="7pm tonight"
                   detail="3 spots left"
                   gradient="from-purple to-blue"
-                  className="hidden sm:block"
+                  className="min-w-[280px] snap-center sm:min-w-0"
                 />
                 <EventCard
                   icon={<Coffee className="h-5 w-5 text-white" />}
@@ -141,7 +142,7 @@ export default function Home() {
                   time="Tomorrow 7am"
                   detail="All levels welcome"
                   gradient="from-amber-500 to-orange-500"
-                  className="hidden lg:block"
+                  className="min-w-[280px] snap-center sm:min-w-0"
                 />
               </div>
             </div>

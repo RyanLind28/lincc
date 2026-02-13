@@ -100,6 +100,8 @@ Last updated: 2026-02-07
 - [ ] **Radius visualization** - Show user's search radius circle on map
 - [ ] **Map filters** - Apply same filters as list view
 - [ ] **Map/list sync** - Keep both views in sync when filtering
+- [x] **Find me button** - ~~Add locate/find me button to zoom closer to user's current location and show nearby events~~ Done — locate button added to bottom-right of map, zooms to user location at zoom level 15
+- [x] **Event detail map** - ~~Show venue location map in event details header (or static Google Places image if map is too heavy)~~ Done — using Mapbox Static Images API for lightweight map preview with marker
 
 ---
 
@@ -157,6 +159,7 @@ Last updated: 2026-02-07
 - [ ] **Animations** - Smooth transitions and micro-interactions
 - [ ] **Dark mode** - Support system dark mode preference
 - [ ] **Accessibility** - Screen reader support, keyboard navigation
+- [x] **Desktop layout** - ~~Responsive desktop version for larger screens — same layout but optimized for bigger displays, better use of horizontal space~~ Done — sidebar nav on lg+, responsive event grid (2→3→4→5 cols), max-width container, hidden mobile nav on desktop
 
 ---
 
@@ -307,6 +310,7 @@ Last updated: 2026-02-07
 
 > Track bugs as they're discovered
 
+- [x] **Bottom nav icon render issue** - ~~Icons change or get hidden based on button state, causing visual flickering~~ Fixed — consistent wrapper structure, fixed dimensions, smooth transitions, uniform strokeWidth
 - [x] **Auth loading loop** - ~~App stuck in loading spinner forever. Caused by race condition between `getSession()` and `onAuthStateChange` in React StrictMode.~~ Fixed — split into two separate effects
 - [x] **ProfilePage mock data** - ~~ProfilePage used hardcoded demo data instead of real Supabase queries~~ Fixed
 - [x] **Vercel SPA routing 404s** - ~~Clicking links on deployed Vercel app returned 404~~ Fixed — added `vercel.json` with SPA rewrites

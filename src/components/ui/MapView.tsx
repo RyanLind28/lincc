@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { useNavigate } from 'react-router-dom';
+import { Locate } from 'lucide-react';
 import type { Coordinates } from '../../types';
 
 // Set access token
@@ -42,10 +43,45 @@ export function MapView({ events, userLocation, className }: MapViewProps) {
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const navigate = useNavigate();
 
   // Default center (London) if no user location
   const defaultCenter: [number, number] = [-0.1278, 51.5074];
+
+  // Find me / recenter on user location
+  const handleFindMe = useCallback(() => {
+    if (!map.current || !isLoaded) return;
+
+    if (userLocation) {
+      // Fly to user location with closer zoom
+      setIsLocating(true);
+      map.current.flyTo({
+        center: [userLocation.longitude, userLocation.latitude],
+        zoom: 15,
+        duration: 1000,
+      });
+      setTimeout(() => setIsLocating(false), 1000);
+    } else {
+      // Request location from browser
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          map.current?.flyTo({
+            center: [position.coords.longitude, position.coords.latitude],
+            zoom: 15,
+            duration: 1000,
+          });
+          setTimeout(() => setIsLocating(false), 1000);
+        },
+        () => {
+          setIsLocating(false);
+          // Location denied or unavailable - stay on current view
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+  }, [userLocation, isLoaded]);
 
   // Initialize map
   useEffect(() => {
@@ -196,6 +232,21 @@ export function MapView({ events, userLocation, className }: MapViewProps) {
   return (
     <div className={className}>
       <div ref={mapContainer} className="w-full h-full" />
+
+      {/* Find Me button */}
+      {isLoaded && (
+        <button
+          onClick={handleFindMe}
+          disabled={isLocating}
+          className="absolute bottom-28 right-2 z-10 w-10 h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50"
+          aria-label="Find my location"
+        >
+          <Locate
+            className={`h-5 w-5 text-gray-700 ${isLocating ? 'animate-pulse text-coral' : ''}`}
+          />
+        </button>
+      )}
+
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="animate-spin w-8 h-8 border-2 border-coral border-t-transparent rounded-full" />

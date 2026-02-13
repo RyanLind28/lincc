@@ -13,12 +13,14 @@ function GradientIcon({
   isActive: boolean;
   className?: string;
 }) {
-  if (!isActive) {
-    return <span className={className}>{children}</span>;
-  }
-
   return (
-    <span className={cn('gradient-icon', className)}>
+    <span
+      className={cn(
+        'flex items-center justify-center w-6 h-6 transition-all duration-200',
+        isActive ? 'gradient-icon' : 'text-text-muted',
+        className
+      )}
+    >
       {children}
     </span>
   );
@@ -38,7 +40,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom lg:hidden">
       {/* SVG gradient definition */}
       <svg width="0" height="0" className="absolute">
         <defs>
@@ -59,9 +61,9 @@ export function BottomNav() {
           >
             <GradientIcon isActive={true}>
               {viewMode === 'list' ? (
-                <Map className="h-6 w-6" strokeWidth={2.5} />
+                <Map className="h-6 w-6" strokeWidth={2} />
               ) : (
-                <List className="h-6 w-6" strokeWidth={2.5} />
+                <List className="h-6 w-6" strokeWidth={2} />
               )}
             </GradientIcon>
           </button>
@@ -71,7 +73,7 @@ export function BottomNav() {
             className="flex items-center justify-center p-3 rounded-xl transition-all"
             aria-label="Discover"
           >
-            <GradientIcon isActive={false} className="text-text-muted hover:text-text">
+            <GradientIcon isActive={false} className="hover:text-text">
               <Map className="h-6 w-6" strokeWidth={2} />
             </GradientIcon>
           </NavLink>
@@ -86,11 +88,8 @@ export function BottomNav() {
             aria-label={item.label}
           >
             {({ isActive }) => (
-              <GradientIcon isActive={isActive} className={!isActive ? 'text-text-muted hover:text-text' : ''}>
-                <item.icon
-                  className="h-6 w-6"
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
+              <GradientIcon isActive={isActive} className={!isActive ? 'hover:text-text' : ''}>
+                <item.icon className="h-6 w-6" strokeWidth={2} />
               </GradientIcon>
             )}
           </NavLink>

@@ -70,10 +70,11 @@ export function Header({
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
+          {/* Create event button - hidden on desktop (in sidebar) */}
           {showCreateEvent && !showBack && (
             <Link
               to="/event/new"
-              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-coral hover:bg-coral/10 transition-colors"
+              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-coral hover:bg-coral/10 transition-colors lg:hidden"
               aria-label="Create event"
             >
               <Plus className="h-6 w-6" />
@@ -82,10 +83,12 @@ export function Header({
           {leftContent}
         </div>
 
-        {/* Center - Logo or Title */}
+        {/* Center - Logo or Title (logo hidden on desktop - in sidebar) */}
         <div className="absolute left-1/2 -translate-x-1/2">
           {showLogo ? (
-            <LinccLogo />
+            <span className="lg:hidden">
+              <LinccLogo />
+            </span>
           ) : title ? (
             <h1 className="text-lg font-semibold text-text truncate">
               {title}

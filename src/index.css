@@ -130,6 +130,13 @@
   /* Gradient for SVG icons - uses stroke gradient */
   .gradient-icon svg {
     stroke: url(#nav-icon-gradient);
+    transition: stroke 0.2s ease;
+  }
+
+  /* Ensure consistent icon sizing in nav */
+  .gradient-icon svg,
+  .text-text-muted svg {
+    transition: stroke 0.2s ease, color 0.2s ease;
   }
 
   .gradient-border {

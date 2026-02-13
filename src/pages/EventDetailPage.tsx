@@ -272,13 +272,14 @@ export default function EventDetailPage() {
         }
       />
 
-      {/* Map preview placeholder */}
-      <div className="h-48 bg-gray-200 relative -mt-14">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center shadow-lg">
-            <MapPin className="h-6 w-6 text-white" />
-          </div>
-        </div>
+      {/* Static map preview */}
+      <div className="h-48 bg-gray-200 relative -mt-14 overflow-hidden">
+        <img
+          src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-s+FF6B6B(${event.venue_lng},${event.venue_lat})/${event.venue_lng},${event.venue_lat},15,0/800x400@2x?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`}
+          alt={`Map showing ${event.venue_name}`}
+          className="w-full h-full object-cover"
+          loading="eager"
+        />
         {/* Gradient overlay at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
