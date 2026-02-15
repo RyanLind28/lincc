@@ -5,6 +5,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { ViewModeProvider } from './contexts/ViewModeContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute, PublicRoute } from './components/layout/ProtectedRoute';
+import { ErrorBoundary } from './components/layout/ErrorBoundary';
 
 // Auth pages (placeholder)
 import LoginPage from './pages/auth/LoginPage';
@@ -28,12 +29,20 @@ import EventDetailPage from './pages/EventDetailPage';
 import ManageParticipantsPage from './pages/ManageParticipantsPage';
 import UserProfilePage from './pages/UserProfilePage';
 
+// Search & Discovery pages
+import SavedEventsPage from './pages/SavedEventsPage';
+import ExplorePage from './pages/ExplorePage';
+
 // Admin pages (placeholder)
 import AdminDashboard from './pages/admin/DashboardPage';
 import AdminUsersPage from './pages/admin/UsersPage';
 import AdminEventsPage from './pages/admin/EventsPage';
 import AdminReportsPage from './pages/admin/ReportsPage';
 import AdminCategoriesPage from './pages/admin/CategoriesPage';
+
+// PWA components
+import { OfflineBanner } from './components/pwa/OfflineBanner';
+import { UpdateNotification } from './components/pwa/UpdateNotification';
 
 // Demo page (no auth required)
 import DemoPage from './pages/DemoPage';
@@ -51,6 +60,8 @@ function App() {
     <AuthProvider>
       <ToastProvider>
         <ViewModeProvider>
+        <OfflineBanner />
+        <UpdateNotification />
         <Routes>
           {/* Demo route (no auth required) */}
           <Route path="/demo" element={<DemoPage />} />
@@ -106,10 +117,10 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<HomePage />} />
-            <Route path="/chats" element={<ChatsPage />} />
-            <Route path="/my-events" element={<MyEventsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/" element={<ErrorBoundary><HomePage /></ErrorBoundary>} />
+            <Route path="/chats" element={<ErrorBoundary><ChatsPage /></ErrorBoundary>} />
+            <Route path="/my-events" element={<ErrorBoundary><MyEventsPage /></ErrorBoundary>} />
+            <Route path="/profile" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
           </Route>
 
           {/* Protected routes without bottom nav */}
@@ -117,7 +128,7 @@ function App() {
             path="/event/new"
             element={
               <ProtectedRoute>
-                <CreateEventPage />
+                <ErrorBoundary><CreateEventPage /></ErrorBoundary>
               </ProtectedRoute>
             }
           />
@@ -125,7 +136,7 @@ function App() {
             path="/event/:id"
             element={
               <ProtectedRoute>
-                <EventDetailPage />
+                <ErrorBoundary><EventDetailPage /></ErrorBoundary>
               </ProtectedRoute>
             }
           />
@@ -174,6 +185,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved"
+            element={
+              <ProtectedRoute>
+                <SavedEventsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/explore"
+            element={
+              <ProtectedRoute>
+                <ExplorePage />
               </ProtectedRoute>
             }
           />

@@ -15,7 +15,7 @@ export interface Database {
           email: string
           first_name: string
           dob: string
-          gender: 'man' | 'woman' | 'non-binary'
+          gender: 'female' | 'male'
           avatar_url: string | null
           bio: string | null
           tags: string[]
@@ -33,7 +33,7 @@ export interface Database {
           email: string
           first_name: string
           dob: string
-          gender: 'man' | 'woman' | 'non-binary'
+          gender: 'female' | 'male'
           avatar_url?: string | null
           bio?: string | null
           tags?: string[]
@@ -51,7 +51,7 @@ export interface Database {
           email?: string
           first_name?: string
           dob?: string
-          gender?: 'man' | 'woman' | 'non-binary'
+          gender?: 'female' | 'male'
           avatar_url?: string | null
           bio?: string | null
           tags?: string[]

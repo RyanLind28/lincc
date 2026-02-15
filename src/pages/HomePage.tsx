@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { SlidersHorizontal, MapPin, Navigation } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { SlidersHorizontal, MapPin, TrendingUp, Compass, Bookmark } from 'lucide-react';
 import {
   SearchBar,
   FilterPills,
@@ -16,6 +16,7 @@ import { useUserLocation } from '../hooks/useUserLocation';
 import { Header } from '../components/layout';
 import { useRecommendedEvents } from '../hooks/useRecommendedEvents';
 import { useViewMode } from '../contexts/ViewModeContext';
+import { useBookmarks } from '../hooks/useBookmarks';
 import { CATEGORIES } from '../data/categories';
 
 // Map categories from data file to filter format
@@ -53,8 +54,20 @@ export default function HomePage() {
   // Get user location for map
   const { location: userLocation } = useUserLocation();
 
+  // Bookmarks
+  const { savedIds, toggleSave } = useBookmarks();
+
   // Result count
   const resultCount = events.length;
+
+  // Trending events (most participants, only when no filters active)
+  const trendingEvents = useMemo(() => {
+    if (hasActiveFilters || filters.search) return [];
+    return [...events]
+      .sort((a, b) => (b.participant_count || 0) - (a.participant_count || 0))
+      .filter((e) => (e.participant_count || 0) > 0)
+      .slice(0, 4);
+  }, [events, hasActiveFilters, filters.search]);
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -69,6 +82,7 @@ export default function HomePage() {
             value={filters.search}
             onChange={(e) => updateFilter('search', e.target.value)}
             onClear={() => updateFilter('search', '')}
+            onSearchSubmit={(term) => updateFilter('search', term)}
             className="flex-1"
           />
           <button
@@ -126,7 +140,72 @@ export default function HomePage() {
               </div>
             ) : (
               <>
-                <EventCardGrid events={events} />
+                {/* Quick action links (only when no search active) */}
+                {!filters.search && (
+                  <div className="flex gap-2 mb-4">
+                    <a
+                      href="/explore"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-surface rounded-xl border border-border hover:border-coral transition-colors"
+                    >
+                      <Compass className="h-4 w-4 text-coral" />
+                      <span className="text-sm font-medium text-text">Explore</span>
+                    </a>
+                    <a
+                      href="/saved"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-surface rounded-xl border border-border hover:border-coral transition-colors"
+                    >
+                      <Bookmark className="h-4 w-4 text-coral" />
+                      <span className="text-sm font-medium text-text">Saved</span>
+                    </a>
+                  </div>
+                )}
+
+                {/* Trending section */}
+                {trendingEvents.length > 0 && (
+                  <div className="mb-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp className="h-4 w-4 text-coral" />
+                      <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
+                        Popular near you
+                      </h2>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                      {trendingEvents.map((event) => (
+                        <a
+                          key={event.id}
+                          href={`/event/${event.id}`}
+                          className="flex-shrink-0 w-[200px] bg-surface rounded-xl border border-border p-3 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <CategoryIcon icon={event.category?.icon || 'Calendar'} size="sm" />
+                            <span className="text-xs font-medium text-coral truncate">
+                              {event.category?.name || 'Event'}
+                            </span>
+                          </div>
+                          <h3 className="text-sm font-semibold text-text truncate mb-1">
+                            {event.title}
+                          </h3>
+                          <p className="text-xs text-text-muted truncate">
+                            {event.participant_count || 0} joined
+                          </p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* All events header */}
+                {!hasActiveFilters && !filters.search && events.length > 0 && (
+                  <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">
+                    All Events
+                  </h2>
+                )}
+
+                <EventCardGrid
+                  events={events}
+                  onToggleSave={toggleSave}
+                  savedIds={savedIds}
+                />
 
                 {/* End of list CTA */}
                 <div className="mt-6 mb-4 text-center">
@@ -157,20 +236,12 @@ export default function HomePage() {
                 </div>
               </div>
             ) : (
-              <>
-                <MapView
-                  events={scoredEvents}
-                  userLocation={userLocation}
-                  className="absolute inset-0"
-                />
-                <button
-                  onClick={refreshLocation}
-                  className="absolute bottom-24 right-4 p-3 bg-surface rounded-full shadow-lg border border-border hover:shadow-xl transition-shadow z-10"
-                  aria-label="Recenter map"
-                >
-                  <Navigation className="h-5 w-5 text-text" />
-                </button>
-              </>
+              <MapView
+                events={scoredEvents}
+                userLocation={userLocation}
+                radiusKm={distance}
+                className="absolute inset-0"
+              />
             )}
           </div>
         )}

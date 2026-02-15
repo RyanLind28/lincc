@@ -7,35 +7,28 @@ import { getAllMatchingCategories, isRelatedCategory } from '../data/tagToCatego
 // CONFIGURABLE WEIGHTS (0-100 total)
 // ===========================================
 export const SCORE_WEIGHTS = {
-  interest: 40,    // Max points for interest match
-  distance: 25,    // Max points for distance
-  time: 20,        // Max points for time relevance
-  engagement: 15,  // Max points for engagement history
+  interest: 35,      // Max points for interest match
+  distance: 25,      // Max points for distance
+  time: 20,          // Max points for time relevance
+  engagement: 10,    // Max points for engagement history
+  popularity: 5,     // Max points for social proof (participant ratio)
+  timeOfDay: 5,      // Max points for matching user's preferred activity hours
 } as const;
 
 // Interest scoring thresholds
 export const INTEREST_THRESHOLDS = {
-  directMatch: 40,   // User tag matches event category exactly
-  relatedMatch: 25,  // Event category is related to user's interests
+  directMatch: 35,   // User tag matches event category exactly
+  relatedMatch: 22,  // Event category is related to user's interests
 } as const;
-
-// Time scoring thresholds (in hours)
-export const TIME_THRESHOLDS = [
-  { maxHours: 1, score: 20 },
-  { maxHours: 3, score: 18 },
-  { maxHours: 6, score: 15 },
-  { maxHours: 12, score: 12 },
-  { maxHours: 24, score: 10 },
-  { maxHours: 48, score: 7 },
-  { maxHours: 72, score: 5 },
-  { maxHours: Infinity, score: 3 },
-] as const;
 
 // Engagement scoring
 export const ENGAGEMENT_CONFIG = {
   maxEvents: 5,           // Cap at this many past events for max score
-  pointsPerEvent: 3,      // Points per past event in category
+  pointsPerEvent: 2,      // Points per past event in category
 } as const;
+
+// Time-of-day defaults (when user has no history)
+const DEFAULT_PREFERRED_HOURS = [17, 18, 19, 20]; // Evenings
 
 // ===========================================
 // SCORING FUNCTIONS
@@ -71,8 +64,8 @@ export function calculateInterestScore(
 }
 
 /**
- * Calculate distance score using linear decay
- * Closer events score higher within the user's radius
+ * Calculate distance score using exponential decay
+ * Strongly prefers very nearby events over ones at the edge of the radius
  * @param distanceKm - Distance to event in kilometers
  * @param userRadius - User's search radius setting in km
  * @returns Score from 0 to SCORE_WEIGHTS.distance
@@ -86,15 +79,15 @@ export function calculateDistanceScore(
   // Events beyond user's radius get 0
   if (distanceKm > userRadius) return 0;
 
-  // Linear decay: closer = higher score
-  // At 0 km: full points, at userRadius: 0 points
-  const ratio = 1 - distanceKm / userRadius;
-  return Math.round(ratio * SCORE_WEIGHTS.distance);
+  // Exponential decay: very nearby events score disproportionately higher
+  // At 0km: 25pts, at 50% radius: ~9pts, at 100% radius: ~3pts
+  const decay = Math.exp(-2 * distanceKm / userRadius);
+  return Math.round(decay * SCORE_WEIGHTS.distance);
 }
 
 /**
- * Calculate time relevance score
- * Events starting sooner score higher
+ * Calculate time relevance score using continuous exponential decay
+ * Events starting sooner score higher, with a floor of 2 points
  * @param startTime - Event start time (Date or ISO string)
  * @returns Score from 0 to SCORE_WEIGHTS.time
  */
@@ -105,15 +98,11 @@ export function calculateTimeScore(startTime: Date | string): number {
   // Past events get 0
   if (start <= now) return 0;
 
-  const hoursUntilStart = (start.getTime() - now.getTime()) / (1000 * 60 * 60);
+  const hoursAway = (start.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-  for (const threshold of TIME_THRESHOLDS) {
-    if (hoursUntilStart <= threshold.maxHours) {
-      return threshold.score;
-    }
-  }
-
-  return TIME_THRESHOLDS[TIME_THRESHOLDS.length - 1].score;
+  // Continuous exponential decay with floor of 2
+  // 0h→20, 1h→17, 3h→13, 6h→8, 12h→3, 24h+→2
+  return Math.round(Math.max(2, SCORE_WEIGHTS.time * Math.exp(-0.15 * hoursAway)));
 }
 
 /**
@@ -134,6 +123,54 @@ export function calculateEngagementScore(categoryEventCount: number): number {
 }
 
 /**
+ * Calculate popularity score based on participant ratio (social proof)
+ * Events with more participants relative to capacity score higher
+ * @param participantCount - Current number of participants
+ * @param capacity - Max event capacity
+ * @returns Score from 0 to SCORE_WEIGHTS.popularity
+ */
+export function calculatePopularityScore(
+  participantCount: number,
+  capacity: number
+): number {
+  if (capacity <= 0 || participantCount <= 0) return 0;
+
+  const ratio = Math.min(participantCount / capacity, 1);
+  return Math.round(ratio * SCORE_WEIGHTS.popularity);
+}
+
+/**
+ * Calculate time-of-day preference score
+ * Events that fall in the user's typical activity window score higher
+ * @param startTime - Event start time
+ * @param preferredHours - Array of preferred hours (0-23), e.g. [17, 18, 19, 20]
+ * @returns Score from 0 to SCORE_WEIGHTS.timeOfDay
+ */
+export function calculateTimeOfDayScore(
+  startTime: Date | string,
+  preferredHours: number[]
+): number {
+  const start = typeof startTime === 'string' ? new Date(startTime) : startTime;
+  const hour = start.getHours();
+
+  const hours = preferredHours.length > 0 ? preferredHours : DEFAULT_PREFERRED_HOURS;
+
+  // Direct match: event starts in preferred window
+  if (hours.includes(hour)) {
+    return SCORE_WEIGHTS.timeOfDay; // 5 pts
+  }
+
+  // Adjacent: within 1 hour of preferred window
+  const isAdjacent = hours.some((h) => Math.abs(h - hour) === 1 || Math.abs(h - hour) === 23);
+  if (isAdjacent) {
+    return 3; // 3 pts
+  }
+
+  // Off-hours
+  return 1;
+}
+
+/**
  * Calculate total score for an event
  */
 export interface ScoreBreakdown {
@@ -141,6 +178,8 @@ export interface ScoreBreakdown {
   distance: number;
   time: number;
   engagement: number;
+  popularity: number;
+  timeOfDay: number;
 }
 
 export interface ScoreInput {
@@ -150,6 +189,9 @@ export interface ScoreInput {
   userRadius: number;
   startTime: Date | string;
   categoryEventCount: number;
+  participantCount: number;
+  capacity: number;
+  preferredHours: number[];
 }
 
 export function calculateTotalScore(input: ScoreInput): {
@@ -161,9 +203,12 @@ export function calculateTotalScore(input: ScoreInput): {
     distance: calculateDistanceScore(input.distanceKm, input.userRadius),
     time: calculateTimeScore(input.startTime),
     engagement: calculateEngagementScore(input.categoryEventCount),
+    popularity: calculatePopularityScore(input.participantCount, input.capacity),
+    timeOfDay: calculateTimeOfDayScore(input.startTime, input.preferredHours),
   };
 
-  const total = breakdown.interest + breakdown.distance + breakdown.time + breakdown.engagement;
+  const total = breakdown.interest + breakdown.distance + breakdown.time
+    + breakdown.engagement + breakdown.popularity + breakdown.timeOfDay;
 
   return { total, breakdown };
 }
@@ -173,7 +218,7 @@ export function calculateTotalScore(input: ScoreInput): {
 // ===========================================
 
 // Minimum interest score to be considered "interest-matched"
-export const INTEREST_MATCH_THRESHOLD = 25;
+export const INTEREST_MATCH_THRESHOLD = 22;
 
 // Check if an event qualifies for interest-based recommendations
 export function hasInterestMatch(interestScore: number): boolean {

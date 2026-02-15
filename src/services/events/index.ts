@@ -1,7 +1,7 @@
 // Barrel exports for events services
 
-export { fetchEvents, fetchDemoEvents, isDevMode, createEvent, getEventById } from './eventService';
-export type { FetchEventsOptions, CreateEventResult, CreateEventData } from './eventService';
+export { fetchEvents, fetchDemoEvents, isDevMode, createEvent, updateEvent, deleteEvent, getEventById } from './eventService';
+export type { FetchEventsOptions, CreateEventResult, CreateEventData, UpdateEventData } from './eventService';
 
 export {
   getRecommendations,

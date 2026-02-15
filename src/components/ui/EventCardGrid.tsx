@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Clock } from 'lucide-react';
+import { Clock, Bookmark } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Avatar } from './Avatar';
 import { CategoryIcon } from './CategoryIcon';
@@ -29,6 +29,8 @@ export interface GridEventData {
 export interface EventCardGridProps {
   events: GridEventData[];
   onEventClick?: (eventId: string) => void;
+  onToggleSave?: (eventId: string) => void;
+  savedIds?: Set<string>;
   className?: string;
 }
 
@@ -48,7 +50,15 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function EventCardTile({ event }: { event: GridEventData }) {
+function EventCardTile({
+  event,
+  onToggleSave,
+  isSaved,
+}: {
+  event: GridEventData;
+  onToggleSave?: (eventId: string) => void;
+  isSaved?: boolean;
+}) {
   const spotsLeft = event.capacity - event.participant_count;
   const coverImage = event.cover_image || event.category.image;
   const showSpotsWarning = spotsLeft <= 2;
@@ -70,6 +80,27 @@ function EventCardTile({ event }: { event: GridEventData }) {
           <div className="w-full h-full gradient-primary flex items-center justify-center">
             <CategoryIcon icon={event.category.icon} size="xl" className="text-white" />
           </div>
+        )}
+
+        {/* Bookmark button */}
+        {onToggleSave && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleSave(event.id);
+            }}
+            className="absolute top-2 left-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors z-10"
+            aria-label={isSaved ? 'Unsave event' : 'Save event'}
+          >
+            <Bookmark
+              className={cn(
+                'h-4 w-4 transition-colors',
+                isSaved ? 'fill-coral text-coral' : 'text-text-muted'
+              )}
+            />
+          </button>
         )}
 
         {/* Only show spots badge when 2 or fewer left */}
@@ -120,11 +151,16 @@ function EventCardTile({ event }: { event: GridEventData }) {
   );
 }
 
-export function EventCardGrid({ events, className }: EventCardGridProps) {
+export function EventCardGrid({ events, onToggleSave, savedIds, className }: EventCardGridProps) {
   return (
     <div className={cn('grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4', className)}>
       {events.map((event) => (
-        <EventCardTile key={event.id} event={event} />
+        <EventCardTile
+          key={event.id}
+          event={event}
+          onToggleSave={onToggleSave}
+          isSaved={savedIds?.has(event.id)}
+        />
       ))}
     </div>
   );

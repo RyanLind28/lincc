@@ -136,7 +136,7 @@ export default function ProfilePage() {
                 <Ghost className="h-3 w-3 mr-1" /> Ghost Mode
               </Badge>
             )}
-            {profile.is_women_only_mode && profile.gender === 'woman' && (
+            {profile.is_women_only_mode && profile.gender === 'female' && (
               <Badge variant="secondary">
                 <Lock className="h-3 w-3 mr-1" /> Women-Only
               </Badge>

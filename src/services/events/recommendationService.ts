@@ -23,6 +23,7 @@ export interface RecommendationOptions {
   userProfile: Profile;
   userLocation: Coordinates | null;
   engagementByCategory: Record<string, number>;
+  preferredHours?: number[];
   filterCategories?: string[];
   filterTimeRange?: string | null;
   filterSearch?: string;
@@ -46,7 +47,7 @@ export async function fetchActiveEvents(audience?: string): Promise<EventWithDet
       participant_count:event_participants(count)
     `)
     .eq('status', 'active')
-    .gte('start_time', new Date().toISOString())
+    .gte('expires_at', new Date().toISOString())
     .order('start_time', { ascending: true });
 
   // Filter by audience
@@ -87,6 +88,7 @@ export async function getRecommendationsAsync(
     userProfile,
     userLocation,
     engagementByCategory,
+    preferredHours = [],
     filterCategories = [],
     filterTimeRange = null,
     filterSearch = '',
@@ -94,12 +96,12 @@ export async function getRecommendationsAsync(
   } = options;
 
   // Determine audience filter based on user profile
-  // Women can see: 'everyone' + 'women' events
-  // Men can see: 'everyone' events only (never women-only)
+  // Female can see: 'everyone' + 'women' events
+  // Male can see: 'everyone' events only (never women-only)
   let audienceFilter: 'women' | 'men' | undefined;
-  if (userProfile.gender === 'woman') {
+  if (userProfile.gender === 'female') {
     audienceFilter = 'women';
-  } else if (userProfile.gender === 'man') {
+  } else if (userProfile.gender === 'male') {
     audienceFilter = 'men';
   }
   // Note: 'men' filter shows only 'everyone' events (no women-only)
@@ -112,7 +114,8 @@ export async function getRecommendationsAsync(
     allEvents,
     userProfile,
     userLocation,
-    engagementByCategory
+    engagementByCategory,
+    preferredHours
   );
 
   // Apply user filters (categories, time, search)
@@ -124,8 +127,10 @@ export async function getRecommendationsAsync(
     userLocation,
   });
 
-  // Apply fallback cascade
-  return applyFallbackCascade(filtered, scored);
+  // Apply fallback cascade then diversity injection
+  const result = applyFallbackCascade(filtered, scored);
+  result.events = injectDiversity(result.events, engagementByCategory);
+  return result;
 }
 
 /**
@@ -152,7 +157,8 @@ function scoreEvents(
   events: EventWithDetails[],
   userProfile: Profile,
   userLocation: Coordinates | null,
-  engagementByCategory: Record<string, number>
+  engagementByCategory: Record<string, number>,
+  preferredHours: number[]
 ): ScoredEvent[] {
   // Default location (Central London) if no user location
   const location = userLocation || { latitude: 51.5074, longitude: -0.1278 };
@@ -181,6 +187,9 @@ function scoreEvents(
       userRadius: userProfile.settings_radius,
       startTime: event.start_time,
       categoryEventCount,
+      participantCount: event.participant_count || 0,
+      capacity: event.capacity,
+      preferredHours,
     });
 
     // Transform to ScoredEvent format
@@ -334,6 +343,71 @@ function applyFallbackCascade(
     fallbackUsed: 'any',
     totalAvailable: allScored.length,
   };
+}
+
+// ===========================================
+// DIVERSITY INJECTION
+// ===========================================
+
+/**
+ * Inject category diversity into the results to prevent filter bubbles.
+ * If the top results are dominated by 1-2 categories, swap in events
+ * from underrepresented categories at positions 4 and 8.
+ */
+function injectDiversity(
+  events: ScoredEvent[],
+  engagementByCategory: Record<string, number>
+): ScoredEvent[] {
+  // Only apply when we have enough events
+  if (events.length <= 10) return events;
+
+  // Check category distribution in top 10
+  const top10 = events.slice(0, 10);
+  const categorySet = new Set(top10.map((e) => e.category_value));
+
+  // If top 10 already has 3+ categories, diversity is fine
+  if (categorySet.size >= 3) return events;
+
+  // Find "discovery" events: categories the user hasn't engaged with much
+  const engagedCategories = new Set(Object.keys(engagementByCategory));
+  const dominantCategories = categorySet;
+
+  const discoveryEvents = events.filter(
+    (e) =>
+      !dominantCategories.has(e.category_value) &&
+      !engagedCategories.has(e.category_value)
+  );
+
+  // If no discovery events available, try events from non-dominant categories
+  const alternativeEvents = discoveryEvents.length > 0
+    ? discoveryEvents
+    : events.filter((e) => !dominantCategories.has(e.category_value));
+
+  if (alternativeEvents.length === 0) return events;
+
+  // Sort alternatives by score (best first)
+  const sortedAlternatives = [...alternativeEvents].sort((a, b) => b.score - a.score);
+
+  // Inject at positions 4 and 8 (0-indexed: 3 and 7)
+  const result = [...events];
+  const swapPositions = [3, 7];
+
+  for (let i = 0; i < Math.min(swapPositions.length, sortedAlternatives.length); i++) {
+    const pos = swapPositions[i];
+    if (pos < result.length) {
+      // Remove the alternative from its current position to avoid duplicates
+      const altEvent = sortedAlternatives[i];
+      const currentIndex = result.findIndex((e) => e.id === altEvent.id);
+      if (currentIndex !== -1 && currentIndex !== pos) {
+        // Swap: move the displaced event to where the alternative was
+        const displaced = result[pos];
+        result[pos] = altEvent;
+        result[currentIndex] = displaced;
+      }
+    }
+  }
+
+  return result;
 }
 
 // ===========================================

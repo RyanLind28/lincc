@@ -13,6 +13,8 @@ import {
   type ScoredEvent,
   type FallbackType,
 } from '../services/events';
+import { supabase } from '../lib/supabase';
+import { invalidatePrefix } from '../lib/cache';
 import type { GridEventData } from '../components/ui/EventCardGrid';
 
 interface UseRecommendedEventsResult {
@@ -60,7 +62,7 @@ export function useRecommendedEvents(
     hasPermission,
     refresh: refreshLocation,
   } = useUserLocation();
-  const { engagementByCategory, isLoading: isEngagementLoading } = useUserEngagement();
+  const { engagementByCategory, preferredHours, isLoading: isEngagementLoading } = useUserEngagement();
   const filterState = useFilters(options.initialFilters);
 
   // State for async recommendation results
@@ -89,6 +91,7 @@ export function useRecommendedEvents(
         userProfile: profile,
         userLocation: location,
         engagementByCategory,
+        preferredHours,
         filterCategories: filterState.filters.categories,
         filterTimeRange: filterState.filters.timeRange,
         filterSearch: filterState.filters.search,
@@ -110,6 +113,7 @@ export function useRecommendedEvents(
     profile,
     location,
     engagementByCategory,
+    preferredHours,
     filterState.filters.categories,
     filterState.filters.timeRange,
     filterState.filters.search,
@@ -126,6 +130,25 @@ export function useRecommendedEvents(
   const refresh = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
   }, []);
+
+  // Real-time subscription: refresh when events are inserted, updated, or deleted
+  useEffect(() => {
+    const channel = supabase
+      .channel('events-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'events' },
+        () => {
+          invalidatePrefix('events:');
+          refresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refresh]);
 
   // Generate fallback message
   const fallbackMessage = getFallbackMessage(fallbackUsed);

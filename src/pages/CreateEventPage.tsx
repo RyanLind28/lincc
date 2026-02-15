@@ -461,7 +461,7 @@ export default function CreateEventPage() {
             </div>
 
             {/* Audience - Only women can create women-only events */}
-            {profile?.gender === 'woman' && (
+            {profile?.gender === 'female' && (
               <div>
                 <label className="block text-sm font-medium text-text mb-3">
                   Who can see this event?
@@ -525,7 +525,7 @@ export default function CreateEventPage() {
                   <span className="text-text-muted">Guests</span>
                   <span className="text-text">{capacity} max</span>
                 </div>
-                {profile?.gender === 'woman' && (
+                {profile?.gender === 'female' && (
                   <div className="flex justify-between">
                     <span className="text-text-muted">Visible to</span>
                     <span className="text-text">{audience === 'women' ? 'Women only' : 'Everyone'}</span>

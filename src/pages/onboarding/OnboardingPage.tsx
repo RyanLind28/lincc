@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { Button, Input, TextArea, Avatar, ChipGroup } from '../../components/ui';
 import { Camera, ArrowLeft, ArrowRight } from 'lucide-react';
+import { validateImageSize, compressImage } from '../../lib/imageCompression';
 import type { Gender } from '../../types';
 
 const INTEREST_TAGS = [
@@ -29,9 +30,8 @@ const INTEREST_TAGS = [
 ];
 
 const GENDER_OPTIONS = [
-  { value: 'woman', label: 'Woman' },
-  { value: 'man', label: 'Man' },
-  { value: 'non-binary', label: 'Non-binary' },
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
 ];
 
 export default function OnboardingPage() {
@@ -44,9 +44,16 @@ export default function OnboardingPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [bio, setBio] = useState('');
 
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  // If profile is already complete, redirect to home
+  useEffect(() => {
+    if (profile?.first_name) {
+      navigate('/', { replace: true });
+    }
+  }, [profile, navigate]);
 
   const totalSteps = 4;
 
@@ -54,26 +61,31 @@ export default function OnboardingPage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    if (file.size > 1024 * 1024) {
-      showToast('Image must be less than 1MB', 'error');
+    const sizeError = validateImageSize(file);
+    if (sizeError) {
+      showToast(sizeError, 'error');
       return;
     }
 
     setIsLoading(true);
 
-    const fileExt = file.name.split('.').pop();
-    const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+    try {
+      const compressed = await compressImage(file);
+      const filePath = `${user.id}/${Date.now()}.jpg`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, compressed, { contentType: 'image/jpeg' });
 
-    if (uploadError) {
-      showToast('Failed to upload photo', 'error');
-      console.error(uploadError);
-    } else {
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      setAvatarUrl(data.publicUrl);
+      if (uploadError) {
+        showToast('Failed to upload photo', 'error');
+        console.error(uploadError);
+      } else {
+        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        setAvatarUrl(data.publicUrl);
+      }
+    } catch {
+      showToast('Failed to process image', 'error');
     }
 
     setIsLoading(false);
@@ -148,17 +160,21 @@ export default function OnboardingPage() {
 
     setIsLoading(true);
 
+    const profileData = {
+      id: user.id as string,
+      email: user.email as string,
+      first_name: firstName.trim(),
+      dob,
+      gender: gender as Gender,
+      avatar_url: avatarUrl,
+      tags,
+      bio: bio.trim() || null,
+    };
+
+    // Use upsert so it works whether the profile row exists or not
     const { error } = await supabase
       .from('profiles')
-      .update({
-        first_name: firstName.trim(),
-        dob,
-        gender: gender as Gender,
-        avatar_url: avatarUrl,
-        tags,
-        bio: bio.trim() || null,
-      })
-      .eq('id', user.id as string);
+      .upsert(profileData, { onConflict: 'id' });
 
     if (error) {
       showToast('Failed to save profile', 'error');
@@ -210,7 +226,7 @@ export default function OnboardingPage() {
                 />
               </label>
               <p className="text-sm text-text-muted">
-                Tap to upload (max 1MB)
+                Tap to upload (max 10MB)
               </p>
             </div>
           </div>
@@ -270,18 +286,17 @@ export default function OnboardingPage() {
           <div>
             <h1 className="text-2xl font-bold text-text mb-2">Your interests</h1>
             <p className="text-text-muted mb-8">
-              Select up to 3 activities you enjoy. This helps others find you.
+              Select the activities you enjoy. This helps others find you.
             </p>
 
             <ChipGroup
               options={INTEREST_TAGS}
               selected={tags}
               onChange={setTags}
-              max={3}
             />
 
             <p className="text-sm text-text-muted mt-4">
-              {tags.length}/3 selected
+              {tags.length} selected
             </p>
           </div>
         )}

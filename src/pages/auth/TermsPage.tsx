@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -32,9 +32,16 @@ const guidelines = [
 export default function TermsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  // If terms already accepted, skip this page
+  useEffect(() => {
+    if (profile?.terms_accepted_at) {
+      navigate(profile.first_name ? '/' : '/onboarding', { replace: true });
+    }
+  }, [profile, navigate]);
 
   const handleAccept = async () => {
     if (!agreed) {
@@ -49,12 +56,17 @@ export default function TermsPage() {
 
     setIsLoading(true);
 
+    // Use upsert so it works whether the profile row exists or not
     const { error } = await supabase
       .from('profiles')
-      .update({
-        terms_accepted_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
+      .upsert(
+        {
+          id: user.id,
+          email: user.email as string,
+          terms_accepted_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
 
     if (error) {
       showToast('Something went wrong. Please try again.', 'error');

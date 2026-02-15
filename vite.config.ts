@@ -10,12 +10,15 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/*.svg', 'icons/*.png'],
+      includeAssets: ['icons/*.svg', 'icons/*.png', 'offline.html'],
       manifest: false, // We're using our own manifest.json
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB limit
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
+          // Google Fonts stylesheets
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -30,6 +33,7 @@ export default defineConfig({
               },
             },
           },
+          // Google Fonts files
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
@@ -44,6 +48,7 @@ export default defineConfig({
               },
             },
           },
+          // Mapbox tiles and API
           {
             urlPattern: /^https:\/\/api\.mapbox\.com\/.*/i,
             handler: 'NetworkFirst',
@@ -54,6 +59,37 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24, // 1 day
               },
               networkTimeoutSeconds: 10,
+            },
+          },
+          // Supabase REST API (events, profiles, etc.)
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60, // 1 hour
+              },
+              networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          // Supabase Storage (avatars, images)
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'supabase-storage-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
             },
           },
         ],

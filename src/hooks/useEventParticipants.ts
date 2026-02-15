@@ -10,6 +10,7 @@ import {
   getParticipants,
   getUserParticipation,
 } from '../services/events/participantService';
+import { supabase } from '../lib/supabase';
 import type { EventParticipantWithProfile, ParticipantStatus, JoinMode } from '../types';
 
 interface UseEventParticipantsResult {
@@ -81,6 +82,31 @@ export function useEventParticipants(
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Real-time subscription for participant changes
+  useEffect(() => {
+    if (!eventId) return;
+
+    const channel = supabase
+      .channel(`participants-${eventId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_participants',
+          filter: `event_id=eq.${eventId}`,
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [eventId, fetchData]);
 
   // Join event
   const join = useCallback(async () => {

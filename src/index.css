@@ -70,6 +70,23 @@
   #root {
     @apply min-h-screen;
   }
+
+  /* Prevent Tailwind CSS 4 preflight from breaking Mapbox GL */
+  .mapboxgl-map {
+    font-size: initial;
+  }
+  .mapboxgl-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .mapboxgl-canvas-container,
+  .mapboxgl-canvas {
+    cursor: grab;
+  }
+  .mapboxgl-canvas-container.mapboxgl-interactive .mapboxgl-canvas {
+    cursor: grab;
+  }
 }
 
 /* Utilities */

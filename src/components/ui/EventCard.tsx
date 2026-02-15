@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Clock, MapPin } from 'lucide-react';
+import { Clock, MapPin, Bookmark } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Avatar } from './Avatar';
 import { GradientButton } from './GradientButton';
@@ -28,6 +28,8 @@ export interface EventCardEvent {
 export interface EventCardProps {
   event: EventCardEvent;
   onJoin?: (eventId: string) => void;
+  onToggleSave?: (eventId: string) => void;
+  isSaved?: boolean;
   className?: string;
   variant?: 'default' | 'compact';
 }
@@ -74,6 +76,8 @@ function CapacityDots({ capacity, filled }: { capacity: number; filled: number }
 export function EventCard({
   event,
   onJoin,
+  onToggleSave,
+  isSaved = false,
   className,
   variant = 'default',
 }: EventCardProps) {
@@ -82,17 +86,38 @@ export function EventCard({
   return (
     <div
       className={cn(
-        'bg-surface rounded-2xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow',
+        'bg-surface rounded-2xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow relative',
         className
       )}
     >
+      {/* Bookmark button */}
+      {onToggleSave && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleSave(event.id);
+          }}
+          className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-gray-100 transition-colors z-10"
+          aria-label={isSaved ? 'Unsave event' : 'Save event'}
+        >
+          <Bookmark
+            className={cn(
+              'h-4 w-4 transition-colors',
+              isSaved ? 'fill-coral text-coral' : 'text-text-light'
+            )}
+          />
+        </button>
+      )}
+
       <Link to={`/event/${event.id}`} className="block">
         {/* Header: Icon + Title */}
         <div className="flex items-start gap-3 mb-3">
           <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
             <CategoryIcon icon={event.category.icon} size="lg" className="text-white" />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pr-6">
             <span className="text-xs font-medium text-coral">{event.category.name}</span>
             <h3 className="font-semibold text-text truncate">{event.title}</h3>
           </div>

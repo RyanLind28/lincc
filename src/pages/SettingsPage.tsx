@@ -139,7 +139,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Women Only Mode - only show for women */}
-            {profile?.gender === 'woman' && (
+            {profile?.gender === 'female' && (
               <div className="p-4 flex items-center gap-3">
                 <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center">
                   <Users className="h-5 w-5 text-purple" />

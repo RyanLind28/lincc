@@ -1,5 +1,5 @@
 // User Types
-export type Gender = 'man' | 'woman' | 'non-binary';
+export type Gender = 'female' | 'male';
 export type UserRole = 'user' | 'admin';
 export type UserStatus = 'active' | 'suspended' | 'banned';
 

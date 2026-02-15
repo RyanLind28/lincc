@@ -11,7 +11,9 @@ export function usePWA() {
     typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches
   );
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [hasUpdate, setHasUpdate] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
     // Listen for install prompt
@@ -37,6 +39,30 @@ export function usePWA() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Check for waiting service worker (update available)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        // Check if there's already a waiting worker
+        if (registration.waiting) {
+          setWaitingWorker(registration.waiting);
+          setHasUpdate(true);
+        }
+
+        // Listen for new updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                setWaitingWorker(newWorker);
+                setHasUpdate(true);
+              }
+            });
+          }
+        });
+      });
+    }
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
@@ -60,10 +86,20 @@ export function usePWA() {
     return false;
   }, [deferredPrompt]);
 
+  const applyUpdate = useCallback(() => {
+    if (!waitingWorker) return;
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    setHasUpdate(false);
+    setWaitingWorker(null);
+    window.location.reload();
+  }, [waitingWorker]);
+
   return {
     isInstallable,
     isInstalled,
     isOffline,
+    hasUpdate,
     promptInstall,
+    applyUpdate,
   };
 }

@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { BottomNav } from './BottomNav';
 import { SideNav } from './SideNav';
+import { InstallBanner } from '../pwa/InstallBanner';
 import { cn } from '../../lib/utils';
 
 interface MainLayoutProps {
@@ -23,6 +24,9 @@ export function MainLayout({ showBottomNav = true, className }: MainLayoutProps)
 
       {/* Mobile bottom nav - hidden on desktop */}
       {showBottomNav && <BottomNav />}
+
+      {/* PWA install banner */}
+      <InstallBanner />
     </div>
   );
 }

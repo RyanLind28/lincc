@@ -2,6 +2,7 @@
 // Handles both demo mode and production (Supabase) events
 
 import { supabase } from '../../lib/supabase';
+import { cached, invalidatePrefix } from '../../lib/cache';
 import { DEMO_EVENTS, refreshDemoEventTimes, type DemoEvent } from '../../data/demoEvents';
 import type { EventWithDetails, Audience, Event } from '../../types';
 
@@ -52,51 +53,55 @@ export function fetchDemoEvents(options: FetchEventsOptions = {}): DemoEvent[] {
 }
 
 /**
- * Fetch events from Supabase for production
+ * Fetch events from Supabase for production (cached for 30s)
  */
 export async function fetchProductionEvents(
   options: FetchEventsOptions = {}
 ): Promise<EventWithDetails[]> {
-  const statuses = options.status || ['active'];
+  const cacheKey = `events:${JSON.stringify(options)}`;
 
-  let query = supabase
-    .from('events')
-    .select(`
-      *,
-      host:profiles!host_id(*),
-      category:categories!category_id(*),
-      participant_count:event_participants(count)
-    `)
-    .in('status', statuses)
-    .gte('start_time', new Date().toISOString())
-    .order('start_time', { ascending: true });
+  return cached(cacheKey, async () => {
+    const statuses = options.status || ['active'];
 
-  // Filter by audience
-  // Women see: 'everyone' + 'women' events
-  // Men see: 'everyone' only (never women-only events)
-  if (options.audience === 'women') {
-    query = query.in('audience', ['everyone', 'women']);
-  } else if (options.audience === 'men') {
-    query = query.eq('audience', 'everyone');
-  }
+    let query = supabase
+      .from('events')
+      .select(`
+        *,
+        host:profiles!host_id(*),
+        category:categories!category_id(*),
+        participant_count:event_participants(count)
+      `)
+      .in('status', statuses)
+      .gte('expires_at', new Date().toISOString())
+      .order('start_time', { ascending: true });
 
-  // Apply limit
-  if (options.limit) {
-    query = query.limit(options.limit);
-  }
+    // Filter by audience
+    // Women see: 'everyone' + 'women' events
+    // Men see: 'everyone' only (never women-only events)
+    if (options.audience === 'women') {
+      query = query.in('audience', ['everyone', 'women']);
+    } else if (options.audience === 'men') {
+      query = query.eq('audience', 'everyone');
+    }
 
-  const { data, error } = await query;
+    // Apply limit
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
 
-  if (error) {
-    console.error('Error fetching events:', error);
-    return [];
-  }
+    const { data, error } = await query;
 
-  // Transform the count format
-  return (data || []).map((event) => ({
-    ...event,
-    participant_count: event.participant_count?.[0]?.count || 0,
-  }));
+    if (error) {
+      console.error('Error fetching events:', error);
+      return [];
+    }
+
+    // Transform the count format
+    return (data || []).map((event) => ({
+      ...event,
+      participant_count: event.participant_count?.[0]?.count || 0,
+    }));
+  }, 30_000); // 30 second cache
 }
 
 /**
@@ -197,6 +202,7 @@ export async function createEvent(
       return { success: false, error: error.message };
     }
 
+    invalidatePrefix('events:');
     return { success: true, data: data as Event };
   } catch (err) {
     console.error('Error creating event:', err);
@@ -205,6 +211,76 @@ export async function createEvent(
       error: err instanceof Error ? err.message : 'Failed to create event',
     };
   }
+}
+
+export interface UpdateEventData {
+  title?: string;
+  description?: string | null;
+  venue_name?: string;
+  venue_address?: string;
+  venue_lat?: number;
+  venue_lng?: number;
+  start_time?: string;
+  capacity?: number;
+  join_mode?: 'request' | 'auto';
+  audience?: Audience;
+  status?: 'active' | 'cancelled' | 'full';
+}
+
+/**
+ * Update an existing event (host only — RLS enforced)
+ */
+export async function updateEvent(
+  eventId: string,
+  updates: UpdateEventData
+): Promise<CreateEventResult> {
+  try {
+    // Recalculate expires_at if start_time changed
+    const patchData: Record<string, unknown> = { ...updates };
+    if (updates.start_time) {
+      const startTime = new Date(updates.start_time);
+      patchData.expires_at = new Date(startTime.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    const { data, error } = await supabase
+      .from('events')
+      .update(patchData)
+      .eq('id', eventId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating event:', error);
+      return { success: false, error: error.message };
+    }
+
+    invalidatePrefix('events:');
+    return { success: true, data: data as Event };
+  } catch (err) {
+    console.error('Error updating event:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to update event',
+    };
+  }
+}
+
+/**
+ * Delete (cancel) an event — sets status to 'cancelled'
+ */
+export async function deleteEvent(eventId: string): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('events')
+    .update({ status: 'cancelled' })
+    .eq('id', eventId);
+
+  if (error) {
+    console.error('Error deleting event:', error);
+    return { success: false, error: error.message };
+  }
+
+  invalidatePrefix('events:');
+  return { success: true };
 }
 
 /**

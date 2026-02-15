@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, CategoryIcon, Spinner } from '../components/ui';
-import { Calendar, Users, ChevronRight, MessageCircle, Clock } from 'lucide-react';
+import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, Button } from '../components/ui';
+import { ReportDialog } from '../components/social/ReportDialog';
+import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, UserPlus, UserMinus, ShieldAlert, Ban } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { calculateAge } from '../lib/utils';
+import { followUser, unfollowUser, isFollowing, getFollowerCount, getFollowingCount } from '../services/followService';
+import { blockUser, unblockUser, isUserBlocked } from '../services/blockService';
 import type { Profile, EventWithDetails } from '../types';
 
 interface UserProfile extends Profile {
@@ -17,11 +21,21 @@ export default function UserProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [hostedEvents, setHostedEvents] = useState<EventWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Social state
+  const [following, setFollowing] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
 
   const isOwnProfile = user?.id === id;
 
@@ -66,6 +80,23 @@ export default function UserProfilePage() {
         events_attended_count: attendedCount || 0,
       });
 
+      // Fetch follow/block status and counts
+      if (user && !isOwnProfile) {
+        const [isFollowingResult, isBlockedResult] = await Promise.all([
+          isFollowing(user.id, id),
+          isUserBlocked(user.id, id),
+        ]);
+        setFollowing(isFollowingResult);
+        setBlocked(isBlockedResult);
+      }
+
+      const [followers, followingCnt] = await Promise.all([
+        getFollowerCount(id),
+        getFollowingCount(id),
+      ]);
+      setFollowerCount(followers);
+      setFollowingCount(followingCnt);
+
       // Fetch user's upcoming hosted events (limit 3)
       const { data: eventsData } = await supabase
         .from('events')
@@ -94,7 +125,7 @@ export default function UserProfilePage() {
     };
 
     fetchUserData();
-  }, [id]);
+  }, [id, user, isOwnProfile]);
 
   const age = profile?.dob ? calculateAge(profile.dob) : null;
 
@@ -108,6 +139,76 @@ export default function UserProfilePage() {
       minute: '2-digit',
     });
   };
+
+  const handleFollow = async () => {
+    if (!user || !id) return;
+    setSocialLoading(true);
+    if (following) {
+      const result = await unfollowUser(user.id, id);
+      if (result.success) {
+        setFollowing(false);
+        setFollowerCount((c) => Math.max(0, c - 1));
+      }
+    } else {
+      const result = await followUser(user.id, id);
+      if (result.success) {
+        setFollowing(true);
+        setFollowerCount((c) => c + 1);
+      }
+    }
+    setSocialLoading(false);
+  };
+
+  const handleBlock = async () => {
+    if (!user || !id) return;
+    setShowMenu(false);
+    setSocialLoading(true);
+    if (blocked) {
+      const result = await unblockUser(user.id, id);
+      if (result.success) {
+        setBlocked(false);
+        showToast('User unblocked', 'info');
+      }
+    } else {
+      const result = await blockUser(user.id, id);
+      if (result.success) {
+        setBlocked(true);
+        if (following) {
+          await unfollowUser(user.id, id);
+          setFollowing(false);
+          setFollowerCount((c) => Math.max(0, c - 1));
+        }
+        showToast('User blocked', 'info');
+      }
+    }
+    setSocialLoading(false);
+  };
+
+  const handleShare = useCallback(async () => {
+    if (!profile) return;
+    const shareUrl = `${window.location.origin}/user/${id}`;
+    const shareData = {
+      title: `${profile.first_name} on Lincc`,
+      text: `Check out ${profile.first_name}'s profile on Lincc!`,
+      url: shareUrl,
+    };
+
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Profile link copied!', 'success');
+    } catch {
+      showToast('Failed to copy link', 'error');
+    }
+  }, [profile, id, showToast]);
 
   if (isLoading) {
     return (
@@ -134,7 +235,59 @@ export default function UserProfilePage() {
 
   return (
     <div className="min-h-screen bg-background pb-8">
-      <Header showBack title="" />
+      <Header
+        showBack
+        title=""
+        rightContent={
+          !isOwnProfile ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleShare}
+                className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+                aria-label="Share profile"
+              >
+                <Share2 className="h-5 w-5" />
+              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+                  aria-label="More options"
+                >
+                  <MoreVertical className="h-5 w-5" />
+                </button>
+                {showMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowMenu(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-xl border border-border shadow-lg z-50 overflow-hidden">
+                      <button
+                        onClick={handleBlock}
+                        className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                      >
+                        <Ban className="h-4 w-4" />
+                        {blocked ? 'Unblock user' : 'Block user'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setShowReport(true);
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                      >
+                        <ShieldAlert className="h-4 w-4" />
+                        Report user
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* Profile Header */}
       <div className="px-4 pt-4">
@@ -161,7 +314,15 @@ export default function UserProfilePage() {
           )}
 
           {/* Stats */}
-          <div className="flex justify-center gap-8 py-4 border-t border-b border-border">
+          <div className="flex justify-center gap-6 py-4 border-t border-b border-border">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-coral">{followerCount}</p>
+              <p className="text-xs text-text-muted uppercase tracking-wide">Followers</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-coral">{followingCount}</p>
+              <p className="text-xs text-text-muted uppercase tracking-wide">Following</p>
+            </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-coral">{profile.events_hosted_count || 0}</p>
               <p className="text-xs text-text-muted uppercase tracking-wide">Hosted</p>
@@ -187,17 +348,27 @@ export default function UserProfilePage() {
           )}
 
           {/* Action Buttons */}
-          {isOwnProfile ? (
-            <Link to="/profile/edit" className="mt-4 inline-block">
-              <GradientButton>Edit Profile</GradientButton>
-            </Link>
-          ) : (
-            <button
-              className="mt-4 px-6 py-2 rounded-xl border border-coral text-coral hover:bg-coral/5 transition-colors inline-flex items-center gap-2"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Message
-            </button>
+          <div className="mt-4 flex justify-center gap-3">
+            {isOwnProfile ? (
+              <Link to="/profile/edit">
+                <GradientButton>Edit Profile</GradientButton>
+              </Link>
+            ) : (
+              <>
+                <Button
+                  onClick={handleFollow}
+                  variant={following ? 'outline' : 'primary'}
+                  disabled={socialLoading || blocked}
+                  leftIcon={following ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                >
+                  {following ? 'Following' : 'Follow'}
+                </Button>
+              </>
+            )}
+          </div>
+
+          {blocked && !isOwnProfile && (
+            <p className="text-xs text-text-muted mt-3">You have blocked this user</p>
           )}
         </div>
 
@@ -266,6 +437,16 @@ export default function UserProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Report Dialog */}
+      {id && profile && (
+        <ReportDialog
+          isOpen={showReport}
+          onClose={() => setShowReport(false)}
+          reportedUserId={id}
+          reportedUserName={profile.first_name}
+        />
+      )}
     </div>
   );
 }

@@ -1,346 +1,325 @@
-# LINCC Project TODO List
+# LINCC TODO
 
-Last updated: 2026-02-07
+Last updated: 2026-02-14
+
+---
+
+## Current Status
+
+- **App**: Pre-launch, demo-ready on Vercel (`lincc-six.vercel.app`)
+- **Database**: Live Supabase with 32 London demo events, 21 categories
+- **Auth**: Working (email/password, magic link)
+- **DEV_MODE**: OFF in all files
+
+### Migrations
+- All migrations up to `010` have been applied to live Supabase
+- **Landing**: Live with waitlist form
+- **PWA**: Partially configured (service worker generates, but no install UI or offline indicator)
 
 ---
 
 ## Phase 1: Project Setup & DevOps
 
-> Get the foundation in place before building features
-
-- [x] **Environment variables** - ~~Set up .env.local, .env.staging, .env.production~~ Done — .env.local configured, Vercel env vars set
-- [x] **Supabase project** - ~~Create Supabase project, get API keys~~ Done — project `srrubyupwiiqnehshszd`
-- [x] **Configure Supabase client** - ~~Update `src/lib/supabase.ts` with real credentials~~ Done
-- [ ] **CI/CD pipeline** - GitHub Actions for build and lint on PR
-- [x] **Staging environment** - ~~Deploy to Vercel/Netlify staging branch~~ Done — `lincc-six.vercel.app` with auto-deploy from main
-- [x] **Error monitoring** - ~~Set up Sentry for error tracking~~ Done
-- [ ] **Analytics setup** - Set up Mixpanel/Amplitude for user analytics
+- [x] Environment variables — `.env.local` configured, Vercel env vars set
+- [x] Supabase project — project `srrubyupwiiqnehshszd`
+- [x] Configure Supabase client — `src/lib/supabase.ts` with real credentials
+- [ ] CI/CD pipeline — GitHub Actions for build and lint on PR
+- [x] Staging environment — `lincc-six.vercel.app` with auto-deploy from main
+- [x] Error monitoring — Sentry configured
+- [ ] Analytics setup — Mixpanel/Amplitude for user analytics
 
 ---
 
 ## Phase 2: Database Schema & Backend
 
-> Build the data layer - everything depends on this
-
-- [x] **Create profiles table** - ~~User profiles with all fields from types~~ Done
-- [x] **Create categories table** - ~~Event categories (seed with CATEGORIES data)~~ Done — 21 categories
-- [x] **Create events table** - ~~Events with all fields, foreign keys~~ Done
-- [x] **Create event_participants table** - ~~Track who joined which events~~ Done
-- [x] **Create messages table** - ~~Event chat messages~~ Done
-- [x] **Create reports table** - ~~User/event reports~~ Done
-- [x] **Create blocks table** - ~~User blocks~~ Done
-- [x] **Create notifications table** - ~~Push notification records~~ Done
-- [x] **Database indexes** - ~~Add indexes for: events by location, by category, by time, by host~~ Done
-- [x] **Row Level Security (RLS)** - ~~Configure RLS policies for all tables~~ Done (except spatial_ref_sys — see backlog)
-- [x] **Database functions** - ~~Stored procedures for nearby events query, participant counts~~ Done
-- [x] **Database triggers** - ~~Auto-update timestamps, participant counts~~ Done
-- [x] **Seed data** - ~~Create seed script for categories and test data~~ Done — 32 London demo events
+- [x] Create profiles table
+- [x] Create categories table — 21 categories seeded
+- [x] Create events table
+- [x] Create event_participants table
+- [x] Create messages table
+- [x] Create reports table
+- [x] Create blocks table
+- [x] Create notifications table
+- [x] Database indexes — events by location, category, time, host
+- [x] Row Level Security (RLS) — all tables (except spatial_ref_sys — known limitation)
+- [x] Database functions — nearby events query, participant counts
+- [x] Database triggers — auto-update timestamps, participant counts
+- [x] Seed data — 32 London demo events
 
 ---
 
 ## Phase 3: API Integration & Core Services
 
-> Connect frontend to backend
-
-- [x] **Disable DEV_MODE** - ~~Set DEV_MODE = false in AuthContext.tsx and eventService.ts~~ Done — OFF in all files
-- [x] **Auth flow testing** - ~~Test sign up, sign in, magic link with real Supabase~~ Done — auth loading loop fixed
-- [x] **Profile CRUD** - ~~Create, read, update profile via Supabase~~ Done
-- [x] **Event fetching** - ~~Test `fetchProductionEvents()` with real data~~ Done
-- [ ] **Event CRUD** - Create, update, delete events via Supabase
-- [ ] **Participant management** - Join/leave events, approve/reject join requests
-- [ ] **Real engagement tracking** - Replace mock data in useUserEngagement.ts
-- [ ] **Real-time subscriptions** - Enable Supabase real-time for live event updates
-- [ ] **Error handling** - Add proper error boundaries and retry logic
-- [ ] **API response caching** - Cache frequently accessed data
+- [x] Disable DEV_MODE — OFF in all files
+- [x] Auth flow testing — sign up, sign in, magic link working
+- [x] Profile CRUD — create, read, update via Supabase
+- [x] Event fetching — `fetchProductionEvents()` with real data
+- [x] Event CRUD — `createEvent()`, `updateEvent()`, `deleteEvent()` (soft-cancel) in eventService.ts
+- [x] Participant management — join/leave/approve/reject via participantService + useEventParticipants hook, wired into EventDetailPage
+- [x] Real engagement tracking — useUserEngagement queries Supabase event_participants, aggregates by category (DEV_MODE off)
+- [x] Real-time subscriptions — events table changes refresh home feed, participant changes refresh event detail (Supabase Realtime channels)
+- [x] Error handling — ErrorBoundary component with retry (up to 3x), Sentry integration, wraps key routes in App.tsx
+- [x] API response caching — in-memory TTL cache (`src/lib/cache.ts`), 30s for event fetches, auto-invalidated on CRUD + realtime
 
 ---
 
 ## Phase 4: Authentication & User Management
 
-> Secure the app and manage users properly
-
-- [ ] **Custom auth emails** - Design branded Supabase email templates (signup, reset, magic link)
-- [ ] **Email verification** - Require email verification for new accounts
-- [ ] **Password reset flow** - Implement forgot password functionality
-- [ ] **Social login** - Add Google/Apple sign-in options
-- [ ] **Profile completion** - Enforce profile completion before using app
-- [ ] **Onboarding flow** - Guide new users through interest selection
-- [ ] **Account settings** - Update email, password, notification preferences
-- [ ] **Account deletion** - Allow users to delete their account (GDPR)
-- [ ] **Session management** - Handle token refresh, logout on all devices
+- [ ] Custom auth emails — branded Supabase email templates
+- [ ] Email verification — require for new accounts
+- [ ] Password reset flow — forgot password
+- [ ] Social login — Google/Apple sign-in
+- [ ] Profile completion enforcement — before using app
+- [x] Onboarding flow — gender (Female/Male), unlimited interests, photo, name, DOB, bio
+- [x] Account settings — update email and password via Supabase Auth in EditProfilePage
+- [x] Profile editing — DOB editable in EditProfilePage
+- [ ] Account deletion — GDPR compliance
+- [ ] Session management — token refresh, logout on all devices
 
 ---
 
 ## Phase 5: Event Features
 
-> Complete the core event functionality
-
-- [ ] **Event creation form** - Complete the CreateEventPage with validation
-- [ ] **Event editing** - Allow hosts to edit their events
-- [ ] **Event cancellation** - Allow hosts to cancel with notification to participants
-- [ ] **Event photos** - Allow uploading event cover photos (Supabase Storage)
-- [ ] **Event chat** - Real-time messaging for event participants
-- [ ] **Event reminders** - Notify participants before event starts
-- [ ] **Recurring events** - Support for weekly/monthly recurring events
-- [ ] **Event capacity** - Handle full events, waitlist functionality
-- [ ] **Event expiry** - Auto-expire past events, cleanup
+- [x] Event creation form — 5-step form with validation, category/subcategory, venue, date/time, capacity, join mode, audience
+- [x] Event editing — host edit bottom sheet on EventDetailPage (title, description, venue, capacity) via `updateEvent()`
+- [x] Event cancellation — host cancel with confirmation dialog, sets status to 'cancelled', navigates to My Events
+- [ ] Event photos — cover photo upload (Supabase Storage) — needs DB migration for cover_image column + storage bucket
+- [x] Event chat — real-time messaging with access control, optimistic UI, date separators, fully working
+- [ ] Event reminders — blocked by push notifications (Phase 12)
+- [ ] Recurring events — post-MVP
+- [x] Event capacity — full events blocked at join level, spots left display, full badge
+- [x] Event expiry — queries filter by `expires_at` (2h after start), events that started still show until expired
+- [x] MyEventsPage — "Hosting" + "Joined" tabs with real data, event counts, participant status badges
 
 ---
 
 ## Phase 6: Map View
 
-> Location-based discovery
-
-- [x] **Mapbox setup** - ~~Get API key, install Mapbox GL JS~~ Done — token configured
-- [x] **Basic map render** - ~~Display map centered on user location~~ Done
-- [x] **Event markers** - ~~Display events as pins on map~~ Done
-- [ ] **Marker clustering** - Group nearby events into clusters
-- [ ] **Event preview** - Show event card when tapping marker
-- [ ] **User location marker** - Show user's current location
-- [ ] **Radius visualization** - Show user's search radius circle on map
-- [ ] **Map filters** - Apply same filters as list view
-- [ ] **Map/list sync** - Keep both views in sync when filtering
-- [x] **Find me button** - ~~Add locate/find me button to zoom closer to user's current location and show nearby events~~ Done — locate button added to bottom-right of map, zooms to user location at zoom level 15
-- [x] **Event detail map** - ~~Show venue location map in event details header (or static Google Places image if map is too heavy)~~ Done — using Mapbox Static Images API for lightweight map preview with marker
+- [x] Mapbox setup — token configured
+- [x] Basic map render — centered on user location
+- [x] Event markers — category-based pins on map
+- [x] Marker clustering — Mapbox GL cluster source with zoom-to-expand, count badges, coral/purple colors
+- [x] Event preview — preview card slides up on marker tap with title, venue, time, spots left, category
+- [x] User location marker — blue dot with ping animation and outer glow
+- [x] Radius visualization — dashed purple circle showing search radius from distance slider
+- [x] Map filters — shared filter state with list view via useRecommendedEvents hook
+- [x] Map/list sync — both views consume same scoredEvents, filters update both simultaneously
+- [x] Find me button — locate button, zooms to user at level 15
+- [x] Event detail map — Mapbox Static Images API with marker
 
 ---
 
-## Phase 7: Search & Discovery
+## Phase 7: PWA
 
-> Help users find events
+### Working
+- [x] vite-plugin-pwa configured with `registerType: 'autoUpdate'`
+- [x] Workbox service worker auto-generated with precaching
+- [x] Runtime caching — Google Fonts (CacheFirst), Mapbox (NetworkFirst)
+- [x] Custom manifest at `public/site.webmanifest`
+- [x] iOS PWA meta tags in `index.html`
+- [x] `usePWA` hook created — detects installability, offline state, exposes `promptInstall()`
 
-- [ ] **Full-text search** - Search events by title, description, venue
-- [ ] **Search suggestions** - Auto-complete for search queries
-- [ ] **Recent searches** - Save and display recent search history
-- [ ] **Category browsing** - Browse events by category
-- [ ] **Trending events** - Show popular events in the area
-- [ ] **Saved/bookmarked events** - Allow users to save events for later
-
----
-
-## Phase 8: Recommendation System Tuning
-
-> Improve the algorithm based on real usage
-
-- [ ] **Test scoring accuracy** - Verify interest/distance/time/engagement scores
-- [ ] **Tune algorithm weights** - Adjust SCORE_WEIGHTS based on user feedback
-- [ ] **Add more tag mappings** - Expand tagToCategoryMap.ts with more tags
-- [ ] **Test fallback cascade** - Verify never-empty behavior in edge cases
-- [ ] **A/B testing** - Test different weight configurations
-- [ ] **Recommendation analytics** - Track fallback usage, click-through rates
-- [ ] **Personalization improvements** - Factor in time-of-day preferences, etc.
+### To Do
+- [x] Add `purpose: "any"` icon to manifest — added 96, 180, 192, 512 icons with both `any` and `maskable` purpose
+- [x] Build install prompt component — `InstallBanner` in MainLayout, dismissible, uses `usePWA` hook
+- [x] Build offline indicator — `OfflineBanner` shows amber bar at top when connection lost
+- [x] Build update notification — `UpdateNotification` detects waiting service worker, prompts reload
+- [x] Add app shortcuts to manifest — "Create Event" (`/event/new`), "My Chats" (`/chats`)
+- [x] Offline fallback page — `public/offline.html` with branded design and retry button
+- [x] Cache Supabase API responses — NetworkFirst for REST API (1h), CacheFirst for Storage (1 week)
+- [x] Enhanced `usePWA` hook — now tracks `hasUpdate`, exposes `applyUpdate()` for service worker updates
+- [ ] Test PWA installability — Lighthouse PWA audit, verify install flow on iOS/Android/desktop
+- [ ] App store listings — PWA store submissions (post-launch)
 
 ---
 
-## Phase 9: Social Features
+## Phase 8: Search & Discovery
 
-> Build community and trust
-
-- [ ] **User profiles** - View other users' public profiles
-- [ ] **Follow system** - Follow other users to see their events
-- [ ] **Event reviews** - Rate and review events after attending
-- [ ] **Share events** - Share events via social media or deep link
-- [ ] **Block users** - Block problematic users
-- [ ] **Report users/events** - Report inappropriate content
-- [ ] **Trust score** - Build reputation based on attendance, reviews
+- [x] Full-text search — PostgreSQL tsvector + GIN index with weighted ranking (title A, venue B, description C), `search_events()` DB function, fallback ILIKE
+- [x] Search suggestions — live auto-complete as user types (debounced 300ms), dropdown with matching titles/venues
+- [x] Recent searches — localStorage with max 8, shown when search focused, individual remove + clear all
+- [x] Category browsing — `/explore` page with category grid, event counts, drill into category to see its events
+- [x] Trending events — "Popular near you" horizontal scroll on home page (sorted by participant count)
+- [x] Saved/bookmarked events — `saved_events` DB table with RLS, bookmark button on EventCard/EventCardGrid/EventDetailPage, `/saved` page, optimistic UI
 
 ---
 
-## Phase 10: User Experience Polish
+## Phase 9: Recommendation System Tuning
 
-> Make it delightful
-
-- [ ] **Pull-to-refresh** - Add pull-to-refresh on event list
-- [ ] **Infinite scroll** - Load more events as user scrolls
-- [ ] **Skeleton loaders** - Add loading states for all data fetching
-- [ ] **Empty states** - Design empty states for no results, no events, etc.
-- [ ] **Error states** - User-friendly error messages with retry
-- [ ] **Haptic feedback** - Add haptics for key interactions (mobile)
-- [ ] **Animations** - Smooth transitions and micro-interactions
-- [ ] **Dark mode** - Support system dark mode preference
-- [ ] **Accessibility** - Screen reader support, keyboard navigation
-- [x] **Desktop layout** - ~~Responsive desktop version for larger screens — same layout but optimized for bigger displays, better use of horizontal space~~ Done — sidebar nav on lg+, responsive event grid (2→3→4→5 cols), max-width container, hidden mobile nav on desktop
+- [x] Tune algorithm weights — rebalanced to `interest:35, distance:25, time:20, engagement:10, popularity:5, timeOfDay:5` (total 100)
+- [x] Improve distance scoring — exponential decay (`exp(-2 * d/r)`) for stronger nearby preference
+- [x] Smooth time scoring — continuous exponential decay with floor (no more coarse 8-tier thresholds)
+- [x] Add popularity scoring — participant/capacity ratio as social proof (5 pts max)
+- [x] Add time-of-day preferences — preferred activity window from past events, default evenings (5 pts max)
+- [x] Add more tag mappings — ~30 new tags (dance, baking, chess, trivia, tech, volunteering, etc.), expanded related categories with symmetry
+- [x] Add diversity injection — swaps in underrepresented categories at positions 4 and 8 when top 10 are dominated by ≤2 categories
+- [x] Expand engagement hook — `useUserEngagement` now returns `preferredHours` (4-hour sliding window from past events)
+- [ ] A/B testing — different weight configurations (post-launch)
+- [ ] Recommendation analytics — track fallback usage, click-through rates (post-launch)
 
 ---
 
-## Phase 11: Push Notifications
+## Phase 10: Social Features
 
-> Keep users engaged
-
-- [ ] **Service worker setup** - Configure for push notifications
-- [ ] **Notification permissions** - Request permission flow
-- [ ] **Event reminders** - 1 hour before, 15 min before
-- [ ] **Join request notifications** - Notify hosts of new requests
-- [ ] **Request approved/declined** - Notify participants
-- [ ] **New message notifications** - Event chat messages
-- [ ] **Event cancelled** - Notify all participants
-- [ ] **Notification preferences** - Let users control what they receive
+- [x] User profiles — view other users' public profiles with follower/following counts, hosted/attended stats, upcoming events
+- [x] Follow system — `follows` table (migration 011), follow/unfollow with optimistic UI, follower + following counts on profile
+- [x] Share events — Web Share API + clipboard fallback (done in Phase 5)
+- [x] Share profiles — Web Share API + clipboard fallback on UserProfilePage
+- [x] Block users — `blockService` with block/unblock, three-dot menu on UserProfilePage + EventDetailPage, auto-unfollow on block
+- [x] Report users/events — `reportService` with reason selection, `ReportDialog` component (BottomSheet with 5 reason options + details), wired into UserProfilePage + EventDetailPage
+- [ ] Event reviews — rate and review after attending (post-MVP)
+- [ ] Trust score — reputation from attendance, reviews (post-MVP)
 
 ---
 
-## Phase 12: Admin Dashboard
+## Phase 11: UX Polish
 
-> Moderation and management tools
+- [ ] Pull-to-refresh — event list
+- [ ] Infinite scroll — load more events on scroll
+- [ ] Skeleton loaders — loading states for all data fetching
+- [ ] Empty states — no results, no events
+- [ ] Error states — user-friendly messages with retry
+- [ ] Haptic feedback — key interactions on mobile
+- [ ] Animations — smooth transitions and micro-interactions
+- [ ] Dark mode — system preference support
+- [ ] Accessibility — screen reader, keyboard navigation
+- [x] Desktop layout — sidebar nav on lg+, responsive grid, max-width container
+
+---
+
+## Phase 12: Push Notifications
+
+- [ ] Service worker setup — configure for push
+- [ ] Notification permissions — request permission flow
+- [ ] Event reminders — 1 hour before, 15 min before
+- [ ] Join request notifications — notify hosts
+- [ ] Request approved/declined — notify participants
+- [ ] New message notifications — chat messages
+- [ ] Event cancelled — notify all participants
+- [ ] Notification preferences — user controls
+
+---
+
+## Phase 13: Admin Dashboard
 
 ### Dashboard & Analytics
-- [ ] **Dashboard overview** - Stats: total users, events, active events, reports
-- [ ] **Analytics charts** - User growth, event creation, engagement trends
-- [ ] **Real-time updates** - Live updates when new reports/events come in
+- [ ] Dashboard overview — stats: total users, events, active events, reports
+- [ ] Analytics charts — user growth, event creation, engagement
+- [ ] Real-time updates — live when new reports/events come in
 
 ### User Management
-- [ ] **User list** - List all users with search, filter, sort
-- [ ] **User details** - View full profile, event history, reports
-- [ ] **User actions** - Suspend, ban, warn, delete users
-- [ ] **Bulk user actions** - Select multiple users for batch operations
+- [ ] User list — search, filter, sort
+- [ ] User details — full profile, event history, reports
+- [ ] User actions — suspend, ban, warn, delete
+- [ ] Bulk user actions — batch operations
 
 ### Event Management
-- [ ] **Event list** - List all events with filters (status, category, date)
-- [ ] **Event moderation** - Approve, reject, feature, or remove events
-- [ ] **Event analytics** - Views, joins, completion rate per event
+- [ ] Event list — filters (status, category, date)
+- [ ] Event moderation — approve, reject, feature, remove
+- [ ] Event analytics — views, joins, completion rate
 
 ### Reports & Moderation
-- [ ] **Reports queue** - View and action user/event reports
-- [ ] **Report workflow** - Mark as reviewed, dismissed, actioned
-- [ ] **Content moderation** - Flag inappropriate titles, descriptions, images
+- [ ] Reports queue — view and action reports
+- [ ] Report workflow — reviewed, dismissed, actioned
+- [ ] Content moderation — flag inappropriate content
 
 ### Configuration
-- [ ] **Category management** - Add, edit, reorder, disable categories
-- [ ] **Announcement system** - Send announcements to all users
-- [ ] **Feature flags** - Toggle features on/off
+- [ ] Category management — add, edit, reorder, disable
+- [ ] Announcement system — send to all users
+- [ ] Feature flags — toggle features
 
 ### Admin System
-- [ ] **Admin roles** - Super admin, moderator, support permissions
-- [ ] **Audit log** - Track all admin actions with timestamps
-- [ ] **Export data** - Export users, events, reports to CSV
-- [ ] **Mobile admin** - Responsive interface for mobile moderation
+- [ ] Admin roles — super admin, moderator, support
+- [ ] Audit log — track admin actions
+- [ ] Export data — users, events, reports to CSV
+- [ ] Mobile admin — responsive for mobile moderation
 
 ---
 
-## Phase 13: Testing
+## Phase 14: Testing
 
-> Ensure quality and prevent regressions
-
-- [ ] **Unit tests setup** - Configure Vitest
-- [ ] **Algorithm tests** - Test all scoring functions in algorithm.ts
-- [ ] **Utility tests** - Test utils.ts functions
-- [ ] **Hook tests** - Test custom hooks with React Testing Library
-- [ ] **Service tests** - Test API services with mocked Supabase
-- [ ] **Component tests** - Test key UI components
-- [ ] **E2E setup** - Configure Playwright or Cypress
-- [ ] **Auth flow E2E** - Test signup, login, logout
-- [ ] **Event flow E2E** - Test create, join, leave event
-- [ ] **Visual regression** - Screenshot testing for UI consistency
+- [ ] Unit tests setup — configure Vitest
+- [ ] Algorithm tests — scoring functions in `algorithm.ts`
+- [ ] Utility tests — `utils.ts` functions
+- [ ] Hook tests — React Testing Library
+- [ ] Service tests — API services with mocked Supabase
+- [ ] Component tests — key UI components
+- [ ] E2E setup — Playwright or Cypress
+- [ ] Auth flow E2E — signup, login, logout
+- [ ] Event flow E2E — create, join, leave
+- [ ] Visual regression — screenshot testing
 
 ---
 
-## Phase 14: Performance & Optimization
+## Phase 15: Performance & Optimization
 
-> Make it fast
-
-- [ ] **Code splitting** - Lazy load routes with React.lazy()
-- [ ] **Component lazy loading** - Lazy load heavy components (map, etc.)
-- [ ] **Image optimization** - Compress images, use WebP, lazy load
-- [ ] **Bundle analysis** - Analyze and reduce bundle size (currently 534KB)
-- [ ] **Caching strategy** - Service worker caching for offline support
-- [ ] **Database query optimization** - Optimize slow queries
-- [ ] **Lighthouse audit** - Achieve 90+ scores across all metrics
+- [ ] Code splitting — lazy load routes with `React.lazy()`
+- [ ] Component lazy loading — heavy components (map, etc.)
+- [ ] Image optimization — compress, WebP, lazy load
+- [ ] Bundle analysis — reduce bundle size (currently 534KB)
+- [ ] Caching strategy — service worker caching for offline
+- [ ] Database query optimization — optimize slow queries
+- [ ] Lighthouse audit — 90+ scores across all metrics
 
 ---
 
-## Phase 15: Documentation
+## Phase 16: Documentation
 
-> Make it maintainable
-
-- [ ] **README update** - Setup instructions, environment variables
-- [ ] **API documentation** - Document all Supabase tables and functions
-- [ ] **Component Storybook** - Document UI components
-- [ ] **Architecture docs** - Document system architecture decisions
-- [ ] **Contributing guide** - Guide for new contributors
-- [ ] **Deployment docs** - How to deploy to staging/production
+- [ ] README update — setup instructions, env vars
+- [ ] API documentation — Supabase tables and functions
+- [ ] Component Storybook — document UI components
+- [ ] Architecture docs — system architecture decisions
+- [ ] Contributing guide — for new contributors
+- [ ] Deployment docs — staging/production deploy
 
 ---
 
-## Phase 16: Production Launch
+## Phase 17: Production Launch
 
-> Ship it!
-
-- [ ] **Production Supabase** - Set up production database
-- [ ] **Production deployment** - Deploy to production environment
-- [ ] **Domain setup** - Configure custom domain, SSL
-- [ ] **CDN configuration** - Set up CDN for static assets
-- [ ] **Monitoring dashboards** - Set up uptime monitoring
-- [ ] **Backup strategy** - Database backup schedule
-- [ ] **Load testing** - Test with simulated traffic
-- [ ] **Security audit** - Review for vulnerabilities
-- [ ] **App store prep** - PWA store listings (if applicable)
+- [ ] Production Supabase — production database
+- [ ] Production deployment — production environment
+- [ ] Domain setup — custom domain, SSL
+- [ ] CDN configuration — static assets
+- [ ] Monitoring dashboards — uptime monitoring
+- [ ] Backup strategy — database backup schedule
+- [ ] Load testing — simulated traffic
+- [ ] Security audit — vulnerability review
 
 ---
 
-## Phase 17: Future Ideas
+## Phase 18: Future Ideas
 
-> Nice to have, post-launch
-
-- [ ] **AI event descriptions** - Generate event descriptions with AI
-- [ ] **Smart scheduling** - Suggest optimal times based on user availability
-- [ ] **Group events** - Events for friend groups
-- [ ] **Event series** - Multi-part events (workshop series)
-- [ ] **Venue partnerships** - Integration with venues for booking
-- [ ] **Premium features** - Subscription for advanced features
-- [ ] **Event templates** - Save and reuse event configurations
-- [ ] **Calendar integration** - Sync with Google/Apple Calendar
-- [ ] **Weather integration** - Show weather for outdoor events
+- [ ] AI event descriptions — generate with AI
+- [ ] Smart scheduling — suggest optimal times
+- [ ] Group events — events for friend groups
+- [ ] Event series — multi-part events
+- [ ] Venue partnerships — venue booking integration
+- [ ] Premium features — subscription model
+- [ ] Event templates — save and reuse configs
+- [ ] Calendar integration — Google/Apple Calendar sync
+- [ ] Weather integration — weather for outdoor events
 
 ---
 
 ## Backlog
 
-> Items to address when time permits
-
-- [ ] **Create style sheet document** - Document the design system (colors, gradients, typography, spacing, components) for consistent styling across the app. Work with designer to finalize.
-- [x] **Update logo references** - ~~Replace lincc-logo.webp across app once final asset is ready~~ Done — using Vercel blob URL
-- [ ] **Supabase: spatial_ref_sys RLS** - PostGIS system table can't have RLS enabled (owned by supabase_admin). Known platform limitation — contact Supabase support or ignore.
-- [ ] **Supabase: PostGIS in public schema** - Linter warns about postgis extension in public schema. Moving it risks breaking geo queries. Safe to ignore.
-- [ ] **Supabase: Enable leaked password protection** - Dashboard → Authentication → Attack Protection → Enable leaked password protection (HaveIBeenPwned check)
-- [ ] **Google Places API integration** - Wire up VITE_GOOGLE_PLACES_API_KEY for venue search/autocomplete in event creation
-- [ ] **Mapbox improvements** - Improve map UX: clustering, event preview on marker tap, user location marker, radius circle
-
----
-
-## Bugs & Issues
-
-> Track bugs as they're discovered
-
-- [x] **Bottom nav icon render issue** - ~~Icons change or get hidden based on button state, causing visual flickering~~ Fixed — consistent wrapper structure, fixed dimensions, smooth transitions, uniform strokeWidth
-- [x] **Auth loading loop** - ~~App stuck in loading spinner forever. Caused by race condition between `getSession()` and `onAuthStateChange` in React StrictMode.~~ Fixed — split into two separate effects
-- [x] **ProfilePage mock data** - ~~ProfilePage used hardcoded demo data instead of real Supabase queries~~ Fixed
-- [x] **Vercel SPA routing 404s** - ~~Clicking links on deployed Vercel app returned 404~~ Fixed — added `vercel.json` with SPA rewrites
-- [x] **Vercel build: unused Shield import** - ~~`TS6133: 'Shield' is declared but never read` in LandingPage.tsx~~ Fixed
-- [x] **Vercel build: ProfilePage TS errors** - ~~`TS18047: 'user' possibly null` and type mismatch on joined events~~ Fixed
-- [x] **Vercel env var typo** - ~~`VITE_SUPABASE_UR` was missing the L~~ Fixed by user
+- [ ] Create style sheet document — design system doc for consistent styling
+- [x] Update logo references — using Vercel blob URL
+- [ ] Supabase: spatial_ref_sys RLS — PostGIS system table, known platform limitation
+- [ ] Supabase: PostGIS in public schema — safe to ignore, moving risks breaking geo queries
+- [ ] Supabase: Enable leaked password protection — Dashboard → Auth → Attack Protection
+- [ ] Google Places API integration — wire up `VITE_GOOGLE_PLACES_API_KEY` for venue autocomplete
+- [x] Mapbox improvements — clustering, event preview on marker tap, user location marker, radius circle (done in Phase 6)
+- [ ] UI design consistency pass — Login, Signup, Onboarding, and Terms pages don't match the main app's design system (gradients, cards, spacing, typography). Align them with the rest of the app
 
 ---
 
-## Notes
+## Resolved Bugs
 
-### Current State
-- DEV_MODE is **OFF** in all files — app uses real Supabase data
-- 32 demo events loaded in Supabase (London locations)
-- Deployed to Vercel: `lincc-six.vercel.app` (auto-deploy from main)
-- Vercel env vars configured: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MAPBOX_TOKEN`
-- SPA routing via `vercel.json` rewrite rules
-- Mapbox token configured
-- Sentry configured
-- Auth flow working (login, signup, magic link)
-- Owner account: ryanlindie@gmail.com
-
-### Key Files
-- Algorithm weights: `src/lib/algorithm.ts`
-- Tag mappings: `src/data/tagToCategoryMap.ts`
-- Demo events: `src/data/demoEvents.ts` (fallback only)
-- Recommendation service: `src/services/events/recommendationService.ts`
-- Auth context: `src/contexts/AuthContext.tsx` (two-effect pattern — do not add getSession race)
-- Vercel config: `vercel.json` (SPA rewrites)
-
-### Dependencies Needed
-- Google Places API key (for venue autocomplete)
-- Analytics SDK (Mixpanel/Amplitude)
+- [x] Bottom nav icon render issue — fixed consistent wrapper, smooth transitions
+- [x] Auth loading loop — fixed with two-effect pattern
+- [x] ProfilePage mock data — fixed to use real Supabase queries
+- [x] Vercel SPA routing 404s — fixed with `vercel.json` rewrites
+- [x] Vercel build: unused Shield import — removed
+- [x] Vercel build: ProfilePage TS errors — fixed null checks
+- [x] Vercel env var typo — `VITE_SUPABASE_UR` → `VITE_SUPABASE_URL`

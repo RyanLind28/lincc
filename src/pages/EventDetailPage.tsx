@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, CategoryIcon, Spinner } from '../components/ui';
-import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2 } from 'lucide-react';
+import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, BottomSheet } from '../components/ui';
+import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { ReportDialog } from '../components/social/ReportDialog';
+import { blockUser, isUserBlocked } from '../services/blockService';
 import { useEventParticipants } from '../hooks/useEventParticipants';
+import { useBookmarks } from '../hooks/useBookmarks';
+import { updateEvent, deleteEvent } from '../services/events';
 import { supabase } from '../lib/supabase';
-import { calculateAge, calculateDistance } from '../lib/utils';
+import { cn, calculateAge, calculateDistance } from '../lib/utils';
 import { useUserLocation } from '../hooks/useUserLocation';
 import type { EventWithDetails } from '../types';
 
@@ -30,6 +34,9 @@ export default function EventDetailPage() {
     join,
     leave,
   } = useEventParticipants(id, event?.join_mode);
+
+  const { isSaved, toggleSave } = useBookmarks();
+  const eventSaved = id ? isSaved(id) : false;
 
   const isHost = user?.id === event?.host_id;
   const approvedParticipants = participants.filter(p => p.status === 'approved');
@@ -137,6 +144,89 @@ export default function EventDetailPage() {
       showToast('Failed to copy link', 'error');
     }
   }, [event, showToast]);
+
+  // Social state (report/block)
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [hostBlocked, setHostBlocked] = useState(false);
+
+  // Check if host is blocked
+  useEffect(() => {
+    if (user && event && !isHost) {
+      isUserBlocked(user.id, event.host_id).then(setHostBlocked);
+    }
+  }, [user, event, isHost]);
+
+  const handleBlockHost = async () => {
+    if (!user || !event) return;
+    setShowMoreMenu(false);
+    const result = await blockUser(user.id, event.host_id);
+    if (result.success) {
+      setHostBlocked(true);
+      showToast('User blocked', 'info');
+    }
+  };
+
+  // Edit / Cancel state
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editVenue, setEditVenue] = useState('');
+  const [editCapacity, setEditCapacity] = useState(1);
+
+  const openEdit = () => {
+    if (!event) return;
+    setEditTitle(event.title);
+    setEditDescription(event.description || '');
+    setEditVenue(event.venue_name);
+    setEditCapacity(event.capacity);
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!event || !id) return;
+    setIsSaving(true);
+
+    const result = await updateEvent(id, {
+      title: editTitle.trim(),
+      description: editDescription.trim() || null,
+      venue_name: editVenue.trim(),
+      capacity: editCapacity,
+    });
+
+    setIsSaving(false);
+
+    if (result.success) {
+      setEvent({
+        ...event,
+        title: editTitle.trim(),
+        description: editDescription.trim() || null,
+        venue_name: editVenue.trim(),
+        capacity: editCapacity,
+      });
+      setIsEditOpen(false);
+      showToast('Event updated!', 'success');
+    } else {
+      showToast(result.error || 'Failed to update', 'error');
+    }
+  };
+
+  const handleCancelEvent = async () => {
+    if (!id) return;
+    setIsSaving(true);
+
+    const result = await deleteEvent(id);
+    setIsSaving(false);
+
+    if (result.success) {
+      showToast('Event cancelled', 'info');
+      navigate('/my-events');
+    } else {
+      showToast(result.error || 'Failed to cancel', 'error');
+    }
+  };
 
   // Render join button based on status
   const renderJoinButton = () => {
@@ -262,13 +352,75 @@ export default function EventDetailPage() {
         showBack
         transparent
         rightContent={
-          <button
-            onClick={handleShare}
-            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
-            aria-label="Share event"
-          >
-            <Share2 className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            {isHost && (
+              <>
+                <button
+                  onClick={openEdit}
+                  className="p-2 rounded-xl text-text-muted hover:text-coral hover:bg-gray-100 transition-colors"
+                  aria-label="Edit event"
+                >
+                  <Pencil className="h-4.5 w-4.5" />
+                </button>
+                <button
+                  onClick={() => setIsCancelOpen(true)}
+                  className="p-2 rounded-xl text-text-muted hover:text-error hover:bg-gray-100 transition-colors"
+                  aria-label="Cancel event"
+                >
+                  <Trash2 className="h-4.5 w-4.5" />
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => id && toggleSave(id)}
+              className="p-2 rounded-xl text-text-muted hover:text-coral hover:bg-gray-100 transition-colors"
+              aria-label={eventSaved ? 'Unsave event' : 'Save event'}
+            >
+              <Bookmark className={cn('h-5 w-5', eventSaved && 'fill-coral text-coral')} />
+            </button>
+            <button
+              onClick={handleShare}
+              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              aria-label="Share event"
+            >
+              <Share2 className="h-5 w-5" />
+            </button>
+            {!isHost && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+                  aria-label="More options"
+                >
+                  <MoreVertical className="h-5 w-5" />
+                </button>
+                {showMoreMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-xl border border-border shadow-lg z-50 overflow-hidden">
+                      <button
+                        onClick={handleBlockHost}
+                        className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                      >
+                        <Ban className="h-4 w-4" />
+                        {hostBlocked ? 'Blocked' : 'Block host'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          setShowReportDialog(true);
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                      >
+                        <ShieldAlert className="h-4 w-4" />
+                        Report event
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         }
       />
 
@@ -440,6 +592,119 @@ export default function EventDetailPage() {
           {renderJoinButton()}
         </div>
       </div>
+
+      {/* Edit Event Bottom Sheet */}
+      <BottomSheet
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        title="Edit Event"
+      >
+        <div className="space-y-4 pb-4">
+          <div>
+            <label className="block text-sm font-medium text-text mb-1">Title</label>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              maxLength={60}
+              className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-coral/50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text mb-1">Description</label>
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              maxLength={280}
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-coral/50 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text mb-1">Venue</label>
+            <input
+              type="text"
+              value={editVenue}
+              onChange={(e) => setEditVenue(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-coral/50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text mb-1">
+              Capacity: {editCapacity} {editCapacity === 1 ? 'guest' : 'guests'}
+            </label>
+            <input
+              type="range"
+              min={1}
+              max={15}
+              value={editCapacity}
+              onChange={(e) => setEditCapacity(Number(e.target.value))}
+              className="w-full accent-coral"
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => setIsEditOpen(false)}
+              className="flex-1 py-3 text-text-muted hover:text-text transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <GradientButton
+              fullWidth
+              onClick={handleSaveEdit}
+              isLoading={isSaving}
+              disabled={!editTitle.trim() || !editVenue.trim()}
+              className="flex-1"
+            >
+              Save Changes
+            </GradientButton>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Report Dialog */}
+      {event && (
+        <ReportDialog
+          isOpen={showReportDialog}
+          onClose={() => setShowReportDialog(false)}
+          reportedUserId={event.host_id}
+          reportedUserName={event.host?.first_name || 'Host'}
+          eventId={event.id}
+        />
+      )}
+
+      {/* Cancel Event Confirmation */}
+      {isCancelOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-surface rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-error" />
+              </div>
+              <h3 className="text-lg font-semibold text-text">Cancel Event?</h3>
+            </div>
+            <p className="text-text-muted text-sm mb-6">
+              This will cancel the event and notify all participants. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsCancelOpen(false)}
+                className="flex-1 py-3 rounded-xl border border-border text-text-muted hover:text-text font-medium transition-colors"
+              >
+                Keep Event
+              </button>
+              <button
+                onClick={handleCancelEvent}
+                disabled={isSaving}
+                className="flex-1 py-3 rounded-xl bg-error text-white font-semibold hover:bg-error/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Cancel Event
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

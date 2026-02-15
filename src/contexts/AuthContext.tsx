@@ -23,7 +23,7 @@ const MOCK_PROFILE: Profile = {
   email: 'dev@lincc.app',
   first_name: 'Dev',
   dob: '1995-06-15',
-  gender: 'woman',
+  gender: 'female',
   avatar_url: null,
   bio: 'This is a dev account for testing the app locally.',
   tags: ['coffee', 'hiking', 'yoga'],
@@ -112,6 +112,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!session?.user) {
         setProfile(null);
         setIsLoading(false);
+      } else if (event === 'SIGNED_IN') {
+        // User just signed in — ensure loading stays true until Effect 2 fetches profile.
+        // Without this, there's a render frame with isLoading=false + profile=null,
+        // which causes ProtectedRoute to redirect to /terms or /onboarding prematurely.
+        setProfile(null);
+        setIsLoading(true);
       }
     });
 
