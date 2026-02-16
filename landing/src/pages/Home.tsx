@@ -41,7 +41,7 @@ function Logo({ className = "h-8", white = false, priority = false }: { classNam
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-white overflow-x-clip">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -112,8 +112,9 @@ export default function Home() {
             {/* Glow effect behind cards */}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple/5 to-transparent rounded-3xl" />
 
-            <div className="bg-gradient-to-br from-gray-50 to-white rounded-3xl p-6 sm:p-10 border border-gray-200/60 shadow-2xl shadow-gray-200/50">
-              <div className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-x-visible sm:snap-none sm:pb-0 sm:-mb-0">
+            {/* Desktop: grid layout (hidden on mobile) */}
+            <div className="hidden sm:block bg-gradient-to-br from-gray-50 to-white rounded-3xl p-10 border border-gray-200/60 shadow-2xl shadow-gray-200/50">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <EventCard
                   icon={<Wine className="h-5 w-5 text-white" />}
                   category="Flash Sale"
@@ -122,7 +123,6 @@ export default function Home() {
                   time="Next 2 hours only"
                   detail="50% off"
                   gradient="from-coral to-purple"
-                  className="min-w-[280px] snap-center sm:min-w-0"
                 />
                 <EventCard
                   icon={<PartyPopper className="h-5 w-5 text-white" />}
@@ -132,7 +132,6 @@ export default function Home() {
                   time="7pm tonight"
                   detail="3 spots left"
                   gradient="from-purple to-blue"
-                  className="min-w-[280px] snap-center sm:min-w-0"
                 />
                 <EventCard
                   icon={<Coffee className="h-5 w-5 text-white" />}
@@ -142,7 +141,55 @@ export default function Home() {
                   time="Tomorrow 7am"
                   detail="All levels welcome"
                   gradient="from-amber-500 to-orange-500"
-                  className="min-w-[280px] snap-center sm:min-w-0"
+                />
+              </div>
+            </div>
+
+            {/* Mobile: horizontal scroll (hidden on desktop) */}
+            <div className="sm:hidden">
+              <div
+                className="scrollbar-hide"
+                style={{
+                  display: 'flex',
+                  gap: '16px',
+                  overflowX: 'auto',
+                  scrollSnapType: 'x mandatory',
+                  paddingBottom: '8px',
+                  WebkitOverflowScrolling: 'touch',
+                }}
+              >
+                <EventCard
+                  icon={<Wine className="h-5 w-5 text-white" />}
+                  category="Flash Sale"
+                  title="Half-price cocktails"
+                  venue="Skybar"
+                  time="Next 2 hours only"
+                  detail="50% off"
+                  gradient="from-coral to-purple"
+                  className="w-[280px] !shrink-0"
+                  style={{ scrollSnapAlign: 'center', flexShrink: 0, minWidth: '280px' }}
+                />
+                <EventCard
+                  icon={<PartyPopper className="h-5 w-5 text-white" />}
+                  category="Social"
+                  title="Board games night at mine"
+                  venue="Hackney"
+                  time="7pm tonight"
+                  detail="3 spots left"
+                  gradient="from-purple to-blue"
+                  className="w-[280px] !shrink-0"
+                  style={{ scrollSnapAlign: 'center', flexShrink: 0, minWidth: '280px' }}
+                />
+                <EventCard
+                  icon={<Coffee className="h-5 w-5 text-white" />}
+                  category="Meetup"
+                  title="Morning run & coffee"
+                  venue="Victoria Park"
+                  time="Tomorrow 7am"
+                  detail="All levels welcome"
+                  gradient="from-amber-500 to-orange-500"
+                  className="w-[280px] !shrink-0"
+                  style={{ scrollSnapAlign: 'center', flexShrink: 0, minWidth: '280px' }}
                 />
               </div>
             </div>
@@ -523,6 +570,7 @@ function EventCard({
   detail,
   gradient = "from-coral to-purple",
   className = '',
+  style,
 }: {
   icon: React.ReactNode;
   category: string;
@@ -532,9 +580,10 @@ function EventCard({
   detail: string;
   gradient?: string;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
-    <div className={`bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg border border-gray-100 transition-all hover:-translate-y-1 ${className}`}>
+    <div className={`bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg border border-gray-100 transition-all hover:-translate-y-1 ${className}`} style={style}>
       <div className="flex items-center gap-3 mb-4">
         <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
           {icon}
