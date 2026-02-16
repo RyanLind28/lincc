@@ -41,7 +41,7 @@ function Logo({ className = "h-8", white = false, priority = false }: { classNam
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white overflow-x-clip">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -146,51 +146,61 @@ export default function Home() {
             </div>
 
             {/* Mobile: horizontal scroll (hidden on desktop) */}
-            <div className="sm:hidden">
+            <div
+              className="sm:hidden"
+              style={{
+                marginLeft: '-16px',
+                marginRight: '-16px',
+                paddingLeft: '16px',
+                paddingRight: '16px',
+              }}
+            >
               <div
-                className="scrollbar-hide"
                 style={{
                   display: 'flex',
                   gap: '16px',
-                  overflowX: 'auto',
+                  overflowX: 'scroll',
+                  overflowY: 'hidden',
                   scrollSnapType: 'x mandatory',
-                  paddingBottom: '8px',
+                  paddingBottom: '12px',
                   WebkitOverflowScrolling: 'touch',
+                  msOverflowStyle: 'none',
+                  scrollbarWidth: 'none',
                 }}
               >
-                <EventCard
-                  icon={<Wine className="h-5 w-5 text-white" />}
-                  category="Flash Sale"
-                  title="Half-price cocktails"
-                  venue="Skybar"
-                  time="Next 2 hours only"
-                  detail="50% off"
-                  gradient="from-coral to-purple"
-                  className="w-[280px] !shrink-0"
-                  style={{ scrollSnapAlign: 'center', flexShrink: 0, minWidth: '280px' }}
-                />
-                <EventCard
-                  icon={<PartyPopper className="h-5 w-5 text-white" />}
-                  category="Social"
-                  title="Board games night at mine"
-                  venue="Hackney"
-                  time="7pm tonight"
-                  detail="3 spots left"
-                  gradient="from-purple to-blue"
-                  className="w-[280px] !shrink-0"
-                  style={{ scrollSnapAlign: 'center', flexShrink: 0, minWidth: '280px' }}
-                />
-                <EventCard
-                  icon={<Coffee className="h-5 w-5 text-white" />}
-                  category="Meetup"
-                  title="Morning run & coffee"
-                  venue="Victoria Park"
-                  time="Tomorrow 7am"
-                  detail="All levels welcome"
-                  gradient="from-amber-500 to-orange-500"
-                  className="w-[280px] !shrink-0"
-                  style={{ scrollSnapAlign: 'center', flexShrink: 0, minWidth: '280px' }}
-                />
+                <div style={{ flex: '0 0 280px', scrollSnapAlign: 'start' }}>
+                  <EventCard
+                    icon={<Wine className="h-5 w-5 text-white" />}
+                    category="Flash Sale"
+                    title="Half-price cocktails"
+                    venue="Skybar"
+                    time="Next 2 hours only"
+                    detail="50% off"
+                    gradient="from-coral to-purple"
+                  />
+                </div>
+                <div style={{ flex: '0 0 280px', scrollSnapAlign: 'start' }}>
+                  <EventCard
+                    icon={<PartyPopper className="h-5 w-5 text-white" />}
+                    category="Social"
+                    title="Board games night at mine"
+                    venue="Hackney"
+                    time="7pm tonight"
+                    detail="3 spots left"
+                    gradient="from-purple to-blue"
+                  />
+                </div>
+                <div style={{ flex: '0 0 280px', scrollSnapAlign: 'start' }}>
+                  <EventCard
+                    icon={<Coffee className="h-5 w-5 text-white" />}
+                    category="Meetup"
+                    title="Morning run & coffee"
+                    venue="Victoria Park"
+                    time="Tomorrow 7am"
+                    detail="All levels welcome"
+                    gradient="from-amber-500 to-orange-500"
+                  />
+                </div>
               </div>
             </div>
           </div>
