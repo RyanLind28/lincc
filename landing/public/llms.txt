@@ -1,0 +1,36 @@
+# Lincc
+
+> Lincc is a local events and discovery platform. Everything happening around you — events, deals, openings, offers — all live, all local. Think of it as your local pulse.
+
+## What is Lincc?
+
+Lincc is a real-time local discovery app that shows you everything happening nearby — events, deals, openings, meetups, and more — in chronological order with no algorithmic filtering. Unlike social media platforms that decide what you see, Lincc shows everything in the order it was posted, so you never miss what's happening around you.
+
+## Key Features
+
+- Real-time local event discovery with no algorithmic sorting
+- Chronological feed of everything happening nearby
+- Event categories: nightlife, food & dining, fitness, live music, markets, comedy, outdoor, coffee & brunch, art, and more
+- Business tools for posting deals, promotions, and events to nearby customers
+- Time-limited offers and flash deals from local businesses
+- Built for communities, not corporations
+
+## Who is Lincc for?
+
+- People who want to discover what's happening around them right now
+- Anyone looking for things to do tonight, this weekend, or nearby
+- Local businesses wanting to reach customers within walking distance
+- Event organisers and community hosts
+
+## Status
+
+- Pre-launch (waitlist open at https://lincc.live)
+- Launching in 2026
+- Based in London, UK
+
+## Links
+
+- Website: https://lincc.live
+- Waitlist: https://lincc.live/#waitlist
+- About: https://lincc.live/about
+- Contact: https://lincc.live/contact

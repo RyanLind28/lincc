@@ -57,7 +57,7 @@ export default function Home() {
       {/* Nav */}
       <nav className="landing-nav">
         <div className="landing-container landing-nav-inner">
-          <Link to="/"><img src={LOGO_URL} alt="Lincc" style={{ height: 40 }} /></Link>
+          <Link to="/"><img src={LOGO_URL} alt="Lincc — local events and discovery platform" style={{ height: 40, width: 120 }} /></Link>
           <div className="nav-links">
             <a href="#how-it-works">How it works</a>
             <a href="#features">Features</a>
@@ -80,6 +80,10 @@ export default function Home() {
             No Algorithms.<br />
             <span className="gradient-text">Just what's happening now</span>
           </h1>
+
+          <h2 style={{ fontSize: '18px', fontWeight: 500, color: '#845EF7', marginBottom: '16px', letterSpacing: '0.01em' }}>
+            Discover local events, deals, and things to do near you
+          </h2>
 
           <p className="hero-sub">
             Tired of Instagram showing you last week's posts when you want to know what's on tonight? Lincc is different. Everything you see is happening now or soon, in the order it was posted. No algorithms choosing for you.
@@ -246,7 +250,7 @@ export default function Home() {
         <div className="landing-container">
           <div className="cta-banner">
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <img src={LOGO_URL} alt="Lincc" style={{ height: 56, marginBottom: 24, filter: 'brightness(0) invert(1)' }} />
+              <img src={LOGO_URL} alt="Lincc" style={{ height: 56, width: 168, marginBottom: 24, filter: 'brightness(0) invert(1)' }} />
               <h2>Your city. Your scene.<br />All in one place.</h2>
               <p>Events, offers, openings, happenings — everything that matters, right at your fingertips.</p>
               <a href="#waitlist" className="cta-banner-btn">
@@ -273,7 +277,7 @@ export default function Home() {
         <div className="landing-container">
           <div className="footer-grid">
             <div className="footer-brand">
-              <img src={LOGO_URL} alt="Lincc" style={{ height: 40 }} />
+              <img src={LOGO_URL} alt="Lincc" style={{ height: 40, width: 120 }} />
               <p>Everything local,<br />at your fingertips.</p>
             </div>
             <div className="footer-col">
