@@ -57,7 +57,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-x-clip overflow-y-visible">
         {/* Background gradient decoration */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-br from-coral/10 via-purple/10 to-blue/10 rounded-full blur-3xl -z-10" />
 
@@ -94,9 +94,9 @@ export default function LandingPage() {
           {/* App Preview */}
           <div className="mt-16 relative">
             <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent z-10 pointer-events-none" />
-            <div className="bg-gradient-to-br from-coral/5 via-purple/5 to-blue/10 rounded-3xl p-8 sm:p-12 border border-gray-100">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Sample Event Cards */}
+            {/* Desktop: grid layout */}
+            <div className="hidden sm:block bg-gradient-to-br from-coral/5 via-purple/5 to-blue/10 rounded-3xl p-8 sm:p-12 border border-gray-100">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <EventCard
                   icon={<Coffee className="h-5 w-5 text-white" />}
                   category="Coffee"
@@ -112,7 +112,6 @@ export default function LandingPage() {
                   venue="The Garden Kitchen"
                   time="This weekend"
                   detail="Use code LINCC50"
-                  className="hidden sm:block"
                 />
                 <EventCard
                   icon={<PartyPopper className="h-5 w-5 text-white" />}
@@ -123,6 +122,42 @@ export default function LandingPage() {
                   detail="Free entry before 11"
                   className="hidden lg:block"
                 />
+              </div>
+            </div>
+
+            {/* Mobile: horizontal scroll */}
+            <div className="sm:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-3">
+              <div className="flex gap-4 w-max">
+                <div className="w-[280px] shrink-0 snap-start">
+                  <EventCard
+                    icon={<Coffee className="h-5 w-5 text-white" />}
+                    category="Coffee"
+                    title="Morning Coffee & Chat"
+                    venue="Brew & Co, Shoreditch"
+                    time="Today at 10 AM"
+                    detail="2 spots left"
+                  />
+                </div>
+                <div className="w-[280px] shrink-0 snap-start">
+                  <EventCard
+                    icon={<Tag className="h-5 w-5 text-white" />}
+                    category="Offer"
+                    title="50% Off Brunch Menu"
+                    venue="The Garden Kitchen"
+                    time="This weekend"
+                    detail="Use code LINCC50"
+                  />
+                </div>
+                <div className="w-[280px] shrink-0 snap-start">
+                  <EventCard
+                    icon={<PartyPopper className="h-5 w-5 text-white" />}
+                    category="Nightlife"
+                    title="Grand Opening Night"
+                    venue="Club Paradiso"
+                    time="Tonight at 10 PM"
+                    detail="Free entry before 11"
+                  />
+                </div>
               </div>
             </div>
           </div>
