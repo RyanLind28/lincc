@@ -24,13 +24,13 @@ Lincc is a real-time local discovery app that shows you everything happening nea
 
 ## Status
 
-- Pre-launch (waitlist open at https://lincc.live)
+- Pre-launch (waitlist open at https://www.lincc.live)
 - Launching in 2026
 - Based in London, UK
 
 ## Links
 
-- Website: https://lincc.live
-- Waitlist: https://lincc.live/#waitlist
-- About: https://lincc.live/about
-- Contact: https://lincc.live/contact
+- Website: https://www.lincc.live
+- Waitlist: https://www.lincc.live/#waitlist
+- About: https://www.lincc.live/about
+- Contact: https://www.lincc.live/contact
