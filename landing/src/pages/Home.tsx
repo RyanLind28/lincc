@@ -146,29 +146,9 @@ export default function Home() {
             </div>
 
             {/* Mobile: horizontal scroll (hidden on desktop) */}
-            <div
-              className="sm:hidden"
-              style={{
-                marginLeft: '-16px',
-                marginRight: '-16px',
-                paddingLeft: '16px',
-                paddingRight: '16px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '16px',
-                  overflowX: 'scroll',
-                  overflowY: 'hidden',
-                  scrollSnapType: 'x mandatory',
-                  paddingBottom: '12px',
-                  WebkitOverflowScrolling: 'touch',
-                  msOverflowStyle: 'none',
-                  scrollbarWidth: 'none',
-                }}
-              >
-                <div style={{ flex: '0 0 280px', scrollSnapAlign: 'start' }}>
+            <div className="sm:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-3">
+              <div className="flex gap-4 w-max">
+                <div className="w-[280px] shrink-0 snap-start">
                   <EventCard
                     icon={<Wine className="h-5 w-5 text-white" />}
                     category="Flash Sale"
@@ -179,7 +159,7 @@ export default function Home() {
                     gradient="from-coral to-purple"
                   />
                 </div>
-                <div style={{ flex: '0 0 280px', scrollSnapAlign: 'start' }}>
+                <div className="w-[280px] shrink-0 snap-start">
                   <EventCard
                     icon={<PartyPopper className="h-5 w-5 text-white" />}
                     category="Social"
@@ -190,7 +170,7 @@ export default function Home() {
                     gradient="from-purple to-blue"
                   />
                 </div>
-                <div style={{ flex: '0 0 280px', scrollSnapAlign: 'start' }}>
+                <div className="w-[280px] shrink-0 snap-start">
                   <EventCard
                     icon={<Coffee className="h-5 w-5 text-white" />}
                     category="Meetup"
