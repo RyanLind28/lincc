@@ -85,6 +85,11 @@
     display: none;
   }
 
+  /* Hide scrollbar on any element that sets scrollbar-width: none inline */
+  [style*="scrollbar-width: none"]::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Gradient utilities */
   .gradient-primary {
     background: linear-gradient(135deg, #FF6B6B 0%, #845EF7 100%);
