@@ -1,4 +1,6 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/((?!assets|favicon|robots\\.txt|sitemap\\.xml|llms\\.txt|site\\.webmanifest|.*\\.png|.*\\.ico|.*\\.svg).*)",
