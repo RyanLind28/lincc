@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles, HelpCircle } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
@@ -23,6 +23,7 @@ export default function CreateEventPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<SubCategory | null>(null);
   const [customSubcategory, setCustomSubcategory] = useState('');
+  const [customCategoryText, setCustomCategoryText] = useState('');
   const [subcategorySearch, setSubcategorySearch] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -45,6 +46,7 @@ export default function CreateEventPage() {
     setSelectedCategory(category);
     setSelectedSubcategory(null);
     setCustomSubcategory('');
+    setCustomCategoryText('');
     setSubcategorySearch('');
     setStep('subcategory');
   };
@@ -116,6 +118,7 @@ export default function CreateEventPage() {
           category_name: selectedCategory.label,
           title: title.trim(),
           description: description.trim() || undefined,
+          custom_category: selectedCategory.value === 'other' ? customCategoryText.trim() : undefined,
           venue_name: venueName.trim(),
           venue_address: venueAddress.trim() || venueName.trim(), // Use venue name as address fallback
           start_time: eventDateTime.toISOString(),
@@ -174,6 +177,7 @@ export default function CreateEventPage() {
   };
 
   const getSubcategoryDisplay = () => {
+    if (selectedCategory?.value === 'other' && customCategoryText) return customCategoryText;
     if (customSubcategory) return customSubcategory;
     if (selectedSubcategory) return selectedSubcategory.label;
     return '';
@@ -252,57 +256,96 @@ export default function CreateEventPage() {
         )}
 
         {step === 'subcategory' && selectedCategory && (
-          <div className="space-y-4">
-            {/* Search input */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
-              <input
-                type="text"
-                value={subcategorySearch}
-                onChange={(e) => setSubcategorySearch(e.target.value)}
-                placeholder={`Search or type custom (e.g., "Hyrox")`}
-                className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-text placeholder:text-text-light focus:outline-none focus:ring-2 focus:ring-coral/30 focus:border-coral"
-              />
+          selectedCategory.value === 'other' ? (
+            /* "Other" category — free-text input */
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-purple/10 rounded-xl">
+                <HelpCircle className="h-6 w-6 text-purple flex-shrink-0" />
+                <p className="text-sm text-text-muted">
+                  Tell us what type of event this is so we can improve our categories.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">
+                  What type of event is this?
+                </label>
+                <input
+                  type="text"
+                  value={customCategoryText}
+                  onChange={(e) => setCustomCategoryText(e.target.value)}
+                  placeholder='e.g., "Volunteering", "Car meetup", "Language exchange"'
+                  maxLength={60}
+                  className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-text placeholder:text-text-light focus:outline-none focus:ring-2 focus:ring-coral/30 focus:border-coral"
+                />
+              </div>
+              <GradientButton
+                fullWidth
+                onClick={() => {
+                  if (!customCategoryText.trim()) {
+                    showToast('Please describe the event type', 'error');
+                    return;
+                  }
+                  setCustomSubcategory(customCategoryText.trim());
+                  setStep('details');
+                }}
+              >
+                Continue
+              </GradientButton>
             </div>
+          ) : (
+            /* Normal subcategory selection */
+            <div className="space-y-4">
+              {/* Search input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
+                <input
+                  type="text"
+                  value={subcategorySearch}
+                  onChange={(e) => setSubcategorySearch(e.target.value)}
+                  placeholder={`Search or type custom (e.g., "Hyrox")`}
+                  className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-text placeholder:text-text-light focus:outline-none focus:ring-2 focus:ring-coral/30 focus:border-coral"
+                />
+              </div>
 
-            {/* Subcategory list */}
-            <div className="space-y-2">
-              {filteredSubcategories.map((sub) => (
-                <button
-                  key={sub.value}
-                  onClick={() => handleSubcategorySelect(sub)}
-                  className="w-full flex items-center justify-between p-4 bg-surface rounded-xl border border-border hover:border-coral transition-colors group"
-                >
-                  <span className="font-medium text-text group-hover:text-coral transition-colors">
-                    {sub.label}
-                  </span>
-                  <ChevronRight className="h-5 w-5 text-text-light group-hover:text-coral transition-colors" />
-                </button>
-              ))}
-
-              {/* Custom option - shown when searching and no exact match */}
-              {subcategorySearch.trim() && !exactMatch && (
-                <button
-                  onClick={() => handleSubcategorySelect(null, subcategorySearch.trim())}
-                  className="w-full flex items-center justify-between p-4 bg-coral/10 rounded-xl border border-coral/30 hover:border-coral transition-colors group"
-                >
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-coral" />
-                    <span className="font-medium text-coral">
-                      "{subcategorySearch.trim()}"
+              {/* Subcategory list */}
+              <div className="space-y-2">
+                {filteredSubcategories.map((sub) => (
+                  <button
+                    key={sub.value}
+                    onClick={() => handleSubcategorySelect(sub)}
+                    className="w-full flex items-center justify-between p-4 bg-surface rounded-xl border border-border hover:border-coral transition-colors group"
+                  >
+                    <span className="font-medium text-text group-hover:text-coral transition-colors">
+                      {sub.label}
                     </span>
-                    <span className="text-sm text-text-muted">(custom)</span>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-coral" />
-                </button>
-              )}
-            </div>
+                    <ChevronRight className="h-5 w-5 text-text-light group-hover:text-coral transition-colors" />
+                  </button>
+                ))}
 
-            {/* Hint */}
-            <p className="text-xs text-text-muted text-center mt-4">
-              Can't find what you're looking for? Just type it above!
-            </p>
-          </div>
+                {/* Custom option - shown when searching and no exact match */}
+                {subcategorySearch.trim() && !exactMatch && (
+                  <button
+                    onClick={() => handleSubcategorySelect(null, subcategorySearch.trim())}
+                    className="w-full flex items-center justify-between p-4 bg-coral/10 rounded-xl border border-coral/30 hover:border-coral transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-coral" />
+                      <span className="font-medium text-coral">
+                        "{subcategorySearch.trim()}"
+                      </span>
+                      <span className="text-sm text-text-muted">(custom)</span>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-coral" />
+                  </button>
+                )}
+              </div>
+
+              {/* Hint */}
+              <p className="text-xs text-text-muted text-center mt-4">
+                Can't find what you're looking for? Just type it above!
+              </p>
+            </div>
+          )
         )}
 
         {step === 'details' && (

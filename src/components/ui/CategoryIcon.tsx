@@ -11,6 +11,8 @@ import {
   BookOpen,
   PartyPopper,
   Dog,
+  Baby,
+  Ellipsis,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -29,6 +31,8 @@ const iconMap: Record<string, LucideIcon> = {
   BookOpen,
   PartyPopper,
   Dog,
+  Baby,
+  Ellipsis,
 };
 
 interface CategoryIconProps {

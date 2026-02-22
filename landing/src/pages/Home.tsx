@@ -20,6 +20,7 @@ import {
   Wine,
   ShoppingBag,
   Drama,
+  Baby,
   type LucideIcon,
 } from 'lucide-react';
 import WaitlistForm from '../components/WaitlistForm';
@@ -49,6 +50,7 @@ const CATEGORIES: { name: string; Icon: LucideIcon }[] = [
   { name: 'Restaurant Deals', Icon: Tag },
   { name: 'Shop Promotions', Icon: Store },
   { name: 'Grand Openings', Icon: Sparkles },
+  { name: 'Kids & Family', Icon: Baby },
 ];
 
 export default function Home() {

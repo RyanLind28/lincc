@@ -174,6 +174,27 @@ export const CATEGORIES: Category[] = [
       { value: 'pets-petcafe', label: 'Pet cafe' },
     ],
   },
+  {
+    value: 'kids-family',
+    label: 'Kids & Family',
+    icon: 'Baby',
+    image: 'https://images.unsplash.com/photo-1536640712-4d4c36ff0e4e?w=400&h=300&fit=crop',
+    subcategories: [
+      { value: 'kids-family-playground', label: 'Playground trip' },
+      { value: 'kids-family-playdate', label: 'Playdate' },
+      { value: 'kids-family-crafts', label: 'Kids crafts' },
+      { value: 'kids-family-museum', label: 'Museum / Exhibition' },
+      { value: 'kids-family-party', label: 'Kids party' },
+      { value: 'kids-family-outdoors', label: 'Family outdoors' },
+    ],
+  },
+  {
+    value: 'other',
+    label: 'Other',
+    icon: 'Ellipsis',
+    image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop',
+    subcategories: [],
+  },
 ];
 
 // Helper to get category by value

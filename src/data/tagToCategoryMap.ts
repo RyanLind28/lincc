@@ -142,6 +142,13 @@ export const TAG_TO_CATEGORY_MAP: Record<string, string[]> = {
   dogs: ['pets'],
   cats: ['pets'],
   animals: ['pets'],
+
+  // Kids & Family
+  kids: ['kids-family'],
+  family: ['kids-family'],
+  children: ['kids-family'],
+  parenting: ['kids-family'],
+  playdate: ['kids-family'],
 };
 
 // Category relationships for "related" scoring
@@ -160,6 +167,7 @@ export const RELATED_CATEGORIES: Record<string, string[]> = {
   learning: ['creative', 'social'],
   social: ['food', 'coffee', 'entertainment', 'gaming', 'sports', 'wellness', 'learning'],
   pets: ['outdoors', 'social', 'wellness'],
+  'kids-family': ['outdoors', 'social', 'entertainment', 'creative'],
 };
 
 // Get categories that match a user tag

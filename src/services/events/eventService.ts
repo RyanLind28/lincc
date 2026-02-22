@@ -121,6 +121,7 @@ export interface CreateEventData {
   category_name: string; // Category name to look up
   title: string;
   description?: string;
+  custom_category?: string;
   venue_name: string;
   venue_address: string;
   venue_lat?: number;
@@ -182,6 +183,7 @@ export async function createEvent(
         category_id: eventData.category_name, // Now contains the ID
         title: eventData.title,
         description: eventData.description || null,
+        custom_category: eventData.custom_category || null,
         venue_name: eventData.venue_name,
         venue_address: eventData.venue_address,
         venue_lat: eventData.venue_lat || 0,

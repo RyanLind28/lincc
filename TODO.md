@@ -1,6 +1,6 @@
 # LINCC TODO
 
-Last updated: 2026-02-14
+Last updated: 2026-02-21
 
 ---
 
@@ -287,7 +287,44 @@ Last updated: 2026-02-14
 
 ---
 
-## Phase 18: Future Ideas
+## Phase 18: MVP Launch Features (Meeting Notes — 2026-02-21)
+
+### Onboarding & UX
+- [ ] How-to guide — in-app walkthrough/tutorial for new users explaining key features
+- [ ] PWA install prompt in onboarding — prompt users to "download" the app to their home screen/desktop during the onboarding flow
+
+### Categories
+- [ ] Add "Kids & Family" category — covers family activities, things to do with kids, and kids-only events. Needs DB migration to seed new category
+- [ ] Add "Other" catch-all category — users can type their own category name. Log all custom entries to a `custom_categories` table so we can review what categories are missing and add popular ones later
+
+### Search & Location
+- [ ] Postcode / location search — allow users to search by postcode or place name (not just GPS), and adjust distance radius from that point
+
+### Event Data & Content
+- [ ] Event data sourcing — research and integrate external event data (APIs, scrapers, partnerships) to populate the app with real events
+- [ ] Business outreach — contact local businesses in launch cities to get them adding events, deals, and offers
+
+### Launch Strategy
+- [ ] Bahrain & Dubai as launch cities — update demo data, location defaults, and marketing for Bahrain/Dubai as primary launch markets. App is globally available (anyone can post/create events anywhere) but launch focus and content seeding is Bahrain & Dubai
+- [ ] Update demo events — replace London demo data with Bahrain & Dubai events and venues
+
+### Business Profiles
+- [ ] Business mode toggle — users can register as a business during signup (or later in settings). Business registration adds a toggle to switch to "business mode". System verifies business status before enabling the toggle. Business mode unlocks posting deals, offers, and promotions
+- [ ] Business profile fields — business name, logo, address, category/type, description, opening hours
+- [ ] Business posting — ability to post deals, offers, flash sales, promotions, and events as a business (different from personal events)
+- [ ] Landing page business signup — add a "Sign up as a business" option/flow to the landing page (lincc.live) alongside the waitlist
+
+### Feedback & Support
+- [ ] Feature request form — in-app form for users to submit feature requests, logged to a DB table for review
+- [ ] Contact us form — in-app "contact us about anything" form (separate from the landing page contact)
+
+### Notifications
+- [ ] Notification alerts for new events — push notification when a new event is posted nearby, with optional date range filter (e.g. "notify me about events this weekend")
+- [ ] Connection-based notification algo — smart notifications for people you regularly connect with (e.g. if someone you've attended 3+ events with posts a new event, prioritise that notification)
+
+---
+
+## Phase 19: Future Ideas (Post-MVP)
 
 - [ ] AI event descriptions — generate with AI
 - [ ] Smart scheduling — suggest optimal times

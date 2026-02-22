@@ -52,6 +52,7 @@ export interface Event {
   capacity: number;
   join_mode: JoinMode;
   audience: Audience;
+  custom_category: string | null;
   status: EventStatus;
   created_at: string;
   expires_at: string;

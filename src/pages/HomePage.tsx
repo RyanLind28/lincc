@@ -19,12 +19,14 @@ import { useViewMode } from '../contexts/ViewModeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { CATEGORIES } from '../data/categories';
 
-// Map categories from data file to filter format
-const ALL_CATEGORIES = CATEGORIES.map((cat) => ({
-  value: cat.value,
-  label: cat.label,
-  icon: cat.icon,
-}));
+// Map categories from data file to filter format (exclude "Other" — not useful as a filter)
+const ALL_CATEGORIES = CATEGORIES
+  .filter((cat) => cat.value !== 'other')
+  .map((cat) => ({
+    value: cat.value,
+    label: cat.label,
+    icon: cat.icon,
+  }));
 
 // Quick category filters for top bar
 const QUICK_CATEGORIES = ALL_CATEGORIES.slice(0, 6);

@@ -95,6 +95,7 @@ export interface Database {
           category_id: string
           title: string
           description: string | null
+          custom_category: string | null
           venue_name: string
           venue_address: string
           venue_lat: number
@@ -114,6 +115,7 @@ export interface Database {
           category_id: string
           title: string
           description?: string | null
+          custom_category?: string | null
           venue_name: string
           venue_address: string
           venue_lat: number
@@ -129,6 +131,7 @@ export interface Database {
         Update: {
           title?: string
           description?: string | null
+          custom_category?: string | null
           venue_name?: string
           venue_address?: string
           venue_lat?: number
