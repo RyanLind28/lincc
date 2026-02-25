@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, EventCardMini, type EventCardEvent } from '../components/ui';
-import { Edit2, Calendar, Users, Ghost, Lock } from 'lucide-react';
+import { Edit2, Calendar, Ghost, Lock, Settings } from 'lucide-react';
 import { calculateAge } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import { getFollowerCount, getFollowingCount } from '../services/followService';
 
 type EventTab = 'hosting' | 'joined';
 
@@ -15,6 +16,8 @@ export default function ProfilePage() {
   const [hosting, setHosting] = useState<EventCardEvent[]>([]);
   const [joined, setJoined] = useState<EventCardEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -48,6 +51,14 @@ export default function ProfilePage() {
         `)
         .eq('user_id', userId)
         .eq('status', 'approved');
+
+      // Fetch follower/following counts
+      const [followers, followingCnt] = await Promise.all([
+        getFollowerCount(userId),
+        getFollowingCount(userId),
+      ]);
+      setFollowerCount(followers);
+      setFollowingCount(followingCnt);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapEvent = (e: any): EventCardEvent => ({
@@ -84,15 +95,26 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header showLogo showCreateEvent showNotifications />
+      <Header
+        showLogo
+        rightContent={
+          <Link
+            to="/settings"
+            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+            aria-label="Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </Link>
+        }
+      />
 
-      {/* Profile header - centered layout */}
-      <div className="px-4 pt-6 pb-4">
-        <div className="flex flex-col items-center text-center">
+      {/* Profile card */}
+      <div className="px-4 pt-4">
+        <div className="bg-surface rounded-2xl p-6 text-center mb-4">
           {/* Avatar with gradient ring */}
-          <div className="relative mb-4">
+          <div className="flex justify-center mb-4">
             <div className="p-1 gradient-primary rounded-full">
-              <div className="p-1 bg-surface rounded-full">
+              <div className="p-0.5 bg-surface rounded-full">
                 <Avatar src={profile.avatar_url} name={profile.first_name} size="xl" />
               </div>
             </div>
@@ -105,57 +127,67 @@ export default function ProfilePage() {
 
           {/* Bio */}
           {profile.bio && (
-            <p className="text-text-muted max-w-xs mb-4">{profile.bio}</p>
+            <p className="text-text-muted text-sm max-w-xs mx-auto mb-4">{profile.bio}</p>
           )}
+
+          {/* Stats row */}
+          <div className="flex justify-center gap-6 py-4 border-t border-b border-border">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-coral">{followerCount}</p>
+              <p className="text-xs text-text-muted uppercase tracking-wide">Followers</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-coral">{followingCount}</p>
+              <p className="text-xs text-text-muted uppercase tracking-wide">Following</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-coral">{hosting.length}</p>
+              <p className="text-xs text-text-muted uppercase tracking-wide">Hosted</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-coral">{joined.length}</p>
+              <p className="text-xs text-text-muted uppercase tracking-wide">Joined</p>
+            </div>
+          </div>
 
           {/* Interest tags */}
           {profile.tags && profile.tags.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-2 mb-4">
-              {profile.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 bg-coral/10 text-coral rounded-full text-sm font-medium"
-                >
-                  {tag}
-                </span>
-              ))}
+            <div className="mt-4">
+              <p className="text-xs text-text-muted uppercase tracking-wide mb-2">Interests</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {profile.tags.map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Edit Profile button */}
-          <Link to="/profile/edit" className="mb-4">
-            <GradientButton size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
-              Edit Profile
-            </GradientButton>
-          </Link>
+          <div className="mt-4 flex justify-center">
+            <Link to="/profile/edit">
+              <GradientButton size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
+                Edit Profile
+              </GradientButton>
+            </Link>
+          </div>
 
           {/* Status indicators */}
-          <div className="flex gap-2 flex-wrap justify-center">
-            {profile.is_ghost_mode && (
-              <Badge variant="warning">
-                <Ghost className="h-3 w-3 mr-1" /> Ghost Mode
-              </Badge>
-            )}
-            {profile.is_women_only_mode && profile.gender === 'female' && (
-              <Badge variant="secondary">
-                <Lock className="h-3 w-3 mr-1" /> Women-Only
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div className="px-4 mb-6">
-        <div className="flex gap-4 justify-center">
-          <div className="flex items-center gap-2 px-4 py-2 bg-surface rounded-xl border border-border">
-            <Calendar className="h-4 w-4 text-coral" />
-            <span className="text-sm font-medium text-text">{hosting.length} hosted</span>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-surface rounded-xl border border-border">
-            <Users className="h-4 w-4 text-purple" />
-            <span className="text-sm font-medium text-text">{joined.length} joined</span>
-          </div>
+          {(profile.is_ghost_mode || (profile.is_women_only_mode && profile.gender === 'female')) && (
+            <div className="flex gap-2 flex-wrap justify-center mt-3">
+              {profile.is_ghost_mode && (
+                <Badge variant="warning">
+                  <Ghost className="h-3 w-3 mr-1" /> Ghost Mode
+                </Badge>
+              )}
+              {profile.is_women_only_mode && profile.gender === 'female' && (
+                <Badge variant="secondary">
+                  <Lock className="h-3 w-3 mr-1" /> Women-Only
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

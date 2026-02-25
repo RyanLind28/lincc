@@ -160,8 +160,8 @@ function scoreEvents(
   engagementByCategory: Record<string, number>,
   preferredHours: number[]
 ): ScoredEvent[] {
-  // Default location (Central London) if no user location
-  const location = userLocation || { latitude: 51.5074, longitude: -0.1278 };
+  // Default location (Dubai) if no user location
+  const location = userLocation || { latitude: 25.2048, longitude: 55.2708 };
 
   return events.map((event) => {
     // Calculate distance

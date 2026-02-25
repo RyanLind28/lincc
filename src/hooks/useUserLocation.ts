@@ -1,7 +1,9 @@
 // User location hook with caching
 // Wraps Geolocation API with 5-minute cache and graceful error handling
+// Also syncs location to DB for nearby event alerts
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '../lib/supabase';
 import type { Coordinates } from '../types';
 
 // Cache duration: 5 minutes
@@ -33,6 +35,32 @@ let cachedLocation: CachedLocation | null = null;
 const isCacheValid = (): boolean =>
   !!cachedLocation && Date.now() - cachedLocation.timestamp < CACHE_DURATION_MS;
 
+// Track last synced location to avoid redundant DB writes
+let lastSyncedLocation: { lat: number; lng: number } | null = null;
+
+async function syncLocationToDb(coords: Coordinates) {
+  // Only sync if location has changed meaningfully (> ~100m)
+  if (
+    lastSyncedLocation &&
+    Math.abs(lastSyncedLocation.lat - coords.latitude) < 0.001 &&
+    Math.abs(lastSyncedLocation.lng - coords.longitude) < 0.001
+  ) {
+    return;
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ last_lat: coords.latitude, last_lng: coords.longitude })
+    .eq('id', user.id);
+
+  if (!error) {
+    lastSyncedLocation = { lat: coords.latitude, lng: coords.longitude };
+  }
+}
+
 export function useUserLocation(): UseUserLocationResult {
   const [location, setLocation] = useState<Coordinates | null>(
     cachedLocation?.coords || null
@@ -42,6 +70,7 @@ export function useUserLocation(): UseUserLocationResult {
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState(isCacheValid());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const hasSyncedRef = useRef(false);
 
   // Fetch location on mount and when refresh is triggered
   useEffect(() => {
@@ -105,6 +134,12 @@ export function useUserLocation(): UseUserLocationResult {
           setLocation(coords);
           setHasPermission(true);
           setIsLoading(false);
+
+          // Sync to DB for nearby event alerts (once per session)
+          if (!hasSyncedRef.current) {
+            hasSyncedRef.current = true;
+            syncLocationToDb(coords);
+          }
         },
         (err) => {
           if (resolved || !isMounted) return;

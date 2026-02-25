@@ -13,11 +13,23 @@ import {
   Dog,
   Baby,
   Ellipsis,
+  Calendar,
+  Umbrella,
+  Dices,
+  Bike,
+  Mountain,
+  Languages,
+  Music,
+  Camera,
+  PersonStanding,
+  ShoppingBag,
+  Footprints,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 // Map icon names to Lucide components
+// Must include every icon used in the `categories` DB table + fallback
 const iconMap: Record<string, LucideIcon> = {
   Coffee,
   Utensils,
@@ -33,6 +45,17 @@ const iconMap: Record<string, LucideIcon> = {
   Dog,
   Baby,
   Ellipsis,
+  Calendar,
+  Umbrella,
+  Dices,
+  Bike,
+  Mountain,
+  Languages,
+  Music,
+  Camera,
+  PersonStanding,
+  ShoppingBag,
+  Footprints,
 };
 
 interface CategoryIconProps {
@@ -53,7 +76,7 @@ export function CategoryIcon({ icon, className, size = 'md' }: CategoryIconProps
 
   if (!IconComponent) {
     // Fallback to a default icon
-    return <Coffee className={cn(sizeMap[size], className)} />;
+    return <Calendar className={cn(sizeMap[size], className)} />;
   }
 
   return <IconComponent className={cn(sizeMap[size], className)} />;

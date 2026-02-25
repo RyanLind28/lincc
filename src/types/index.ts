@@ -18,6 +18,9 @@ export interface Profile {
   terms_accepted_at: string | null;
   role: UserRole;
   status: UserStatus;
+  notification_preferences: NotificationPreferences | null;
+  last_lat: number | null;
+  last_lng: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -125,7 +128,22 @@ export type NotificationType =
   | 'request_declined'
   | 'new_message'
   | 'event_starting'
-  | 'event_cancelled';
+  | 'event_cancelled'
+  | 'nearby_event';
+
+// Notification preference keys (toggleable push types)
+export interface NotificationPreferences {
+  join_request: boolean;
+  request_approved: boolean;
+  request_declined: boolean;
+  new_message: boolean;
+  event_cancelled: boolean;
+  event_starting: boolean;
+  nearby_event: boolean;
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: string; // "HH:MM" format
+  quiet_hours_end: string;   // "HH:MM" format
+}
 
 export interface Notification {
   id: string;

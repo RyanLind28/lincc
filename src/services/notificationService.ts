@@ -189,6 +189,7 @@ export function getNotificationPath(notification: Notification): string {
       return eventId ? `/event/${eventId}/chat` : '/chats';
     case 'event_starting':
     case 'event_cancelled':
+    case 'nearby_event':
       return eventId ? `/event/${eventId}` : '/';
     default:
       return '/';

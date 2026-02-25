@@ -67,15 +67,21 @@ export default function EditProfilePage() {
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, compressed, { contentType: 'image/jpeg' });
+        .upload(filePath, compressed, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        });
 
       if (uploadError) {
+        console.error('Avatar upload error:', uploadError);
         showToast('Failed to upload photo', 'error');
       } else {
         const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
         setAvatarUrl(data.publicUrl);
+        showToast('Photo uploaded — tap Save to keep it', 'success');
       }
-    } catch {
+    } catch (err) {
+      console.error('Image processing error:', err);
       showToast('Failed to process image', 'error');
     }
 
@@ -127,6 +133,7 @@ export default function EditProfilePage() {
       .eq('id', user.id);
 
     if (error) {
+      console.error('Profile update error:', error);
       showToast('Failed to save profile', 'error');
     } else {
       await refreshProfile(user.id);

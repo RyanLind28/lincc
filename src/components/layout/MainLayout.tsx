@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { BottomNav } from './BottomNav';
 import { SideNav } from './SideNav';
 import { InstallBanner } from '../pwa/InstallBanner';
+import { NotificationPermissionPrompt } from '../ui/NotificationPermissionPrompt';
 import { cn } from '../../lib/utils';
 
 interface MainLayoutProps {
@@ -18,6 +19,7 @@ export function MainLayout({ showBottomNav = true, className }: MainLayoutProps)
       {/* Main content area */}
       <main className={cn('flex-1', showBottomNav && 'pb-20 lg:pb-0')}>
         <div className="lg:max-w-6xl lg:mx-auto">
+          <NotificationPermissionPrompt />
           <Outlet />
         </div>
       </main>

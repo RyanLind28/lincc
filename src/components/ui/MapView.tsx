@@ -113,8 +113,8 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
   const previewRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Default center (London) if no user location
-  const defaultCenter: [number, number] = [-0.1278, 51.5074];
+  // Default center (Dubai) if no user location
+  const defaultCenter: [number, number] = [55.2708, 25.2048];
 
   // Find me / recenter on user location
   const handleFindMe = useCallback(() => {
@@ -545,8 +545,6 @@ function getEmojiForCategory(icon: string): string {
   const emojiMap: Record<string, string> = {
     Coffee: '☕',
     Utensils: '🍽️',
-    Wine: '🍷',
-    Beer: '🍺',
     Dumbbell: '💪',
     Trophy: '🏆',
     TreePine: '🌲',
@@ -557,24 +555,19 @@ function getEmojiForCategory(icon: string): string {
     BookOpen: '📚',
     PartyPopper: '🎉',
     Dog: '🐕',
-    // Lowercase fallbacks
-    coffee: '☕',
-    utensils: '🍽️',
-    wine: '🍷',
-    beer: '🍺',
-    dumbbell: '💪',
-    bike: '🚴',
-    gamepad: '🎮',
-    music: '🎵',
-    palette: '🎨',
-    book: '📚',
-    briefcase: '💼',
-    heart: '❤️',
-    users: '👥',
-    camera: '📷',
-    film: '🎬',
-    'map-pin': '📍',
-    star: '⭐',
+    Baby: '👶',
+    Ellipsis: '📍',
+    Calendar: '📅',
+    Umbrella: '🏖️',
+    Dices: '🎲',
+    Bike: '🚴',
+    Mountain: '⛰️',
+    Languages: '🗣️',
+    Music: '🎵',
+    Camera: '📷',
+    PersonStanding: '🏃',
+    ShoppingBag: '🛍️',
+    Footprints: '👣',
   };
   return emojiMap[icon] || '📍';
 }

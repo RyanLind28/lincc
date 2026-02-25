@@ -9,6 +9,7 @@ import {
   MessageCircle,
   Clock,
   AlertCircle,
+  MapPin,
   Trash2,
   CheckCheck,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
   new_message: <MessageCircle className="h-5 w-5 text-purple" />,
   event_starting: <Clock className="h-5 w-5 text-warning" />,
   event_cancelled: <AlertCircle className="h-5 w-5 text-error" />,
+  nearby_event: <MapPin className="h-5 w-5 text-blue" />,
 };
 
 // Background colors for notification types
@@ -35,6 +37,7 @@ const notificationBgColors: Record<NotificationType, string> = {
   new_message: 'bg-purple/10',
   event_starting: 'bg-warning/10',
   event_cancelled: 'bg-error/10',
+  nearby_event: 'bg-blue/10',
 };
 
 export default function NotificationsPage() {

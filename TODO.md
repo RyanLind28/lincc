@@ -1,39 +1,230 @@
 # LINCC TODO
 
-Last updated: 2026-02-21
+Last updated: 2026-02-26
 
 ---
 
 ## Current Status
 
 - **App**: Pre-launch, demo-ready on Vercel (`lincc-six.vercel.app`)
-- **Database**: Live Supabase with 32 London demo events, 21 categories
+- **Database**: Live Supabase with 25 Dubai/Bahrain demo events (2027 dates), 26 categories
 - **Auth**: Working (email/password, magic link)
 - **DEV_MODE**: OFF in all files
-
-### Migrations
-- All migrations up to `010` have been applied to live Supabase
+- **Migrations**: All up to `015` applied to live Supabase
 - **Landing**: Live with waitlist form
-- **PWA**: Partially configured (service worker generates, but no install UI or offline indicator)
+- **PWA**: Configured with install prompt, offline banner, update notification, service worker
 
 ---
 
-## Phase 1: Project Setup & DevOps
+## MVP Phase 1: Auth & Profile Hardening
 
-- [x] Environment variables — `.env.local` configured, Vercel env vars set
-- [x] Supabase project — project `srrubyupwiiqnehshszd`
-- [x] Configure Supabase client — `src/lib/supabase.ts` with real credentials
-- [ ] CI/CD pipeline — GitHub Actions for build and lint on PR
-- [x] Staging environment — `lincc-six.vercel.app` with auto-deploy from main
-- [x] Error monitoring — Sentry configured
+- [ ] Profile completion enforcement — block app use until profile is complete (name, DOB, gender, at least 1 tag)
+- [ ] Password reset flow — forgot password page + Supabase reset email
+- [ ] Custom auth emails — branded Supabase email templates (welcome, reset, magic link)
+- [ ] Email verification — require email confirmation for new signups
+- [ ] Session management — token refresh handling, logout on all devices
+- [ ] Account deletion — GDPR compliance, delete profile + data
+- [ ] UI design consistency pass — Login, Signup, Onboarding, and Terms pages don't match the app design system. Align gradients, cards, spacing, typography
+
+---
+
+## MVP Phase 2: UX Polish & Core Quality
+
+- [ ] Skeleton loaders — shimmer placeholders for all data-fetching views (home, profile, event detail, chats)
+- [ ] Empty states — friendly messages + CTAs when no events, no chats, no results
+- [ ] Error states — user-friendly error messages with retry buttons
+- [ ] Pull-to-refresh — event list on home page
+- [ ] Animations — smooth page transitions and micro-interactions
+- [ ] Haptic feedback — key interactions on mobile (join, like, send message)
+- [ ] How-to guide — in-app walkthrough/tutorial for new users explaining key features
+- [ ] PWA install prompt in onboarding — prompt users to add to home screen during onboarding flow
+
+---
+
+## MVP Phase 3: Push Notifications
+
+### Chunk A — Foundation (DONE)
+- [x] VAPID key generation — `scripts/generate-vapid-keys.mjs`, keys generated and in `.env`
+- [x] `push_subscriptions` table — migration `013` applied to live Supabase (RLS, index, CASCADE delete)
+- [x] Custom service worker — `src/sw.ts` with Workbox precaching, runtime caching, push + notificationclick handlers
+- [x] Vite PWA config — switched from `generateSW` to `injectManifest` strategy
+- [x] Push subscription service — `src/services/pushService.ts` (subscribe, unsubscribe, getSubscription)
+- [x] `usePushNotifications` hook — permission state, isSubscribed, subscribe/unsubscribe
+- [x] Notification permission prompt — dismissible card in MainLayout for first-time users
+- [x] Settings page push toggle — on/off toggle with "Blocked in browser" state
+- [x] Set `VITE_VAPID_PUBLIC_KEY` in Vercel dashboard env vars
+
+### Chunk B — Server-Side Push Sending (DONE)
+- [x] Supabase Edge Function — `send-push-notification` deployed, uses `web-push` npm for VAPID signing
+- [x] `create_notification()` updated — fires async `pg_net` HTTP POST to Edge Function on every notification
+- [x] Join request notifications — push to host via existing `on_join_request` trigger → `create_notification()`
+- [x] Request approved/declined — push to participant via existing `on_request_response` trigger → `create_notification()`
+- [x] New message notifications — `on_new_message` trigger on `messages` INSERT, notifies all participants except sender, 5-min throttle per user/event
+- [x] Event cancelled — `on_event_cancelled` trigger on `events` UPDATE to `cancelled`, notifies all approved participants
+- [x] Event reminders — `send_event_reminders()` pg_cron job every 5 min, notifies for events starting within 1 hour (one-time per event)
+- [x] VAPID keys + secrets — stored as Supabase Edge Function secrets (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `PUSH_FUNCTION_SECRET`)
+- [x] Stale subscription cleanup — 410/404 responses auto-delete expired subscriptions from DB
+- [x] Migration 014 applied — `014_push_notification_trigger.sql`
+
+### Chunk C — Notification Preferences & Enhancements (DONE)
+- [x] Notification preferences — per-type toggles in Settings (join_request, new_message, event_cancelled, event_starting, nearby_event)
+- [x] Quiet hours — user-configurable start/end times, push notifications suppressed during set window
+- [x] Nearby event alerts — `on_nearby_event` trigger on events INSERT, Haversine distance check against user's saved location and radius
+- [x] Connection-based notifications — 3+ shared events bypass quiet hours (checked in `create_notification()`)
+- [x] `notification_preferences` JSONB column added to profiles with sensible defaults
+- [x] `last_lat`/`last_lng` columns on profiles for location-based alerts
+- [x] Location sync — `useUserLocation` hook saves position to DB once per session
+- [x] Migration 015 applied — `015_notification_preferences.sql`
+
+---
+
+## MVP Phase 4: Admin Dashboard
+
+### Dashboard & Analytics
+- [ ] Dashboard overview — stats: total users, events, active events, reports
+- [ ] Analytics charts — user growth, event creation, engagement over time
+- [ ] Real-time updates — live feed when new reports/events come in
+
+### User Management
+- [ ] User list — search, filter, sort by date/activity
+- [ ] User details — full profile, event history, reports filed against them
+- [ ] User actions — suspend, ban, warn, delete
+- [ ] Bulk user actions — batch operations
+
+### Event Management
+- [ ] Event list — filters by status, category, date, location
+- [ ] Event moderation — approve, reject, feature, remove
+- [ ] Event analytics — views, joins, completion rate
+
+### Reports & Moderation
+- [ ] Reports queue — view and action pending reports
+- [ ] Report workflow — reviewed, dismissed, actioned statuses
+- [ ] Content moderation — flag inappropriate content
+
+### Configuration
+- [ ] Category management — add, edit, reorder, disable categories
+- [ ] Announcement system — send announcements to all users
+- [ ] Feature flags — toggle features on/off
+
+### Admin System
+- [ ] Admin roles — super admin, moderator, support tiers
+- [ ] Audit log — track all admin actions
+- [ ] Export data — users, events, reports to CSV
+- [ ] Mobile admin — responsive layout for mobile moderation
+
+---
+
+## MVP Phase 5: Business Profiles
+
+- [ ] Business mode toggle — users register as a business during signup or later in settings. Toggle to switch to "business mode"
+- [ ] Business profile fields — business name, logo, address, category/type, description, opening hours
+- [ ] Business posting — post deals, offers, flash sales, promotions as a business (separate from personal events)
+- [ ] Landing page business signup — "Sign up as a business" option on the landing page alongside the waitlist
+
+---
+
+## MVP Phase 6: Performance & Testing
+
+### Performance
+- [ ] Code splitting — lazy load routes with `React.lazy()` and `Suspense`
+- [ ] Component lazy loading — heavy components (map, chat)
+- [ ] Image optimization — compress, WebP, lazy load images
+- [ ] Bundle analysis — reduce bundle size (currently ~2.6MB, target < 1MB)
+- [ ] Database query optimization — review slow queries, add missing indexes
+- [ ] Lighthouse audit — target 90+ across all metrics
+
+### Testing
+- [ ] Unit tests setup — configure Vitest
+- [ ] Algorithm tests — scoring functions in `algorithm.ts`
+- [ ] Service tests — API services with mocked Supabase
+- [ ] Component tests — key UI components with React Testing Library
+- [ ] E2E setup — Playwright or Cypress
+- [ ] Auth flow E2E — signup, login, logout
+- [ ] Event flow E2E — create, join, leave, chat
+- [ ] Test PWA installability — Lighthouse PWA audit, verify install on iOS/Android/desktop
+
+---
+
+## MVP Phase 7: Production Launch
+
+- [ ] Production Supabase — separate production database
+- [ ] Production deployment — production environment on Vercel
+- [ ] Domain setup — custom domain (lincc.live), SSL
+- [ ] CDN configuration — static asset caching
+- [ ] Monitoring dashboards — uptime monitoring, error alerting
+- [ ] Backup strategy — database backup schedule
+- [ ] Load testing — simulated traffic
+- [ ] Security audit — vulnerability review, pen test
+- [ ] CI/CD pipeline — GitHub Actions for build + lint on PR
 - [ ] Analytics setup — Mixpanel/Amplitude for user analytics
 
 ---
 
-## Phase 2: Database Schema & Backend
+## Post-MVP / Future Ideas
 
+- [ ] Social login — Google/Apple sign-in
+- [ ] Event photos — cover photo upload via Supabase Storage
+- [ ] Event reviews — rate and review after attending
+- [ ] Trust score — reputation from attendance and reviews
+- [ ] Recurring events — weekly/monthly repeat
+- [ ] Dark mode — system preference support
+- [ ] Accessibility — screen reader, keyboard navigation
+- [ ] Infinite scroll — paginated event loading
+- [ ] A/B testing — recommendation weight configurations
+- [ ] Recommendation analytics — track fallback usage, click-through rates
+- [ ] AI event descriptions — generate with AI
+- [ ] Smart scheduling — suggest optimal event times
+- [ ] Group events — events for friend groups
+- [ ] Event series — multi-part events
+- [ ] Venue partnerships — venue booking integration
+- [ ] Premium features — subscription model
+- [ ] Event templates — save and reuse event configs
+- [ ] Calendar integration — Google/Apple Calendar sync
+- [ ] Weather integration — weather info for outdoor events
+- [ ] App store listings — PWA store submissions
+- [ ] Event data sourcing — external event APIs, scrapers, partnerships
+- [ ] Postcode / location search — search by postcode or place name (not just GPS)
+- [ ] Feature request form — in-app form logged to DB
+- [ ] Contact us form — in-app support form
+
+---
+
+## Blocked / Waiting
+
+- [ ] Google Places API integration — waiting on API access approval. Wire up `VITE_GOOGLE_PLACES_API_KEY` for venue autocomplete when ready
+
+---
+
+## Known Limitations
+
+- Supabase: `spatial_ref_sys` RLS — PostGIS system table, known platform limitation
+- Supabase: PostGIS in public schema — safe to ignore, moving risks breaking geo queries
+- Supabase: Enable leaked password protection — Dashboard > Auth > Attack Protection (manual step)
+
+---
+
+## Open Bugs
+
+(none currently)
+
+---
+
+## Completed
+
+<details>
+<summary>All completed tasks (click to expand)</summary>
+
+### Setup & Infrastructure
+- [x] Environment variables — `.env.local` configured, Vercel env vars set
+- [x] Supabase project — `srrubyupwiiqnehshszd`
+- [x] Configure Supabase client — `src/lib/supabase.ts`
+- [x] Staging environment — `lincc-six.vercel.app` with auto-deploy from main
+- [x] Error monitoring — Sentry configured
+- [x] Update logo references — using Vercel blob URL
+
+### Database & Backend
 - [x] Create profiles table
-- [x] Create categories table — 21 categories seeded
+- [x] Create categories table — 26 categories
 - [x] Create events table
 - [x] Create event_participants table
 - [x] Create messages table
@@ -41,322 +232,129 @@ Last updated: 2026-02-21
 - [x] Create blocks table
 - [x] Create notifications table
 - [x] Database indexes — events by location, category, time, host
-- [x] Row Level Security (RLS) — all tables (except spatial_ref_sys — known limitation)
+- [x] Row Level Security (RLS) — all tables
 - [x] Database functions — nearby events query, participant counts
 - [x] Database triggers — auto-update timestamps, participant counts
-- [x] Seed data — 32 London demo events
+- [x] Seed data — 25 Dubai/Bahrain demo events (2027 dates)
 
----
-
-## Phase 3: API Integration & Core Services
-
+### Auth & Profiles
 - [x] Disable DEV_MODE — OFF in all files
-- [x] Auth flow testing — sign up, sign in, magic link working
+- [x] Auth flow — sign up, sign in, magic link working
 - [x] Profile CRUD — create, read, update via Supabase
-- [x] Event fetching — `fetchProductionEvents()` with real data
-- [x] Event CRUD — `createEvent()`, `updateEvent()`, `deleteEvent()` (soft-cancel) in eventService.ts
-- [x] Participant management — join/leave/approve/reject via participantService + useEventParticipants hook, wired into EventDetailPage
-- [x] Real engagement tracking — useUserEngagement queries Supabase event_participants, aggregates by category (DEV_MODE off)
-- [x] Real-time subscriptions — events table changes refresh home feed, participant changes refresh event detail (Supabase Realtime channels)
-- [x] Error handling — ErrorBoundary component with retry (up to 3x), Sentry integration, wraps key routes in App.tsx
-- [x] API response caching — in-memory TTL cache (`src/lib/cache.ts`), 30s for event fetches, auto-invalidated on CRUD + realtime
-
----
-
-## Phase 4: Authentication & User Management
-
-- [ ] Custom auth emails — branded Supabase email templates
-- [ ] Email verification — require for new accounts
-- [ ] Password reset flow — forgot password
-- [ ] Social login — Google/Apple sign-in
-- [ ] Profile completion enforcement — before using app
-- [x] Onboarding flow — gender (Female/Male), unlimited interests, photo, name, DOB, bio
-- [x] Account settings — update email and password via Supabase Auth in EditProfilePage
-- [x] Profile editing — DOB editable in EditProfilePage
-- [ ] Account deletion — GDPR compliance
-- [ ] Session management — token refresh, logout on all devices
-
----
-
-## Phase 5: Event Features
-
-- [x] Event creation form — 5-step form with validation, category/subcategory, venue, date/time, capacity, join mode, audience
-- [x] Event editing — host edit bottom sheet on EventDetailPage (title, description, venue, capacity) via `updateEvent()`
-- [x] Event cancellation — host cancel with confirmation dialog, sets status to 'cancelled', navigates to My Events
-- [ ] Event photos — cover photo upload (Supabase Storage) — needs DB migration for cover_image column + storage bucket
-- [x] Event chat — real-time messaging with access control, optimistic UI, date separators, fully working
-- [ ] Event reminders — blocked by push notifications (Phase 12)
-- [ ] Recurring events — post-MVP
-- [x] Event capacity — full events blocked at join level, spots left display, full badge
-- [x] Event expiry — queries filter by `expires_at` (2h after start), events that started still show until expired
-- [x] MyEventsPage — "Hosting" + "Joined" tabs with real data, event counts, participant status badges
-
----
-
-## Phase 6: Map View
-
-- [x] Mapbox setup — token configured
-- [x] Basic map render — centered on user location
-- [x] Event markers — category-based pins on map
-- [x] Marker clustering — Mapbox GL cluster source with zoom-to-expand, count badges, coral/purple colors
-- [x] Event preview — preview card slides up on marker tap with title, venue, time, spots left, category
-- [x] User location marker — blue dot with ping animation and outer glow
-- [x] Radius visualization — dashed purple circle showing search radius from distance slider
-- [x] Map filters — shared filter state with list view via useRecommendedEvents hook
-- [x] Map/list sync — both views consume same scoredEvents, filters update both simultaneously
-- [x] Find me button — locate button, zooms to user at level 15
-- [x] Event detail map — Mapbox Static Images API with marker
-
----
-
-## Phase 7: PWA
-
-### Working
-- [x] vite-plugin-pwa configured with `registerType: 'autoUpdate'`
-- [x] Workbox service worker auto-generated with precaching
-- [x] Runtime caching — Google Fonts (CacheFirst), Mapbox (NetworkFirst)
-- [x] Custom manifest at `public/site.webmanifest`
-- [x] iOS PWA meta tags in `index.html`
-- [x] `usePWA` hook created — detects installability, offline state, exposes `promptInstall()`
-
-### To Do
-- [x] Add `purpose: "any"` icon to manifest — added 96, 180, 192, 512 icons with both `any` and `maskable` purpose
-- [x] Build install prompt component — `InstallBanner` in MainLayout, dismissible, uses `usePWA` hook
-- [x] Build offline indicator — `OfflineBanner` shows amber bar at top when connection lost
-- [x] Build update notification — `UpdateNotification` detects waiting service worker, prompts reload
-- [x] Add app shortcuts to manifest — "Create Event" (`/event/new`), "My Chats" (`/chats`)
-- [x] Offline fallback page — `public/offline.html` with branded design and retry button
-- [x] Cache Supabase API responses — NetworkFirst for REST API (1h), CacheFirst for Storage (1 week)
-- [x] Enhanced `usePWA` hook — now tracks `hasUpdate`, exposes `applyUpdate()` for service worker updates
-- [ ] Test PWA installability — Lighthouse PWA audit, verify install flow on iOS/Android/desktop
-- [ ] App store listings — PWA store submissions (post-launch)
-
----
-
-## Phase 8: Search & Discovery
-
-- [x] Full-text search — PostgreSQL tsvector + GIN index with weighted ranking (title A, venue B, description C), `search_events()` DB function, fallback ILIKE
-- [x] Search suggestions — live auto-complete as user types (debounced 300ms), dropdown with matching titles/venues
-- [x] Recent searches — localStorage with max 8, shown when search focused, individual remove + clear all
-- [x] Category browsing — `/explore` page with category grid, event counts, drill into category to see its events
-- [x] Trending events — "Popular near you" horizontal scroll on home page (sorted by participant count)
-- [x] Saved/bookmarked events — `saved_events` DB table with RLS, bookmark button on EventCard/EventCardGrid/EventDetailPage, `/saved` page, optimistic UI
-
----
-
-## Phase 9: Recommendation System Tuning
-
-- [x] Tune algorithm weights — rebalanced to `interest:35, distance:25, time:20, engagement:10, popularity:5, timeOfDay:5` (total 100)
-- [x] Improve distance scoring — exponential decay (`exp(-2 * d/r)`) for stronger nearby preference
-- [x] Smooth time scoring — continuous exponential decay with floor (no more coarse 8-tier thresholds)
-- [x] Add popularity scoring — participant/capacity ratio as social proof (5 pts max)
-- [x] Add time-of-day preferences — preferred activity window from past events, default evenings (5 pts max)
-- [x] Add more tag mappings — ~30 new tags (dance, baking, chess, trivia, tech, volunteering, etc.), expanded related categories with symmetry
-- [x] Add diversity injection — swaps in underrepresented categories at positions 4 and 8 when top 10 are dominated by ≤2 categories
-- [x] Expand engagement hook — `useUserEngagement` now returns `preferredHours` (4-hour sliding window from past events)
-- [ ] A/B testing — different weight configurations (post-launch)
-- [ ] Recommendation analytics — track fallback usage, click-through rates (post-launch)
-
----
-
-## Phase 10: Social Features
-
-- [x] User profiles — view other users' public profiles with follower/following counts, hosted/attended stats, upcoming events
-- [x] Follow system — `follows` table (migration 011), follow/unfollow with optimistic UI, follower + following counts on profile
-- [x] Share events — Web Share API + clipboard fallback (done in Phase 5)
-- [x] Share profiles — Web Share API + clipboard fallback on UserProfilePage
-- [x] Block users — `blockService` with block/unblock, three-dot menu on UserProfilePage + EventDetailPage, auto-unfollow on block
-- [x] Report users/events — `reportService` with reason selection, `ReportDialog` component (BottomSheet with 5 reason options + details), wired into UserProfilePage + EventDetailPage
-- [ ] Event reviews — rate and review after attending (post-MVP)
-- [ ] Trust score — reputation from attendance, reviews (post-MVP)
-
----
-
-## Phase 11: UX Polish
-
-- [ ] Pull-to-refresh — event list
-- [ ] Infinite scroll — load more events on scroll
-- [ ] Skeleton loaders — loading states for all data fetching
-- [ ] Empty states — no results, no events
-- [ ] Error states — user-friendly messages with retry
-- [ ] Haptic feedback — key interactions on mobile
-- [ ] Animations — smooth transitions and micro-interactions
-- [ ] Dark mode — system preference support
-- [ ] Accessibility — screen reader, keyboard navigation
-- [x] Desktop layout — sidebar nav on lg+, responsive grid, max-width container
-
----
-
-## Phase 12: Push Notifications
-
-- [ ] Service worker setup — configure for push
-- [ ] Notification permissions — request permission flow
-- [ ] Event reminders — 1 hour before, 15 min before
-- [ ] Join request notifications — notify hosts
-- [ ] Request approved/declined — notify participants
-- [ ] New message notifications — chat messages
-- [ ] Event cancelled — notify all participants
-- [ ] Notification preferences — user controls
-
----
-
-## Phase 13: Admin Dashboard
-
-### Dashboard & Analytics
-- [ ] Dashboard overview — stats: total users, events, active events, reports
-- [ ] Analytics charts — user growth, event creation, engagement
-- [ ] Real-time updates — live when new reports/events come in
-
-### User Management
-- [ ] User list — search, filter, sort
-- [ ] User details — full profile, event history, reports
-- [ ] User actions — suspend, ban, warn, delete
-- [ ] Bulk user actions — batch operations
-
-### Event Management
-- [ ] Event list — filters (status, category, date)
-- [ ] Event moderation — approve, reject, feature, remove
-- [ ] Event analytics — views, joins, completion rate
-
-### Reports & Moderation
-- [ ] Reports queue — view and action reports
-- [ ] Report workflow — reviewed, dismissed, actioned
-- [ ] Content moderation — flag inappropriate content
-
-### Configuration
-- [ ] Category management — add, edit, reorder, disable
-- [ ] Announcement system — send to all users
-- [ ] Feature flags — toggle features
-
-### Admin System
-- [ ] Admin roles — super admin, moderator, support
-- [ ] Audit log — track admin actions
-- [ ] Export data — users, events, reports to CSV
-- [ ] Mobile admin — responsive for mobile moderation
-
----
-
-## Phase 14: Testing
-
-- [ ] Unit tests setup — configure Vitest
-- [ ] Algorithm tests — scoring functions in `algorithm.ts`
-- [ ] Utility tests — `utils.ts` functions
-- [ ] Hook tests — React Testing Library
-- [ ] Service tests — API services with mocked Supabase
-- [ ] Component tests — key UI components
-- [ ] E2E setup — Playwright or Cypress
-- [ ] Auth flow E2E — signup, login, logout
-- [ ] Event flow E2E — create, join, leave
-- [ ] Visual regression — screenshot testing
-
----
-
-## Phase 15: Performance & Optimization
-
-- [ ] Code splitting — lazy load routes with `React.lazy()`
-- [ ] Component lazy loading — heavy components (map, etc.)
-- [ ] Image optimization — compress, WebP, lazy load
-- [ ] Bundle analysis — reduce bundle size (currently 534KB)
-- [ ] Caching strategy — service worker caching for offline
-- [ ] Database query optimization — optimize slow queries
-- [ ] Lighthouse audit — 90+ scores across all metrics
-
----
-
-## Phase 16: Documentation
-
-- [ ] README update — setup instructions, env vars
-- [ ] API documentation — Supabase tables and functions
-- [ ] Component Storybook — document UI components
-- [ ] Architecture docs — system architecture decisions
-- [ ] Contributing guide — for new contributors
-- [ ] Deployment docs — staging/production deploy
-
----
-
-## Phase 17: Production Launch
-
-- [ ] Production Supabase — production database
-- [ ] Production deployment — production environment
-- [ ] Domain setup — custom domain, SSL
-- [ ] CDN configuration — static assets
-- [ ] Monitoring dashboards — uptime monitoring
-- [ ] Backup strategy — database backup schedule
-- [ ] Load testing — simulated traffic
-- [ ] Security audit — vulnerability review
-
----
-
-## Phase 18: MVP Launch Features (Meeting Notes — 2026-02-21)
-
-### Onboarding & UX
-- [ ] How-to guide — in-app walkthrough/tutorial for new users explaining key features
-- [ ] PWA install prompt in onboarding — prompt users to "download" the app to their home screen/desktop during the onboarding flow
-
-### Categories
-- [ ] Add "Kids & Family" category — covers family activities, things to do with kids, and kids-only events. Needs DB migration to seed new category
-- [ ] Add "Other" catch-all category — users can type their own category name. Log all custom entries to a `custom_categories` table so we can review what categories are missing and add popular ones later
-
-### Search & Location
-- [ ] Postcode / location search — allow users to search by postcode or place name (not just GPS), and adjust distance radius from that point
-
-### Event Data & Content
-- [ ] Event data sourcing — research and integrate external event data (APIs, scrapers, partnerships) to populate the app with real events
-- [ ] Business outreach — contact local businesses in launch cities to get them adding events, deals, and offers
-
-### Launch Strategy
-- [ ] Bahrain & Dubai as launch cities — update demo data, location defaults, and marketing for Bahrain/Dubai as primary launch markets. App is globally available (anyone can post/create events anywhere) but launch focus and content seeding is Bahrain & Dubai
-- [ ] Update demo events — replace London demo data with Bahrain & Dubai events and venues
-
-### Business Profiles
-- [ ] Business mode toggle — users can register as a business during signup (or later in settings). Business registration adds a toggle to switch to "business mode". System verifies business status before enabling the toggle. Business mode unlocks posting deals, offers, and promotions
-- [ ] Business profile fields — business name, logo, address, category/type, description, opening hours
-- [ ] Business posting — ability to post deals, offers, flash sales, promotions, and events as a business (different from personal events)
-- [ ] Landing page business signup — add a "Sign up as a business" option/flow to the landing page (lincc.live) alongside the waitlist
-
-### Feedback & Support
-- [ ] Feature request form — in-app form for users to submit feature requests, logged to a DB table for review
-- [ ] Contact us form — in-app "contact us about anything" form (separate from the landing page contact)
-
-### Notifications
-- [ ] Notification alerts for new events — push notification when a new event is posted nearby, with optional date range filter (e.g. "notify me about events this weekend")
-- [ ] Connection-based notification algo — smart notifications for people you regularly connect with (e.g. if someone you've attended 3+ events with posts a new event, prioritise that notification)
-
----
-
-## Phase 19: Future Ideas (Post-MVP)
-
-- [ ] AI event descriptions — generate with AI
-- [ ] Smart scheduling — suggest optimal times
-- [ ] Group events — events for friend groups
-- [ ] Event series — multi-part events
-- [ ] Venue partnerships — venue booking integration
-- [ ] Premium features — subscription model
-- [ ] Event templates — save and reuse configs
-- [ ] Calendar integration — Google/Apple Calendar sync
-- [ ] Weather integration — weather for outdoor events
-
----
-
-## Backlog
-
-- [ ] Create style sheet document — design system doc for consistent styling
-- [x] Update logo references — using Vercel blob URL
-- [ ] Supabase: spatial_ref_sys RLS — PostGIS system table, known platform limitation
-- [ ] Supabase: PostGIS in public schema — safe to ignore, moving risks breaking geo queries
-- [ ] Supabase: Enable leaked password protection — Dashboard → Auth → Attack Protection
-- [ ] Google Places API integration — wire up `VITE_GOOGLE_PLACES_API_KEY` for venue autocomplete
-- [x] Mapbox improvements — clustering, event preview on marker tap, user location marker, radius circle (done in Phase 6)
-- [ ] UI design consistency pass — Login, Signup, Onboarding, and Terms pages don't match the main app's design system (gradients, cards, spacing, typography). Align them with the rest of the app
-
----
-
-## Resolved Bugs
-
-- [x] Bottom nav icon render issue — fixed consistent wrapper, smooth transitions
-- [x] Auth loading loop — fixed with two-effect pattern
-- [x] ProfilePage mock data — fixed to use real Supabase queries
-- [x] Vercel SPA routing 404s — fixed with `vercel.json` rewrites
-- [x] Vercel build: unused Shield import — removed
-- [x] Vercel build: ProfilePage TS errors — fixed null checks
-- [x] Vercel env var typo — `VITE_SUPABASE_UR` → `VITE_SUPABASE_URL`
+- [x] Onboarding flow — gender, interests, photo, name, DOB, bio
+- [x] Account settings — update email and password
+- [x] Profile editing — all fields editable in EditProfilePage
+
+### Events & Core Features
+- [x] Event fetching — `fetchProductionEvents()` with real Supabase data
+- [x] Event CRUD — create, update, delete (soft-cancel)
+- [x] Participant management — join/leave/approve/reject
+- [x] Real engagement tracking — queries event_participants, aggregates by category
+- [x] Real-time subscriptions — events, participants, messages, notifications
+- [x] Error handling — ErrorBoundary with retry + Sentry
+- [x] API response caching — 30s TTL, auto-invalidated
+- [x] Event creation form — 5-step with validation
+- [x] Event editing — host edit bottom sheet
+- [x] Event cancellation — soft-cancel with confirmation
+- [x] Event chat — real-time messaging with access control
+- [x] Event capacity — full blocking, spots display
+- [x] Event expiry — 2h after start via `expires_at`
+- [x] MyEventsPage — Hosting + Joined tabs
+
+### Map
+- [x] Mapbox setup + basic render
+- [x] Event markers — category-based pins
+- [x] Marker clustering — zoom-to-expand, count badges
+- [x] Event preview card on marker tap
+- [x] User location marker — blue dot with ping
+- [x] Radius visualization — dashed purple circle
+- [x] Map/list filter sync
+- [x] Find me button
+- [x] Event detail static map
+
+### PWA
+- [x] vite-plugin-pwa with autoUpdate
+- [x] Workbox service worker with precaching
+- [x] Runtime caching — Fonts, Mapbox, Supabase REST, Storage
+- [x] Custom manifest with maskable icons
+- [x] iOS PWA meta tags
+- [x] `usePWA` hook — installability, offline, updates
+- [x] Install prompt banner
+- [x] Offline indicator banner
+- [x] Update notification
+- [x] App shortcuts
+- [x] Offline fallback page
+
+### Search & Discovery
+- [x] Full-text search — tsvector + GIN index
+- [x] Search suggestions — debounced auto-complete
+- [x] Recent searches — localStorage
+- [x] Category browsing — `/explore` page
+- [x] Trending events — popular near you
+- [x] Saved/bookmarked events
+
+### Recommendation System
+- [x] Tuned algorithm weights (interest 35, distance 25, time 20, engagement 10, popularity 5, timeOfDay 5)
+- [x] Exponential distance decay
+- [x] Continuous time scoring
+- [x] Popularity scoring
+- [x] Time-of-day preferences
+- [x] 30+ tag mappings
+- [x] Diversity injection
+- [x] Engagement hook with preferredHours
+
+### Social Features
+- [x] User profiles with stats
+- [x] Follow system with optimistic UI
+- [x] Share events + profiles (Web Share API)
+- [x] Block users with auto-unfollow
+- [x] Report users/events with reason selection
+
+### Layout
+- [x] Desktop layout — sidebar nav, responsive grid
+
+### Launch Data
+- [x] Bahrain & Dubai demo events — 13 Dubai + 12 Bahrain with real venues
+- [x] Map default center changed to Dubai
+- [x] Recommendation fallback location changed to Dubai
+
+### Push Notifications (Phase 3, Chunk A)
+- [x] VAPID key generation script
+- [x] `push_subscriptions` DB table + RLS + migration 013
+- [x] Custom service worker (`src/sw.ts`) — injectManifest with push handler
+- [x] Push subscription service (`src/services/pushService.ts`)
+- [x] `usePushNotifications` hook
+- [x] Notification permission prompt component in MainLayout
+- [x] Push toggle in Settings page
+
+### Push Notifications (Phase 3, Chunk B)
+- [x] Edge Function `send-push-notification` deployed with VAPID signing
+- [x] `create_notification()` wired to pg_net → Edge Function for push delivery
+- [x] `on_event_cancelled` trigger — notifies approved participants
+- [x] `on_new_message` trigger — notifies chat participants (5-min throttle)
+- [x] `send_event_reminders()` pg_cron job — events starting within 1 hour
+- [x] Stale subscription cleanup (410/404 auto-delete)
+- [x] Migration 014 applied
+
+### Push Notifications (Phase 3, Chunk C)
+- [x] Per-type notification preferences (toggles in Settings UI)
+- [x] Quiet hours with configurable start/end time pickers
+- [x] Nearby event alerts — DB trigger with Haversine distance + user radius
+- [x] Connection-based priority — 3+ shared events bypass quiet hours
+- [x] `notification_preferences` JSONB + `last_lat`/`last_lng` on profiles
+- [x] Location sync from frontend to DB (once per session)
+- [x] `nearby_event` notification type with icon/routing in NotificationsPage + service worker
+- [x] Migration 015 applied
+
+### Bug Fixes
+- [x] Bottom nav icon render issue
+- [x] Auth loading loop — two-effect pattern
+- [x] ProfilePage mock data → real queries
+- [x] Vercel SPA routing 404s
+- [x] Vercel build errors (unused imports, TS errors, env typo)
+- [x] Category icons — added 11 missing icons to iconMap + MapView emoji map
+- [x] Profile picture upload — upsert + error logging + success toast
+- [x] Profile UI redesign — card layout with stats row
+- [x] Profile follower/following counts
+
+</details>
