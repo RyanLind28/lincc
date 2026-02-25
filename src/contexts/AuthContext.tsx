@@ -33,6 +33,9 @@ const MOCK_PROFILE: Profile = {
   terms_accepted_at: new Date().toISOString(),
   role: 'admin',
   status: 'active',
+  notification_preferences: null,
+  last_lat: null,
+  last_lng: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
