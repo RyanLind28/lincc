@@ -206,7 +206,7 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
 
     map.current.flyTo({
       center: [userLocation.longitude, userLocation.latitude],
-      zoom: 13,
+      zoom: 15,
       duration: 1000,
     });
   }, [userLocation, isLoaded]);

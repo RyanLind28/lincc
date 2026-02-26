@@ -38,6 +38,7 @@ Last updated: 2026-02-26
 - [ ] Haptic feedback — key interactions on mobile (join, like, send message)
 - [ ] How-to guide — in-app walkthrough/tutorial for new users explaining key features
 - [ ] PWA install prompt in onboarding — prompt users to add to home screen during onboarding flow
+- [ ] Settings page enhancements — comprehensive settings hub: account management (email, password change), app preferences (language, theme), linked accounts, about/version info, help & support links, clear cache, notification sounds
 
 ---
 

@@ -63,13 +63,22 @@ export default function EditProfilePage() {
 
     try {
       const compressed = await compressImage(file);
+
+      // Delete old avatar files before uploading new one
+      const { data: existingFiles } = await supabase.storage
+        .from('avatars')
+        .list(user.id);
+      if (existingFiles && existingFiles.length > 0) {
+        const filesToRemove = existingFiles.map((f) => `${user.id}/${f.name}`);
+        await supabase.storage.from('avatars').remove(filesToRemove);
+      }
+
       const filePath = `${user.id}/${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, compressed, {
           contentType: 'image/jpeg',
-          upsert: true,
         });
 
       if (uploadError) {

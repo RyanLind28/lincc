@@ -74,6 +74,14 @@ registerRoute(
   })
 );
 
+// --- SKIP WAITING HANDLER ---
+// When the app sends SKIP_WAITING, activate the new service worker immediately
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // --- PUSH NOTIFICATION HANDLER ---
 
 self.addEventListener('push', (event) => {
