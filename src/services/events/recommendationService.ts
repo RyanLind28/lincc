@@ -127,8 +127,22 @@ export async function getRecommendationsAsync(
     userLocation,
   });
 
-  // Apply fallback cascade then diversity injection
-  const result = applyFallbackCascade(filtered, scored);
+  // When the user has explicitly set filters, respect the results (even if empty).
+  // Only apply the fallback cascade for the default "no filters" view.
+  const hasExplicitFilters =
+    filterCategories.length > 0 || !!filterTimeRange || filterSearch.trim().length > 0;
+
+  let result: RecommendationResult;
+  if (hasExplicitFilters) {
+    result = {
+      events: [...filtered].sort((a, b) => b.score - a.score),
+      fallbackUsed: 'none',
+      totalAvailable: scored.length,
+    };
+  } else {
+    result = applyFallbackCascade(filtered, scored);
+  }
+
   result.events = injectDiversity(result.events, engagementByCategory);
   return result;
 }
@@ -202,6 +216,7 @@ function scoreEvents(
       },
       category_value: categoryValue,
       subcategory: undefined,
+      cover_image_url: (event as EventWithDetails & { cover_image_url?: string | null }).cover_image_url,
       venue_name: event.venue_name,
       venue_short: event.venue_address?.split(',')[0] || event.venue_name,
       venue_lat: event.venue_lat,

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -34,6 +34,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  // Listen for toast events from contexts that can't use useToast (e.g. AuthContext)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { message, type } = (e as CustomEvent).detail;
+      showToast(message, type);
+    };
+    window.addEventListener('lincc:toast', handler);
+    return () => window.removeEventListener('lincc:toast', handler);
+  }, [showToast]);
 
   return (
     <ToastContext.Provider value={{ toasts, showToast, dismissToast }}>

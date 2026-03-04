@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
-import { Button } from '../../components/ui';
+import { GradientButton } from '../../components/ui';
 import { Shield, Users, Clock, Heart } from 'lucide-react';
+
+const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
 const guidelines = [
   {
@@ -81,51 +83,58 @@ export default function TermsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-text mb-2">Community Guidelines</h1>
-          <p className="text-text-muted">
-            Before you get started, please review and agree to our community guidelines.
-          </p>
+      <div className="max-w-md mx-auto px-4 py-12">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <img src={LOGO_URL} alt="Lincc" className="h-8" />
         </div>
 
-        <div className="space-y-4 mb-8">
-          {guidelines.map((item) => (
-            <div
-              key={item.title}
-              className="flex gap-4 p-4 bg-surface rounded-xl border border-border"
-            >
-              <div className="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <item.icon className="h-5 w-5 text-primary" />
+        <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold gradient-text mb-2">Community Guidelines</h1>
+            <p className="text-text-muted">
+              Before you get started, please review and agree to our community guidelines.
+            </p>
+          </div>
+
+          <div className="space-y-4 mb-6">
+            {guidelines.map((item) => (
+              <div
+                key={item.title}
+                className="flex gap-4 p-4 bg-background rounded-xl border border-border"
+              >
+                <div className="flex-shrink-0 w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
+                  <item.icon className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-text mb-1">{item.title}</h3>
+                  <p className="text-sm text-text-muted">{item.description}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-text mb-1">{item.title}</h3>
-                <p className="text-sm text-text-muted">{item.description}</p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <label className="flex items-start gap-3 mb-6 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-border text-coral focus:ring-coral"
+            />
+            <span className="text-sm text-text">
+              I agree to follow the community guidelines and understand that violations may result in account suspension.
+            </span>
+          </label>
+
+          <GradientButton
+            onClick={handleAccept}
+            fullWidth
+            isLoading={isLoading}
+            disabled={!agreed}
+          >
+            Continue
+          </GradientButton>
         </div>
-
-        <label className="flex items-start gap-3 mb-6 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
-          />
-          <span className="text-sm text-text">
-            I agree to follow the community guidelines and understand that violations may result in account suspension.
-          </span>
-        </label>
-
-        <Button
-          onClick={handleAccept}
-          className="w-full"
-          isLoading={isLoading}
-          disabled={!agreed}
-        >
-          Continue
-        </Button>
       </div>
     </div>
   );

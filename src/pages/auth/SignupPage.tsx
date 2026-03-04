@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { Button, Input } from '../../components/ui';
+import { GradientButton, Input } from '../../components/ui';
 import { Mail, CheckCircle } from 'lucide-react';
+
+const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -61,86 +63,94 @@ export default function SignupPage() {
 
   if (showVerificationSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="h-8 w-8 text-success" />
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12">
+        <div className="w-full max-w-sm">
+          <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm text-center">
+            <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-text mb-2">Verify your email</h1>
+            <p className="text-text-muted mb-6">
+              We sent a verification link to <strong>{email}</strong>. Please verify your email before signing in.
+            </p>
+            <Link to="/login">
+              <GradientButton variant="outline">Back to login</GradientButton>
+            </Link>
           </div>
-          <h1 className="text-2xl font-bold text-text mb-2">Check your email</h1>
-          <p className="text-text-muted mb-6">
-            We sent a verification link to <strong>{email}</strong>. Click the link to complete your registration.
-          </p>
-          <Link to="/login">
-            <Button variant="ghost">Back to login</Button>
-          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Join Lincc</h1>
-          <p className="text-text-muted">Create your account</p>
+        <div className="flex justify-center mb-6">
+          <img src={LOGO_URL} alt="Lincc" className="h-8" />
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-4">
-          <Input
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-          />
-
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 6 characters"
-            required
-          />
-
-          <Input
-            label="Confirm Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm your password"
-            required
-          />
-
-          <Button type="submit" className="w-full" isLoading={isLoading}>
-            Create Account
-          </Button>
-        </form>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
+        <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold gradient-text mb-2">Join Lincc</h1>
+            <p className="text-text-muted">Create your account</p>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-background text-text-muted">or</span>
+
+          <form onSubmit={handleSignup} className="space-y-4">
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              required
+            />
+
+            <Input
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              required
+            />
+
+            <GradientButton type="submit" fullWidth isLoading={isLoading}>
+              Create Account
+            </GradientButton>
+          </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-surface text-text-light">or</span>
+            </div>
           </div>
+
+          <GradientButton
+            variant="outline"
+            fullWidth
+            onClick={handleMagicLink}
+            isLoading={isLoading}
+            leftIcon={<Mail className="h-4 w-4" />}
+          >
+            Continue with Magic Link
+          </GradientButton>
         </div>
-
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleMagicLink}
-          isLoading={isLoading}
-          leftIcon={<Mail className="h-4 w-4" />}
-        >
-          Continue with Magic Link
-        </Button>
 
         <p className="text-center text-sm text-text-muted mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary font-medium hover:underline">
+          <Link to="/login" className="text-coral font-medium hover:text-coral/80">
             Sign in
           </Link>
         </p>

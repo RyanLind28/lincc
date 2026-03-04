@@ -1,18 +1,12 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <!-- SEO: Title & Meta -->
     <title>Local Events & Things to Do Near You | Lincc</title>
     <meta name="description" content="Discover local events, deals, and things to do near you — all in real time. Lincc brings together everything happening in your area. Join the waitlist for early access." />
     <meta name="theme-color" content="#845EF7" />
-
-    <!-- SEO: Canonical -->
     <link rel="canonical" href="https://www.lincc.live/" />
-
-    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.lincc.live/" />
     <meta property="og:title" content="Lincc — Discover Local Events & Deals Near You" />
@@ -21,34 +15,23 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="Lincc" />
-
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Lincc — Discover Local Events & Deals Near You" />
     <meta name="twitter:description" content="Everything happening around you, in one place. Events, deals, openings — all live, all local." />
     <meta name="twitter:image" content="https://www.lincc.live/og-image.png" />
-
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="Lincc" />
     <link rel="manifest" href="/site.webmanifest" />
-
-    <!-- Preconnects -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com" crossorigin />
-
-    <!-- Preload LCP image (logo) -->
     <link rel="preload" as="image" href="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp" type="image/webp" fetchpriority="high" />
-
-    <!-- Fonts -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" /></noscript>
-
-    <!-- Structured Data: Organization -->
+    <link rel="stylesheet" href="/styles.css" />
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -60,8 +43,6 @@
       "sameAs": []
     }
     </script>
-
-    <!-- Structured Data: WebSite -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -70,8 +51,6 @@
       "url": "https://www.lincc.live/"
     }
     </script>
-
-    <!-- Structured Data: SoftwareApplication -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -89,7 +68,453 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Nav -->
+    <nav class="nav">
+      <div class="nav-inner">
+        <a href="/" class="nav-logo">
+          <img src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp" alt="Lincc" height="40" width="120" />
+        </a>
+        <div class="nav-links">
+          <a href="#how-it-works">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#businesses">For Businesses</a>
+          <a href="/about">About</a>
+        </div>
+        <a href="#waitlist" class="nav-cta">Get Early Access</a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-badge">
+          <i data-lucide="sparkles" style="width:16px;height:16px;color:#FF6B6B"></i>
+          <span>Coming Soon — Join the waitlist</span>
+        </div>
+        <h1>No Algorithms.<br /><span class="gradient-text">Just what's happening now</span></h1>
+        <h2 style="font-size:18px;font-weight:500;color:#845EF7;margin-bottom:16px;letter-spacing:0.01em">Discover local events, deals, and things to do near you</h2>
+        <p class="hero-sub">Tired of Instagram showing you last week's posts when you want to know what's on tonight? Lincc is different. Everything you see is happening now or soon, in the order it was posted. No algorithms choosing for you.</p>
+        <a href="#waitlist" class="hero-cta">Get Early Access <i data-lucide="arrow-right" style="width:20px;height:20px"></i></a>
+        <p class="hero-note">Be first to know when we launch.</p>
+
+        <div class="preview-cards desktop-grid">
+          <div class="preview-card" style="background:linear-gradient(135deg,#FF6B6B,#845EF7)">
+            <i data-lucide="wine" style="width:24px;height:24px;color:#fff"></i>
+            <span class="preview-card-label">Flash Sale</span>
+            <span class="preview-card-title">Half-price cocktails</span>
+            <span class="preview-card-location">Skybar</span>
+            <span class="preview-card-time">Next 2 hours only</span>
+            <span class="preview-card-tag">50% off</span>
+          </div>
+          <div class="preview-card" style="background:linear-gradient(135deg,#845EF7,#5C7CFA)">
+            <i data-lucide="party-popper" style="width:24px;height:24px;color:#fff"></i>
+            <span class="preview-card-label">Social</span>
+            <span class="preview-card-title">Board games night at mine</span>
+            <span class="preview-card-location">Hackney</span>
+            <span class="preview-card-time">7pm tonight</span>
+            <span class="preview-card-tag">3 spots left</span>
+          </div>
+          <div class="preview-card" style="background:linear-gradient(135deg,#f59e0b,#f97316)">
+            <i data-lucide="coffee" style="width:24px;height:24px;color:#fff"></i>
+            <span class="preview-card-label">Meetup</span>
+            <span class="preview-card-title">Morning run & coffee</span>
+            <span class="preview-card-location">Victoria Park</span>
+            <span class="preview-card-time">Tomorrow 7am</span>
+            <span class="preview-card-tag">All levels welcome</span>
+          </div>
+        </div>
+
+        <div class="preview-cards mobile-scroll">
+          <div class="preview-card" style="background:linear-gradient(135deg,#FF6B6B,#845EF7)">
+            <i data-lucide="wine" style="width:24px;height:24px;color:#fff"></i>
+            <span class="preview-card-label">Flash Sale</span>
+            <span class="preview-card-title">Half-price cocktails</span>
+            <span class="preview-card-location">Skybar</span>
+            <span class="preview-card-time">Next 2 hours only</span>
+            <span class="preview-card-tag">50% off</span>
+          </div>
+          <div class="preview-card" style="background:linear-gradient(135deg,#845EF7,#5C7CFA)">
+            <i data-lucide="party-popper" style="width:24px;height:24px;color:#fff"></i>
+            <span class="preview-card-label">Social</span>
+            <span class="preview-card-title">Board games night at mine</span>
+            <span class="preview-card-location">Hackney</span>
+            <span class="preview-card-time">7pm tonight</span>
+            <span class="preview-card-tag">3 spots left</span>
+          </div>
+          <div class="preview-card" style="background:linear-gradient(135deg,#f59e0b,#f97316)">
+            <i data-lucide="coffee" style="width:24px;height:24px;color:#fff"></i>
+            <span class="preview-card-label">Meetup</span>
+            <span class="preview-card-title">Morning run & coffee</span>
+            <span class="preview-card-location">Victoria Park</span>
+            <span class="preview-card-time">Tomorrow 7am</span>
+            <span class="preview-card-tag">All levels welcome</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Lincc -->
+    <section class="why-lincc">
+      <div class="section-inner">
+        <span class="section-label">Why Lincc</span>
+        <h2>Real-Time. Chronological. Unfiltered.</h2>
+        <p class="tagline gradient-text">Your social life, sorted.</p>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="section-inner">
+        <span class="section-label">How it works</span>
+        <h2>Your area, at your<br /><span class="gradient-text">fingertips</span></h2>
+        <div class="steps-grid">
+          <div class="step-card">
+            <span class="step-number">1</span>
+            <h3>See what's on</h3>
+            <p>Open Lincc and instantly see everything happening around you — events, deals, openings, meetups, and more.</p>
+          </div>
+          <div class="step-card">
+            <span class="step-number">2</span>
+            <h3>Find your vibe</h3>
+            <p>Narrow it down to what suits you — by time, place, or interest. From tonight's plans to this weekend's events.</p>
+          </div>
+          <div class="step-card">
+            <span class="step-number">3</span>
+            <h3>Get out there</h3>
+            <p>Grab a deal, join an event, or try something new. Everything you need to go is right here.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+      <div class="section-inner">
+        <span class="section-label">Features</span>
+        <h2>Everything you need,<br /><span class="gradient-text">one place.</span></h2>
+        <p>Events, deals, meetups, and local happenings — all in your pocket.</p>
+        <div class="features-grid">
+          <div class="feature-card">
+            <i data-lucide="heart" style="width:24px;height:24px"></i>
+            <h3>New connections</h3>
+            <p>Find a coffee buddy, a running partner, a co-working crew, or a whole new circle. Meet people doing what you love.</p>
+          </div>
+          <div class="feature-card">
+            <i data-lucide="sparkles" style="width:24px;height:24px"></i>
+            <h3>New things to do</h3>
+            <p>Pop-up markets, open mic nights, food festivals, club openings — discover things you never knew were happening.</p>
+          </div>
+          <div class="feature-card">
+            <i data-lucide="tag" style="width:24px;height:24px"></i>
+            <h3>Exclusive deals</h3>
+            <p>Offers and discounts from local restaurants, bars, and shops — only on Lincc.</p>
+          </div>
+          <div class="feature-card">
+            <i data-lucide="clock" style="width:24px;height:24px"></i>
+            <h3>Always something on</h3>
+            <p>Live, real-time events updated around the clock. Whether it's tonight or this weekend, there's always a plan.</p>
+          </div>
+          <div class="feature-card">
+            <i data-lucide="map-pin" style="width:24px;height:24px"></i>
+            <h3>Right on your doorstep</h3>
+            <p>See what's within walking distance or explore further out. Your area is more interesting than you think.</p>
+          </div>
+          <div class="feature-card">
+            <i data-lucide="store" style="width:24px;height:24px"></i>
+            <h3>Support local</h3>
+            <p>Discover independent restaurants, shops, and venues in your neighbourhood. Keep it local.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- For Businesses -->
+    <section class="for-businesses" id="businesses">
+      <div class="section-inner">
+        <div class="biz-layout">
+          <div class="biz-left">
+            <span class="section-label">For Businesses</span>
+            <h2>Reach customers<br /><span class="gradient-text">when it matters</span></h2>
+            <p class="biz-desc">Whether you're a restaurant, bar, shop, or venue — Lincc puts your events, offers, and promotions in front of people who are nearby and ready to go.</p>
+            <ul class="biz-checklist">
+              <li><span class="check-icon"><i data-lucide="check" style="width:14px;height:14px;color:#fff"></i></span> Post events, offers & promotions instantly</li>
+              <li><span class="check-icon"><i data-lucide="check" style="width:14px;height:14px;color:#fff"></i></span> Reach people within walking distance</li>
+              <li><span class="check-icon"><i data-lucide="check" style="width:14px;height:14px;color:#fff"></i></span> Drive foot traffic with time-limited deals</li>
+              <li><span class="check-icon"><i data-lucide="check" style="width:14px;height:14px;color:#fff"></i></span> Track engagement and redemptions</li>
+            </ul>
+          </div>
+          <div class="biz-right">
+            <div class="biz-card" style="background:linear-gradient(135deg,#f59e0b,#f97316)">
+              <i data-lucide="utensils" style="width:20px;height:20px;color:#fff"></i>
+              <span class="biz-card-name">The Garden Kitchen</span>
+              <span class="biz-card-type">Restaurant</span>
+              <span class="biz-card-offer">50% off lunch menu — Today only</span>
+            </div>
+            <div class="biz-card" style="background:linear-gradient(135deg,#FF6B6B,#845EF7)">
+              <i data-lucide="coffee" style="width:20px;height:20px;color:#fff"></i>
+              <span class="biz-card-name">Brew & Co</span>
+              <span class="biz-card-type">Coffee Shop</span>
+              <span class="biz-card-offer">Free pastry with any coffee before 10am</span>
+            </div>
+            <div class="biz-card" style="background:linear-gradient(135deg,#845EF7,#5C7CFA)">
+              <i data-lucide="store" style="width:20px;height:20px;color:#fff"></i>
+              <span class="biz-card-name">Urban Threads</span>
+              <span class="biz-card-type">Boutique</span>
+              <span class="biz-card-offer">New collection launch — 20% off this weekend</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="categories">
+      <div class="section-inner">
+        <span class="section-label">Categories</span>
+        <h2>Whatever you're looking for</h2>
+        <div class="category-tags">
+          <span class="category-tag"><i data-lucide="party-popper" style="width:16px;height:16px"></i> Nightlife & Clubs</span>
+          <span class="category-tag"><i data-lucide="utensils" style="width:16px;height:16px"></i> Food & Dining</span>
+          <span class="category-tag"><i data-lucide="music" style="width:16px;height:16px"></i> Live Music</span>
+          <span class="category-tag"><i data-lucide="wine" style="width:16px;height:16px"></i> Happy Hour</span>
+          <span class="category-tag"><i data-lucide="dumbbell" style="width:16px;height:16px"></i> Fitness & Wellness</span>
+          <span class="category-tag"><i data-lucide="shopping-bag" style="width:16px;height:16px"></i> Markets & Pop-ups</span>
+          <span class="category-tag"><i data-lucide="coffee" style="width:16px;height:16px"></i> Coffee & Brunch</span>
+          <span class="category-tag"><i data-lucide="palette" style="width:16px;height:16px"></i> Art & Exhibitions</span>
+          <span class="category-tag"><i data-lucide="drama" style="width:16px;height:16px"></i> Comedy & Shows</span>
+          <span class="category-tag"><i data-lucide="tree-pine" style="width:16px;height:16px"></i> Outdoor & Adventure</span>
+          <span class="category-tag"><i data-lucide="trophy" style="width:16px;height:16px"></i> Sports & Recreation</span>
+          <span class="category-tag"><i data-lucide="heart" style="width:16px;height:16px"></i> Community Events</span>
+          <span class="category-tag"><i data-lucide="tag" style="width:16px;height:16px"></i> Restaurant Deals</span>
+          <span class="category-tag"><i data-lucide="store" style="width:16px;height:16px"></i> Shop Promotions</span>
+          <span class="category-tag"><i data-lucide="sparkles" style="width:16px;height:16px"></i> Grand Openings</span>
+          <span class="category-tag"><i data-lucide="baby" style="width:16px;height:16px"></i> Kids & Family</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- The Problem -->
+    <section class="the-problem">
+      <div class="section-inner">
+        <div class="problem-layout">
+          <div class="problem-left">
+            <span class="section-label">The Problem</span>
+            <h2>Stop searching.<br /><span class="gradient-text">Start discovering.</span></h2>
+            <p class="biz-desc">How do you find out what's happening tonight? You check Instagram, Google, maybe five different apps — and still miss half of it. Lincc brings it all together. One place. Always up to date. Always local.</p>
+            <ul class="biz-checklist">
+              <li><span class="check-icon"><i data-lucide="check" style="width:14px;height:14px;color:#fff"></i></span> Posted in order, not by engagement</li>
+              <li><span class="check-icon"><i data-lucide="check" style="width:14px;height:14px;color:#fff"></i></span> See what's on now, not last week</li>
+              <li><span class="check-icon"><i data-lucide="check" style="width:14px;height:14px;color:#fff"></i></span> Local first — your area, your feed</li>
+              <li><span class="check-icon"><i data-lucide="check" style="width:14px;height:14px;color:#fff"></i></span> No algorithm deciding what you see</li>
+            </ul>
+          </div>
+          <div class="problem-right">
+            <div class="problem-card">
+              <i data-lucide="globe" style="width:28px;height:28px;color:#fff"></i>
+              <h3>Launching Soon</h3>
+              <span class="problem-card-subtitle">Be the first to know</span>
+              <p>We're building the go-to app for discovering everything happening in your area. Join the waitlist to get early access.</p>
+              <a href="#waitlist" class="problem-card-link">Join the waitlist <i data-lucide="arrow-right" style="width:16px;height:16px"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Banner -->
+    <section class="cta-banner">
+      <div class="section-inner">
+        <img src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp" alt="Lincc" height="56" width="168" style="filter:brightness(0) invert(1)" />
+        <h2>Your city. Your scene.<br />All in one place.</h2>
+        <p>Events, offers, openings, happenings — everything that matters, right at your fingertips.</p>
+        <a href="#waitlist" class="cta-banner-btn">Get Early Access <i data-lucide="arrow-right" style="width:20px;height:20px"></i></a>
+      </div>
+    </section>
+
+    <!-- Waitlist -->
+    <section class="waitlist" id="waitlist">
+      <div class="section-inner">
+        <span class="section-label">Join the waitlist</span>
+        <h2>Be first in line</h2>
+        <p>We're launching soon. Get early access and never miss what's happening around you again.</p>
+
+        <form id="waitlist-form">
+          <div class="form-group">
+            <input type="text" name="name" placeholder="Your name" required />
+          </div>
+          <div class="form-group">
+            <input type="email" name="email" placeholder="Your email" required />
+          </div>
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="is-business" name="is_business" />
+              <span>I'm registering as a business</span>
+            </label>
+          </div>
+          <div class="business-fields" id="business-fields" style="display:none">
+            <div class="form-group">
+              <input type="text" name="business_name" placeholder="Business name" id="business-name" />
+            </div>
+            <div class="form-group">
+              <select name="business_type" id="business-type">
+                <option value="" disabled selected>Business type</option>
+                <option value="Restaurant">Restaurant</option>
+                <option value="Cafe">Cafe</option>
+                <option value="Bar & Pub">Bar & Pub</option>
+                <option value="Nightclub">Nightclub</option>
+                <option value="Retail Shop">Retail Shop</option>
+                <option value="Gym & Fitness">Gym & Fitness</option>
+                <option value="Salon & Spa">Salon & Spa</option>
+                <option value="Entertainment Venue">Entertainment Venue</option>
+                <option value="Hotel & Accommodation">Hotel & Accommodation</option>
+                <option value="Market & Pop-up">Market & Pop-up</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="form-submit">Join Waitlist <i data-lucide="chevron-right" style="width:18px;height:18px"></i></button>
+          <p class="form-note">We'll keep you updated along the way.</p>
+        </form>
+
+        <div id="waitlist-success" class="waitlist-success" style="display:none">
+          <i data-lucide="check-circle" style="width:48px;height:48px;color:#22c55e"></i>
+          <h3>You're on the list!</h3>
+          <p id="success-message">We'll notify you as soon as Lincc is ready.</p>
+        </div>
+
+        <div id="waitlist-error" class="waitlist-error" style="display:none">
+          <p id="error-message"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <img src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp" alt="Lincc" height="40" width="120" />
+            <p>Everything local, at your fingertips.</p>
+          </div>
+          <div class="footer-links">
+            <div class="footer-col">
+              <h4>Product</h4>
+              <a href="#how-it-works">How it works</a>
+              <a href="#features">Features</a>
+              <a href="#businesses">For Businesses</a>
+              <a href="#waitlist">Join waitlist</a>
+            </div>
+            <div class="footer-col">
+              <h4>Company</h4>
+              <a href="/about">About</a>
+              <a href="/contact">Contact</a>
+            </div>
+            <div class="footer-col">
+              <h4>Legal</h4>
+              <a href="/privacy">Privacy</a>
+              <a href="/terms">Terms</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>&copy; 2026 Lincc. All rights reserved.</span>
+          <div class="footer-social">
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+      // Initialize Lucide icons
+      lucide.createIcons();
+
+      // Business checkbox toggle
+      var bizCheckbox = document.getElementById('is-business');
+      var bizFields = document.getElementById('business-fields');
+      var bizName = document.getElementById('business-name');
+      var bizType = document.getElementById('business-type');
+
+      bizCheckbox.addEventListener('change', function () {
+        if (this.checked) {
+          bizFields.style.display = 'block';
+          bizName.setAttribute('required', '');
+          bizType.setAttribute('required', '');
+        } else {
+          bizFields.style.display = 'none';
+          bizName.removeAttribute('required');
+          bizType.removeAttribute('required');
+        }
+      });
+
+      // Waitlist form handler
+      var SUPABASE_URL = 'https://srrubyupwiiqnehshszd.supabase.co';
+      var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNycnVieXVwd2lpcW5laHNoc3pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1Mjc1MzUsImV4cCI6MjA4NTEwMzUzNX0.vBRe6b6OImN2mJMqy3eI53_eF9n4LRejY69Bvfrc9yY';
+
+      var form = document.getElementById('waitlist-form');
+      var successEl = document.getElementById('waitlist-success');
+      var successMsg = document.getElementById('success-message');
+      var errorEl = document.getElementById('waitlist-error');
+      var errorMsg = document.getElementById('error-message');
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        errorEl.style.display = 'none';
+
+        var formData = new FormData(form);
+        var isBusiness = bizCheckbox.checked;
+
+        var body = {
+          name: formData.get('name'),
+          email: formData.get('email'),
+          is_business: isBusiness,
+          business_name: isBusiness ? formData.get('business_name') : null,
+          business_type: isBusiness ? formData.get('business_type') : null
+        };
+
+        try {
+          var res = await fetch(SUPABASE_URL + '/rest/v1/waitlist', {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify(body)
+          });
+
+          if (res.ok) {
+            form.style.display = 'none';
+            successEl.style.display = 'flex';
+            if (isBusiness) {
+              successMsg.textContent = "We'll be in touch soon to discuss how Lincc can help your business.";
+            } else {
+              successMsg.textContent = "We'll notify you as soon as Lincc is ready.";
+            }
+          } else {
+            var data = await res.json();
+            if (res.status === 409 || (data.code && data.code === '23505')) {
+              errorMsg.textContent = 'This email is already on the waitlist.';
+            } else {
+              errorMsg.textContent = 'Something went wrong. Please try again.';
+            }
+            errorEl.style.display = 'block';
+          }
+        } catch (err) {
+          errorMsg.textContent = 'Something went wrong. Please try again.';
+          errorEl.style.display = 'block';
+        }
+      });
+    </script>
+
   </body>
 </html>

@@ -131,6 +131,7 @@ export interface CreateEventData {
   capacity: number;
   join_mode: 'request' | 'auto';
   audience: Audience;
+  cover_image_url?: string;
 }
 
 /**
@@ -193,6 +194,7 @@ export async function createEvent(
         capacity: eventData.capacity,
         join_mode: eventData.join_mode,
         audience: eventData.audience,
+        cover_image_url: eventData.cover_image_url || null,
         status: 'active',
         expires_at: expiresAt.toISOString(),
       })
@@ -226,6 +228,7 @@ export interface UpdateEventData {
   capacity?: number;
   join_mode?: 'request' | 'auto';
   audience?: Audience;
+  cover_image_url?: string | null;
   status?: 'active' | 'cancelled' | 'full';
 }
 

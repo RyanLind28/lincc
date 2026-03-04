@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, EventCardMini, type EventCardEvent } from '../components/ui';
-import { Edit2, Calendar, Ghost, Lock, Settings } from 'lucide-react';
+import { Avatar, Badge, GradientButton, EventCardMini, VoucherTile, type EventCardEvent } from '../components/ui';
+import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Store, Tag, Plus, MapPin } from 'lucide-react';
 import { calculateAge } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { getFollowerCount, getFollowingCount } from '../services/followService';
+import { getVouchersByBusiness } from '../services/voucherService';
+import { useBookmarks } from '../hooks/useBookmarks';
+import { BusinessHoursDisplay } from '../components/business/BusinessHoursDisplay';
+import type { VoucherWithDetails } from '../types';
 
-type EventTab = 'hosting' | 'joined';
+type EventTab = 'hosting' | 'joined' | 'saved' | 'vouchers';
 
 export default function ProfilePage() {
   const { profile, user } = useAuth();
@@ -18,6 +22,27 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [businessVouchers, setBusinessVouchers] = useState<VoucherWithDetails[]>([]);
+  const [isVouchersLoading, setIsVouchersLoading] = useState(false);
+  const { savedEvents, loadSavedEvents, isLoading: isSavedLoading } = useBookmarks();
+
+  // Load saved events when tab switches to 'saved'
+  useEffect(() => {
+    if (activeTab === 'saved') {
+      loadSavedEvents();
+    }
+  }, [activeTab, loadSavedEvents]);
+
+  // Load vouchers when tab switches to 'vouchers'
+  useEffect(() => {
+    if (activeTab === 'vouchers' && user?.id) {
+      setIsVouchersLoading(true);
+      getVouchersByBusiness(user.id).then((vouchers) => {
+        setBusinessVouchers(vouchers);
+        setIsVouchersLoading(false);
+      });
+    }
+  }, [activeTab, user?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -91,7 +116,24 @@ export default function ProfilePage() {
   }
 
   const age = calculateAge(profile.dob);
-  const activeEvents = activeTab === 'hosting' ? hosting : joined;
+
+  // Map saved events to EventCardEvent format
+  const savedEventCards: EventCardEvent[] = savedEvents.map((e) => ({
+    id: e.id,
+    title: e.title,
+    venue_name: e.venue_name,
+    start_time: e.start_time,
+    capacity: e.capacity,
+    participant_count: e.participant_count || 0,
+    join_mode: e.join_mode as 'instant' | 'request',
+    category: e.category as { name: string; icon: string },
+    host: e.host as { first_name: string; avatar_url?: string | null },
+  }));
+
+  const activeEvents =
+    activeTab === 'hosting' ? hosting :
+    activeTab === 'joined' ? joined :
+    savedEventCards;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -110,36 +152,76 @@ export default function ProfilePage() {
 
       {/* Profile card */}
       <div className="px-4 pt-4">
-        <div className="bg-surface rounded-2xl p-6 text-center mb-4">
-          {/* Avatar with gradient ring */}
-          <div className="flex justify-center mb-4">
-            <div className="p-1 gradient-primary rounded-full">
-              <div className="p-0.5 bg-surface rounded-full">
+        <div className="bg-surface rounded-2xl p-6 mb-4">
+          {/* Horizontal profile header: avatar left, info right */}
+          <div className="flex gap-4 items-start">
+            {/* Avatar with gradient ring */}
+            <div className="shrink-0 h-[88px] w-[88px] gradient-primary rounded-full flex items-center justify-center">
+              <div className="h-[84px] w-[84px] bg-surface rounded-full flex items-center justify-center">
                 <Avatar src={profile.avatar_url} name={profile.first_name} size="xl" />
               </div>
             </div>
+
+            {/* Info column */}
+            <div className="min-w-0 flex-1">
+              {/* Name + age + edit icon */}
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-text">
+                  {profile.first_name}, {age}
+                </h1>
+                <Link to="/profile/edit" className="text-text-muted hover:text-coral transition-colors" aria-label="Edit Profile">
+                  <Edit2 className="h-4 w-4" />
+                </Link>
+              </div>
+
+              {/* Business badge */}
+              {profile.is_business && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Badge variant="primary" size="sm">
+                    <Store className="h-3 w-3 mr-1" /> Business
+                  </Badge>
+                  {profile.business_category && (
+                    <span className="text-xs text-text-muted">{profile.business_category}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Bio */}
+              {profile.bio && (
+                <p className="text-text-muted text-sm mt-1">{profile.bio}</p>
+              )}
+
+              {/* Business address */}
+              {profile.is_business && profile.business_address && (
+                <div className="flex items-center gap-1 text-sm text-text-muted mt-1">
+                  <MapPin className="h-3 w-3" />
+                  <span>{profile.business_address}</span>
+                </div>
+              )}
+
+              {/* Interest tags */}
+              {profile.tags && profile.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {profile.tags.map((tag) => (
+                    <Badge key={tag} variant="outline" size="sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Name and age */}
-          <h1 className="text-2xl font-bold text-text mb-1">
-            {profile.first_name}, {age}
-          </h1>
-
-          {/* Bio */}
-          {profile.bio && (
-            <p className="text-text-muted text-sm max-w-xs mx-auto mb-4">{profile.bio}</p>
-          )}
-
-          {/* Stats row */}
-          <div className="flex justify-center gap-6 py-4 border-t border-b border-border">
-            <div className="text-center">
+          {/* Stats row — full width */}
+          <div className="flex justify-around py-4 mt-4 border-t border-b border-border">
+            <Link to={`/user/${user?.id}/follows?tab=followers`} className="text-center hover:opacity-80 transition-opacity">
               <p className="text-2xl font-bold text-coral">{followerCount}</p>
               <p className="text-xs text-text-muted uppercase tracking-wide">Followers</p>
-            </div>
-            <div className="text-center">
+            </Link>
+            <Link to={`/user/${user?.id}/follows?tab=following`} className="text-center hover:opacity-80 transition-opacity">
               <p className="text-2xl font-bold text-coral">{followingCount}</p>
               <p className="text-xs text-text-muted uppercase tracking-wide">Following</p>
-            </div>
+            </Link>
             <div className="text-center">
               <p className="text-2xl font-bold text-coral">{hosting.length}</p>
               <p className="text-xs text-text-muted uppercase tracking-wide">Hosted</p>
@@ -150,32 +232,9 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Interest tags */}
-          {profile.tags && profile.tags.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs text-text-muted uppercase tracking-wide mb-2">Interests</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {profile.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Edit Profile button */}
-          <div className="mt-4 flex justify-center">
-            <Link to="/profile/edit">
-              <GradientButton size="sm" leftIcon={<Edit2 className="h-4 w-4" />}>
-                Edit Profile
-              </GradientButton>
-            </Link>
-          </div>
-
           {/* Status indicators */}
           {(profile.is_ghost_mode || (profile.is_women_only_mode && profile.gender === 'female')) && (
-            <div className="flex gap-2 flex-wrap justify-center mt-3">
+            <div className="flex gap-2 flex-wrap mt-3">
               {profile.is_ghost_mode && (
                 <Badge variant="warning">
                   <Ghost className="h-3 w-3 mr-1" /> Ghost Mode
@@ -186,6 +245,13 @@ export default function ProfilePage() {
                   <Lock className="h-3 w-3 mr-1" /> Women-Only
                 </Badge>
               )}
+            </div>
+          )}
+
+          {/* Business opening hours */}
+          {profile.is_business && profile.business_opening_hours && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <BusinessHoursDisplay hours={profile.business_opening_hours} />
             </div>
           )}
         </div>
@@ -223,11 +289,59 @@ export default function ProfilePage() {
           >
             Joined
           </button>
+          <button
+            onClick={() => setActiveTab('saved')}
+            className={`
+              flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5
+              ${activeTab === 'saved'
+                ? 'gradient-primary text-white shadow-sm'
+                : 'bg-surface border border-border text-text-muted hover:border-coral hover:text-coral'
+              }
+            `}
+          >
+            <Bookmark className="h-3.5 w-3.5" />
+            Saved
+          </button>
+          {profile.is_business && (
+            <button
+              onClick={() => setActiveTab('vouchers')}
+              className={`
+                flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5
+                ${activeTab === 'vouchers'
+                  ? 'gradient-primary text-white shadow-sm'
+                  : 'bg-surface border border-border text-text-muted hover:border-coral hover:text-coral'
+                }
+              `}
+            >
+              <Tag className="h-3.5 w-3.5" />
+              Vouchers
+            </button>
+          )}
         </div>
 
-        {/* Event list */}
+        {/* Event/Voucher list */}
         <div className="space-y-3">
-          {isLoading ? (
+          {activeTab === 'vouchers' ? (
+            isVouchersLoading ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-2 border-coral border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm text-text-muted">Loading vouchers...</p>
+              </div>
+            ) : businessVouchers.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {businessVouchers.map((voucher) => (
+                  <VoucherTile key={voucher.id} voucher={voucher} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No vouchers yet"
+                description="Create your first voucher to attract customers!"
+                actionLabel="Create Voucher"
+                actionHref="/voucher/new"
+              />
+            )
+          ) : (isLoading || (activeTab === 'saved' && isSavedLoading)) ? (
             <div className="text-center py-8">
               <div className="w-8 h-8 border-2 border-coral border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               <p className="text-sm text-text-muted">Loading events...</p>
@@ -243,16 +357,34 @@ export default function ProfilePage() {
               actionLabel="Create Event"
               actionHref="/event/new"
             />
-          ) : (
+          ) : activeTab === 'joined' ? (
             <EmptyState
               title="No events joined"
               description="Browse events nearby and join one!"
               actionLabel="Browse Events"
               actionHref="/"
             />
+          ) : (
+            <EmptyState
+              title="No saved events"
+              description="Bookmark events you're interested in!"
+              actionLabel="Browse Events"
+              actionHref="/"
+            />
           )}
         </div>
       </div>
+
+      {/* Floating Create Voucher CTA */}
+      {profile.is_business && (
+        <Link
+          to="/voucher/new"
+          className="fixed bottom-24 right-4 z-40 w-14 h-14 gradient-primary rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow"
+          aria-label="Create Voucher"
+        >
+          <Plus className="h-6 w-6 text-white" />
+        </Link>
+      )}
     </div>
   );
 }

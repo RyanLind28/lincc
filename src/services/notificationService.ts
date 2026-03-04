@@ -191,6 +191,8 @@ export function getNotificationPath(notification: Notification): string {
     case 'event_cancelled':
     case 'nearby_event':
       return eventId ? `/event/${eventId}` : '/';
+    case 'voucher_shared':
+      return (data?.voucher_id as string) ? `/voucher/${data.voucher_id}` : '/';
     default:
       return '/';
   }

@@ -86,8 +86,22 @@ export default function EditProfilePage() {
         showToast('Failed to upload photo', 'error');
       } else {
         const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-        setAvatarUrl(data.publicUrl);
-        showToast('Photo uploaded — tap Save to keep it', 'success');
+        const newUrl = data.publicUrl;
+        setAvatarUrl(newUrl);
+
+        // Save to DB immediately so it reflects across the site
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ avatar_url: newUrl })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Avatar DB update error:', updateError);
+          showToast('Photo uploaded but failed to save', 'error');
+        } else {
+          await refreshProfile(user.id);
+          showToast('Photo updated', 'success');
+        }
       }
     } catch (err) {
       console.error('Image processing error:', err);

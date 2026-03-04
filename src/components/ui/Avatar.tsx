@@ -1,4 +1,4 @@
-import { useState, type ImgHTMLAttributes } from 'react';
+import { useState, useEffect, type ImgHTMLAttributes } from 'react';
 import { cn } from '../../lib/utils';
 import { User } from 'lucide-react';
 
@@ -10,6 +10,11 @@ export interface AvatarProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, '
 
 function Avatar({ src, name, size = 'md', className, ...props }: AvatarProps) {
   const [hasError, setHasError] = useState(false);
+
+  // Reset error state when src changes (e.g., new avatar uploaded)
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
 
   const sizes = {
     xs: 'h-6 w-6 text-xs',

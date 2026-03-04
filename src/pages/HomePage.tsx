@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { SlidersHorizontal, MapPin, TrendingUp, Compass, Bookmark } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { SlidersHorizontal, MapPin, Ticket, Clock, LayoutGrid, Calendar, RotateCcw } from 'lucide-react';
 import {
   SearchBar,
   FilterPills,
@@ -10,14 +10,18 @@ import {
   DatePicker,
   CategoryIcon,
   MapView,
+  VoucherTile,
   QUICK_DATE_OPTIONS,
 } from '../components/ui';
 import { useUserLocation } from '../hooks/useUserLocation';
+import { useLocationName } from '../hooks/useLocationName';
 import { Header } from '../components/layout';
 import { useRecommendedEvents } from '../hooks/useRecommendedEvents';
 import { useViewMode } from '../contexts/ViewModeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { CATEGORIES } from '../data/categories';
+import { getActiveVouchers } from '../services/voucherService';
+import type { VoucherWithDetails } from '../types';
 
 // Map categories from data file to filter format (exclude "Other" — not useful as a filter)
 const ALL_CATEGORIES = CATEGORIES
@@ -28,17 +32,23 @@ const ALL_CATEGORIES = CATEGORIES
     icon: cat.icon,
   }));
 
-// Quick category filters for top bar
-const QUICK_CATEGORIES = ALL_CATEGORIES.slice(0, 6);
-
 export default function HomePage() {
   const { viewMode } = useViewMode();
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [distance, setDistance] = useState(10);
+  const [debouncedDistance, setDebouncedDistance] = useState(10);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [vouchers, setVouchers] = useState<VoucherWithDetails[]>([]);
 
-  // Use the recommendation hook
+  // Debounce distance so the slider doesn't hammer Supabase on every tick
+  const distanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    distanceTimerRef.current = setTimeout(() => setDebouncedDistance(distance), 300);
+    return () => { if (distanceTimerRef.current) clearTimeout(distanceTimerRef.current); };
+  }, [distance]);
+
+  // Use the recommendation hook with debounced distance
   const {
     events,
     scoredEvents,
@@ -51,25 +61,23 @@ export default function HomePage() {
     hasActiveFilters,
     hasLocation,
     refreshLocation,
-  } = useRecommendedEvents({ maxDistance: distance });
+  } = useRecommendedEvents({ maxDistance: debouncedDistance });
 
-  // Get user location for map
+  // Get user location for map + readable name
   const { location: userLocation } = useUserLocation();
+  const { locationName } = useLocationName(userLocation);
 
   // Bookmarks
   const { savedIds, toggleSave } = useBookmarks();
 
-  // Result count
+  // Result count + reset state
   const resultCount = events.length;
+  const hasFiltersToReset = hasActiveFilters || distance !== 10 || selectedDate !== null;
 
-  // Trending events (most participants, only when no filters active)
-  const trendingEvents = useMemo(() => {
-    if (hasActiveFilters || filters.search) return [];
-    return [...events]
-      .sort((a, b) => (b.participant_count || 0) - (a.participant_count || 0))
-      .filter((e) => (e.participant_count || 0) > 0)
-      .slice(0, 4);
-  }, [events, hasActiveFilters, filters.search]);
+  // Fetch vouchers
+  useEffect(() => {
+    getActiveVouchers().then(setVouchers).catch(console.error);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -107,10 +115,10 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Category quick filters - horizontal scroll hidden */}
+        {/* Category quick filters - horizontal scroll, all categories */}
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
           <FilterPills
-            options={QUICK_CATEGORIES}
+            options={ALL_CATEGORIES}
             selected={filters.categories}
             onChange={(selected) => updateFilter('categories', selected)}
             className="flex-nowrap"
@@ -142,65 +150,37 @@ export default function HomePage() {
               </div>
             ) : (
               <>
-                {/* Quick action links (only when no search active) */}
-                {!filters.search && (
-                  <div className="flex gap-2 mb-4">
-                    <a
-                      href="/explore"
-                      className="flex items-center gap-2 px-4 py-2.5 bg-surface rounded-xl border border-border hover:border-coral transition-colors"
-                    >
-                      <Compass className="h-4 w-4 text-coral" />
-                      <span className="text-sm font-medium text-text">Explore</span>
-                    </a>
-                    <a
-                      href="/saved"
-                      className="flex items-center gap-2 px-4 py-2.5 bg-surface rounded-xl border border-border hover:border-coral transition-colors"
-                    >
-                      <Bookmark className="h-4 w-4 text-coral" />
-                      <span className="text-sm font-medium text-text">Saved</span>
-                    </a>
-                  </div>
-                )}
-
-                {/* Trending section */}
-                {trendingEvents.length > 0 && (
+                {/* Vouchers Near You section */}
+                {vouchers.length > 0 && !filters.search && (
                   <div className="mb-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <TrendingUp className="h-4 w-4 text-coral" />
+                      <Ticket className="h-4 w-4 text-coral" />
                       <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
-                        Popular near you
+                        Vouchers Near You
                       </h2>
+                      {locationName && (
+                        <span className="ml-auto text-xs text-text-muted">{locationName}</span>
+                      )}
                     </div>
                     <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
-                      {trendingEvents.map((event) => (
-                        <a
-                          key={event.id}
-                          href={`/event/${event.id}`}
-                          className="flex-shrink-0 w-[200px] bg-surface rounded-xl border border-border p-3 hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <CategoryIcon icon={event.category?.icon || 'Calendar'} size="sm" />
-                            <span className="text-xs font-medium text-coral truncate">
-                              {event.category?.name || 'Event'}
-                            </span>
-                          </div>
-                          <h3 className="text-sm font-semibold text-text truncate mb-1">
-                            {event.title}
-                          </h3>
-                          <p className="text-xs text-text-muted truncate">
-                            {event.participant_count || 0} joined
-                          </p>
-                        </a>
+                      {vouchers.map((voucher) => (
+                        <VoucherTile key={voucher.id} voucher={voucher} />
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* All events header */}
+                {/* Events header */}
                 {!hasActiveFilters && !filters.search && events.length > 0 && (
-                  <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">
-                    All Events
-                  </h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin className="h-4 w-4 text-coral" />
+                    <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
+                      Events Near You
+                    </h2>
+                    {locationName && (
+                      <span className="ml-auto text-xs text-text-muted">{locationName}</span>
+                    )}
+                  </div>
                 )}
 
                 <EventCardGrid
@@ -253,50 +233,39 @@ export default function HomePage() {
       <BottomSheet
         isOpen={isFilterSheetOpen}
         onClose={() => setIsFilterSheetOpen(false)}
-        title="Filter Events"
+        title="Filters"
       >
-        <div className="space-y-6 pb-4 max-h-[70vh] overflow-y-auto scrollbar-hide">
-          {/* Result count */}
-          <div className="flex items-center justify-between py-2 px-3 bg-coral/10 rounded-xl">
-            <span className="text-sm text-text-muted">Showing</span>
-            <span className="font-semibold text-coral">
-              {resultCount} of {totalAvailable} events
-            </span>
+        {/* When */}
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="h-4 w-4 text-coral" />
+            <span className="text-sm font-semibold text-text">When</span>
           </div>
-
-          {/* When - Quick options + Date picker */}
-          <div>
-            <label className="block text-sm font-semibold text-text mb-3">When</label>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {QUICK_DATE_OPTIONS.slice(0, -1).map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    if (option.value === 'custom') {
-                      setShowDatePicker(true);
-                    } else {
-                      updateFilter('timeRange', option.value);
-                      setShowDatePicker(false);
-                      setSelectedDate(null);
-                    }
-                  }}
-                  className={`
-                    py-2.5 px-3 rounded-xl text-sm font-medium transition-all
-                    ${
-                      filters.timeRange === option.value
-                        ? 'gradient-primary text-white shadow-sm'
-                        : 'bg-gray-100 text-text-muted hover:bg-gray-200'
-                    }
-                  `}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_DATE_OPTIONS.slice(0, -1).map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  updateFilter('timeRange', option.value);
+                  setShowDatePicker(false);
+                  setSelectedDate(null);
+                }}
+                className={`
+                  px-4 py-2 rounded-full text-sm font-medium transition-all
+                  ${
+                    filters.timeRange === option.value && !selectedDate
+                      ? 'gradient-primary text-white shadow-sm'
+                      : 'bg-gray-100 text-text-muted hover:bg-gray-200'
+                  }
+                `}
+              >
+                {option.label}
+              </button>
+            ))}
             <button
               onClick={() => setShowDatePicker(!showDatePicker)}
               className={`
-                w-full py-2.5 px-3 rounded-xl text-sm font-medium transition-all
+                inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all
                 ${
                   showDatePicker || selectedDate
                     ? 'gradient-primary text-white shadow-sm'
@@ -304,6 +273,7 @@ export default function HomePage() {
                 }
               `}
             >
+              <Calendar className="h-3.5 w-3.5" />
               {selectedDate
                 ? selectedDate.toLocaleDateString('en-US', {
                     weekday: 'short',
@@ -312,88 +282,121 @@ export default function HomePage() {
                   })
                 : 'Pick a date'}
             </button>
-            {showDatePicker && (
-              <DatePicker
-                value={selectedDate}
-                onChange={(date) => {
-                  setSelectedDate(date);
-                  if (date) {
-                    updateFilter('timeRange', null);
-                  }
-                }}
-                className="mt-3"
-              />
+          </div>
+          {showDatePicker && (
+            <DatePicker
+              value={selectedDate}
+              onChange={(date) => {
+                setSelectedDate(date);
+                if (date) {
+                  updateFilter('timeRange', null);
+                }
+              }}
+              className="mt-3"
+            />
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-border mb-5" />
+
+        {/* Distance */}
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-1">
+            <MapPin className="h-4 w-4 text-coral" />
+            <span className="text-sm font-semibold text-text">Distance</span>
+            <span className="ml-auto text-lg font-bold gradient-text">{distance} km</span>
+          </div>
+          {locationName && (
+            <p className="text-xs text-text-muted mb-3 ml-6">from {locationName}</p>
+          )}
+          <Slider
+            value={distance}
+            onChange={setDistance}
+            min={1}
+            max={100}
+            step={1}
+            showValue={false}
+          />
+          <div className="flex justify-between mt-1">
+            <span className="text-[10px] text-text-light">1 km</span>
+            <span className="text-[10px] text-text-light">100 km</span>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-border mb-5" />
+
+        {/* Categories */}
+        <div className="pb-24">
+          <div className="flex items-center gap-2 mb-3">
+            <LayoutGrid className="h-4 w-4 text-coral" />
+            <span className="text-sm font-semibold text-text">Categories</span>
+            {filters.categories.length > 0 && (
+              <span className="ml-auto text-xs font-medium text-coral bg-coral/10 px-2 py-0.5 rounded-full">
+                {filters.categories.length} selected
+              </span>
             )}
           </div>
-
-          {/* Distance - Slider */}
-          <div>
-            <Slider
-              label="Distance"
-              value={distance}
-              onChange={setDistance}
-              min={1}
-              max={20}
-              step={1}
-              formatValue={(v) => `${v} km`}
-            />
+          <div className="grid grid-cols-4 gap-2">
+            {ALL_CATEGORIES.map((category) => {
+              const isSelected = filters.categories.includes(category.value);
+              return (
+                <button
+                  key={category.value}
+                  onClick={() => {
+                    if (isSelected) {
+                      updateFilter(
+                        'categories',
+                        filters.categories.filter((c) => c !== category.value)
+                      );
+                    } else {
+                      updateFilter('categories', [...filters.categories, category.value]);
+                    }
+                  }}
+                  className={`
+                    flex flex-col items-center gap-1.5 p-2.5 rounded-xl transition-all
+                    ${
+                      isSelected
+                        ? 'gradient-primary text-white shadow-sm scale-[0.97]'
+                        : 'bg-gray-50 text-text-muted hover:bg-gray-100 border border-transparent hover:border-gray-200'
+                    }
+                  `}
+                >
+                  <CategoryIcon icon={category.icon} size="lg" />
+                  <span className="text-[11px] font-medium leading-tight text-center">{category.label}</span>
+                </button>
+              );
+            })}
           </div>
+        </div>
 
-          {/* Categories - Grid */}
-          <div>
-            <label className="block text-sm font-semibold text-text mb-3">Categories</label>
-            <div className="grid grid-cols-4 gap-2">
-              {ALL_CATEGORIES.map((category) => {
-                const isSelected = filters.categories.includes(category.value);
-                return (
-                  <button
-                    key={category.value}
-                    onClick={() => {
-                      if (isSelected) {
-                        updateFilter(
-                          'categories',
-                          filters.categories.filter((c) => c !== category.value)
-                        );
-                      } else {
-                        updateFilter('categories', [...filters.categories, category.value]);
-                      }
-                    }}
-                    className={`
-                      flex flex-col items-center gap-1 p-3 rounded-xl transition-all
-                      ${
-                        isSelected
-                          ? 'gradient-primary text-white shadow-sm'
-                          : 'bg-gray-100 text-text-muted hover:bg-gray-200'
-                      }
-                    `}
-                  >
-                    <CategoryIcon icon={category.icon} size="lg" />
-                    <span className="text-xs font-medium">{category.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-2 sticky bottom-0 bg-surface pb-2">
-            <button
-              onClick={() => {
-                clearAll();
-                setDistance(10);
-                setSelectedDate(null);
-                setShowDatePicker(false);
-              }}
-              className="flex-1 py-3 text-text-muted hover:text-text transition-colors font-medium"
-            >
-              Clear All
-            </button>
+        {/* Actions — pinned to bottom */}
+        <div className="sticky bottom-[-16px] z-10 bg-surface pt-3 pb-5 border-t border-border -mx-4 px-4">
+          <p className="text-xs text-text-muted text-center mb-2">
+            {resultCount} of {totalAvailable} events match
+          </p>
+          <div className="flex gap-3">
+            {hasFiltersToReset && (
+              <button
+                onClick={() => {
+                  clearAll();
+                  setDistance(10);
+                  setSelectedDate(null);
+                  setShowDatePicker(false);
+                }}
+                className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl border border-border text-sm font-medium text-text-muted hover:text-coral hover:border-coral transition-colors"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reset
+              </button>
+            )}
             <GradientButton
               fullWidth
               onClick={() => setIsFilterSheetOpen(false)}
               className="flex-1"
             >
-              Show {resultCount} Results
+              Show {resultCount} {resultCount === 1 ? 'Event' : 'Events'}
             </GradientButton>
           </div>
         </div>

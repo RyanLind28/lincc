@@ -21,9 +21,65 @@ export interface Profile {
   notification_preferences: NotificationPreferences | null;
   last_lat: number | null;
   last_lng: number | null;
+  is_business: boolean;
+  business_name: string | null;
+  business_logo_url: string | null;
+  business_category: string | null;
+  business_description: string | null;
+  business_address: string | null;
+  business_opening_hours: BusinessOpeningHours | null;
   created_at: string;
   updated_at: string;
 }
+
+// Business Types
+export interface BusinessOpeningHours {
+  monday?: { open: string; close: string } | null;
+  tuesday?: { open: string; close: string } | null;
+  wednesday?: { open: string; close: string } | null;
+  thursday?: { open: string; close: string } | null;
+  friday?: { open: string; close: string } | null;
+  saturday?: { open: string; close: string } | null;
+  sunday?: { open: string; close: string } | null;
+}
+
+export interface BusinessOnboardingForm {
+  business_name: string;
+  business_category: string;
+  business_description?: string;
+  business_address?: string;
+  business_logo_url?: string;
+}
+
+export interface CreateVoucherForm {
+  title: string;
+  discount_text: string;
+  original_price?: number;
+  discounted_price?: number;
+  category_id?: string;
+  terms?: string;
+  venue_name: string;
+  venue_address: string;
+  venue_lat: number;
+  venue_lng: number;
+  cover_image_url?: string;
+  expires_at: string;
+}
+
+export const BUSINESS_CATEGORIES = [
+  'Restaurant',
+  'Cafe',
+  'Bar & Pub',
+  'Nightclub',
+  'Retail Shop',
+  'Gym & Fitness',
+  'Salon & Spa',
+  'Entertainment',
+  'Hotel & Accommodation',
+  'Takeaway',
+  'Market & Pop-up',
+  'Other',
+] as const;
 
 // Category Types
 export interface Category {
@@ -56,6 +112,7 @@ export interface Event {
   join_mode: JoinMode;
   audience: Audience;
   custom_category: string | null;
+  cover_image_url: string | null;
   status: EventStatus;
   created_at: string;
   expires_at: string;
@@ -129,7 +186,8 @@ export type NotificationType =
   | 'new_message'
   | 'event_starting'
   | 'event_cancelled'
-  | 'nearby_event';
+  | 'nearby_event'
+  | 'voucher_shared';
 
 // Notification preference keys (toggleable push types)
 export interface NotificationPreferences {
@@ -140,6 +198,7 @@ export interface NotificationPreferences {
   event_cancelled: boolean;
   event_starting: boolean;
   nearby_event: boolean;
+  voucher_shared: boolean;
   quiet_hours_enabled: boolean;
   quiet_hours_start: string; // "HH:MM" format
   quiet_hours_end: string;   // "HH:MM" format
@@ -192,4 +251,65 @@ export interface OnboardingForm {
   gender: Gender;
   tags: string[];
   bio?: string;
+}
+
+// Direct Message Types
+export type DMMessageType = 'text' | 'voucher_share' | 'event_share';
+
+export interface Conversation {
+  id: string;
+  participant_one: string;
+  participant_two: string;
+  last_message_at: string;
+  created_at: string;
+}
+
+export interface ConversationWithDetails extends Conversation {
+  other_user: Profile;
+  last_message: DirectMessage | null;
+}
+
+export interface DirectMessage {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  message_type: DMMessageType;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface DirectMessageWithSender extends DirectMessage {
+  sender: Profile;
+}
+
+// Voucher Types
+export type VoucherStatus = 'active' | 'expired' | 'redeemed' | 'deleted';
+
+export interface Voucher {
+  id: string;
+  business_id: string;
+  category_id: string | null;
+  title: string;
+  description: string | null;
+  discount_text: string;
+  original_price: number | null;
+  discounted_price: number | null;
+  redemption_code: string | null;
+  redemption_limit: number | null;
+  redemption_count: number;
+  terms: string | null;
+  cover_image_url: string | null;
+  venue_name: string;
+  venue_address: string;
+  venue_lat: number;
+  venue_lng: number;
+  expires_at: string;
+  status: VoucherStatus;
+  created_at: string;
+}
+
+export interface VoucherWithDetails extends Voucher {
+  business: Profile;
+  category: Category | null;
 }

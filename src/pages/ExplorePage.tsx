@@ -137,6 +137,7 @@ export default function ExplorePage() {
     start_time: event.start_time,
     capacity: event.capacity,
     participant_count: event.participant_count || 0,
+    cover_image: (event as EventWithDetails & { cover_image_url?: string | null }).cover_image_url || undefined,
   }));
 
   // Category detail view

@@ -9,3 +9,11 @@ export {
   checkChatAccess,
 } from './chatService';
 export type { SendMessageResult, MessagesResult } from './chatService';
+
+export {
+  getOrCreateConversation,
+  sendDirectMessage,
+  getDirectMessages,
+  getUserConversations,
+  subscribeToDMs,
+} from './dmService';

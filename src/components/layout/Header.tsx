@@ -64,7 +64,10 @@ export function Header({
           {showBack && (
             <button
               onClick={() => navigate(-1)}
-              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              className={cn(
+                'p-2 -ml-2 rounded-xl transition-colors',
+                transparent ? 'text-white hover:text-white/80' : 'text-text-muted hover:text-text hover:bg-gray-100'
+              )}
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />

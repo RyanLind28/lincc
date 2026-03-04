@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, Button } from '../components/ui';
+import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, Button, VoucherTile } from '../components/ui';
 import { ReportDialog } from '../components/social/ReportDialog';
-import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, UserPlus, UserMinus, ShieldAlert, Ban } from 'lucide-react';
+import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, UserPlus, UserMinus, ShieldAlert, Ban, Store, MapPin } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { calculateAge } from '../lib/utils';
 import { followUser, unfollowUser, isFollowing, getFollowerCount, getFollowingCount } from '../services/followService';
 import { blockUser, unblockUser, isUserBlocked } from '../services/blockService';
-import type { Profile, EventWithDetails } from '../types';
+import { getActiveVouchersByBusiness } from '../services/voucherService';
+import { BusinessHoursDisplay } from '../components/business/BusinessHoursDisplay';
+import type { Profile, EventWithDetails, VoucherWithDetails } from '../types';
 
 interface UserProfile extends Profile {
   events_hosted_count?: number;
@@ -25,6 +27,7 @@ export default function UserProfilePage() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [hostedEvents, setHostedEvents] = useState<EventWithDetails[]>([]);
+  const [userVouchers, setUserVouchers] = useState<VoucherWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -119,6 +122,12 @@ export default function UserProfilePage() {
             participant_count: e.participant_count?.[0]?.count || 0,
           }))
         );
+      }
+
+      // Fetch vouchers if user is a business
+      if (profileData.is_business) {
+        const vouchers = await getActiveVouchersByBusiness(id);
+        setUserVouchers(vouchers);
       }
 
       setIsLoading(false);
@@ -291,38 +300,77 @@ export default function UserProfilePage() {
 
       {/* Profile Header */}
       <div className="px-4 pt-4">
-        <div className="bg-surface rounded-2xl p-6 text-center mb-4">
-          {/* Avatar */}
-          <div className="flex justify-center mb-4">
-            <Avatar
-              src={profile.avatar_url}
-              name={profile.first_name}
-              size="xl"
-            />
+        <div className="bg-surface rounded-2xl p-6 mb-4">
+          {/* Horizontal profile header: avatar left, info right */}
+          <div className="flex gap-4 items-start">
+            {/* Avatar with gradient ring */}
+            <div className="shrink-0 h-[88px] w-[88px] gradient-primary rounded-full flex items-center justify-center">
+              <div className="h-[84px] w-[84px] bg-surface rounded-full flex items-center justify-center">
+                <Avatar
+                  src={profile.avatar_url}
+                  name={profile.first_name}
+                  size="xl"
+                />
+              </div>
+            </div>
+
+            {/* Info column */}
+            <div className="min-w-0 flex-1">
+              {/* Name and Age */}
+              <h1 className="text-2xl font-bold text-text">
+                {profile.is_business ? profile.business_name || profile.first_name : profile.first_name}{age ? `, ${age}` : ''}
+              </h1>
+
+              {/* Business badge */}
+              {profile.is_business && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Badge variant="primary" size="sm">
+                    <Store className="h-3 w-3 mr-1" /> Business
+                  </Badge>
+                  {profile.business_category && (
+                    <span className="text-xs text-text-muted">{profile.business_category}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Bio or Business Description */}
+              {(profile.is_business && profile.business_description) ? (
+                <p className="text-text-muted text-sm mt-1">{profile.business_description}</p>
+              ) : profile.bio ? (
+                <p className="text-text-muted text-sm mt-1">{profile.bio}</p>
+              ) : null}
+
+              {/* Business address */}
+              {profile.is_business && profile.business_address && (
+                <div className="flex items-center gap-1 text-sm text-text-muted mt-1">
+                  <MapPin className="h-3 w-3" />
+                  <span>{profile.business_address}</span>
+                </div>
+              )}
+
+              {/* Tags/Interests */}
+              {profile.tags && profile.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {profile.tags.map((tag) => (
+                    <Badge key={tag} variant="outline" size="sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Name and Age */}
-          <h1 className="text-2xl font-bold text-text mb-1">
-            {profile.first_name}{age ? `, ${age}` : ''}
-          </h1>
-
-          {/* Bio */}
-          {profile.bio && (
-            <p className="text-text-muted text-sm mb-4 max-w-xs mx-auto">
-              {profile.bio}
-            </p>
-          )}
-
-          {/* Stats */}
-          <div className="flex justify-center gap-6 py-4 border-t border-b border-border">
-            <div className="text-center">
+          {/* Stats — full width */}
+          <div className="flex justify-around py-4 mt-4 border-t border-b border-border">
+            <Link to={`/user/${id}/follows?tab=followers`} className="text-center hover:opacity-80 transition-opacity">
               <p className="text-2xl font-bold text-coral">{followerCount}</p>
               <p className="text-xs text-text-muted uppercase tracking-wide">Followers</p>
-            </div>
-            <div className="text-center">
+            </Link>
+            <Link to={`/user/${id}/follows?tab=following`} className="text-center hover:opacity-80 transition-opacity">
               <p className="text-2xl font-bold text-coral">{followingCount}</p>
               <p className="text-xs text-text-muted uppercase tracking-wide">Following</p>
-            </div>
+            </Link>
             <div className="text-center">
               <p className="text-2xl font-bold text-coral">{profile.events_hosted_count || 0}</p>
               <p className="text-xs text-text-muted uppercase tracking-wide">Hosted</p>
@@ -333,37 +381,21 @@ export default function UserProfilePage() {
             </div>
           </div>
 
-          {/* Tags/Interests */}
-          {profile.tags && profile.tags.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs text-text-muted uppercase tracking-wide mb-2">Interests</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {profile.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Action Buttons */}
-          <div className="mt-4 flex justify-center gap-3">
+          <div className="mt-3 flex gap-3">
             {isOwnProfile ? (
               <Link to="/profile/edit">
                 <GradientButton>Edit Profile</GradientButton>
               </Link>
             ) : (
-              <>
-                <Button
-                  onClick={handleFollow}
-                  variant={following ? 'outline' : 'primary'}
-                  disabled={socialLoading || blocked}
-                  leftIcon={following ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                >
-                  {following ? 'Following' : 'Follow'}
-                </Button>
-              </>
+              <Button
+                onClick={handleFollow}
+                variant={following ? 'outline' : 'primary'}
+                disabled={socialLoading || blocked}
+                leftIcon={following ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+              >
+                {following ? 'Following' : 'Follow'}
+              </Button>
             )}
           </div>
 
@@ -415,6 +447,25 @@ export default function UserProfilePage() {
                 </Link>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Business Vouchers */}
+        {profile.is_business && userVouchers.length > 0 && (
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-text mb-3">Vouchers & Deals</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {userVouchers.map((voucher) => (
+                <VoucherTile key={voucher.id} voucher={voucher} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Business Opening Hours */}
+        {profile.is_business && profile.business_opening_hours && (
+          <div className="bg-surface rounded-2xl p-4 mb-4">
+            <BusinessHoursDisplay hours={profile.business_opening_hours as any} />
           </div>
         )}
 

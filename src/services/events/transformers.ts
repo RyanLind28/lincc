@@ -18,6 +18,7 @@ export interface ScoredEvent {
     image?: string;
   };
   subcategory?: string;
+  cover_image_url?: string | null;
   host: {
     first_name: string;
     avatar_url: string | null;
@@ -81,6 +82,7 @@ export function toGridEventData(event: ScoredEvent): GridEventData {
       image: event.category.image,
     },
     subcategory: event.subcategory,
+    cover_image: event.cover_image_url || undefined,
     host: {
       first_name: event.host.first_name,
       avatar_url: event.host.avatar_url,

@@ -3,6 +3,7 @@ import { Bookmark } from 'lucide-react';
 import { Header } from '../components/layout';
 import { EventCardGrid, GradientButton } from '../components/ui';
 import { useBookmarks } from '../hooks/useBookmarks';
+import type { EventWithDetails } from '../types';
 
 export default function SavedEventsPage() {
   const { savedEvents, savedIds, isLoading, loadSavedEvents, toggleSave } = useBookmarks();
@@ -28,6 +29,7 @@ export default function SavedEventsPage() {
     start_time: event.start_time,
     capacity: event.capacity,
     participant_count: event.participant_count || 0,
+    cover_image: (event as EventWithDetails & { cover_image_url?: string | null }).cover_image_url || undefined,
   }));
 
   return (

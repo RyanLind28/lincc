@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, GradientButton, Input, Spinner } from '../components/ui';
-import { Send, Lock, ChevronRight } from 'lucide-react';
+import { Avatar, CategoryIcon, GradientButton, Input, Spinner } from '../components/ui';
+import { Send, Lock, ChevronRight, MapPin, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEventChat } from '../hooks/useEventChat';
 import { supabase } from '../lib/supabase';
@@ -115,21 +115,42 @@ export default function ChatRoomPage() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Header with event link */}
-      <Header
-        showBack
-        rightContent={
-          event && (
-            <Link
-              to={`/event/${eventId}`}
-              className="flex items-center gap-2 text-sm text-text-muted hover:text-coral transition-colors"
-            >
-              <span className="max-w-[120px] truncate">{event.title}</span>
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          )
-        }
-      />
+      {/* Header */}
+      <Header showBack title="Chat" />
+
+      {/* Event details banner */}
+      {event && (
+        <Link
+          to={`/event/${eventId}`}
+          className="flex items-center gap-3 px-4 py-3 bg-surface border-b border-border hover:bg-gray-50 transition-colors"
+        >
+          <div className="h-10 w-10 gradient-primary rounded-xl flex items-center justify-center shrink-0">
+            <CategoryIcon icon={event.category?.icon} size="sm" className="text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-text text-sm truncate">{event.title}</p>
+            <div className="flex items-center gap-3 text-xs text-text-muted mt-0.5">
+              {event.venue_name && (
+                <span className="flex items-center gap-1 truncate">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  {event.venue_name}
+                </span>
+              )}
+              <span className="flex items-center gap-1 shrink-0">
+                <Clock className="h-3 w-3" />
+                {new Date(event.start_time).toLocaleString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </span>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-text-muted shrink-0" />
+        </Link>
+      )}
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto scrollbar-hide p-4">
@@ -169,15 +190,17 @@ export default function ChatRoomPage() {
                         key={msg.id}
                         className={`flex gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}
                       >
-                        {/* Avatar (for others' messages) */}
+                        {/* Avatar (for others' messages) — tap to visit profile */}
                         {!isMe && (
                           <div className="w-8 flex-shrink-0">
                             {showAvatar && (
-                              <Avatar
-                                src={msg.sender?.avatar_url}
-                                name={msg.sender?.first_name || 'User'}
-                                size="sm"
-                              />
+                              <Link to={`/user/${msg.sender_id}`}>
+                                <Avatar
+                                  src={msg.sender?.avatar_url}
+                                  name={msg.sender?.first_name || 'User'}
+                                  size="sm"
+                                />
+                              </Link>
                             )}
                           </div>
                         )}
@@ -187,9 +210,11 @@ export default function ChatRoomPage() {
                           className={`max-w-[75%] ${isMe ? 'order-first' : ''}`}
                         >
                           {showName && (
-                            <p className="text-xs text-text-muted mb-1 ml-1">
-                              {msg.sender?.first_name}
-                            </p>
+                            <Link to={`/user/${msg.sender_id}`} className="hover:underline">
+                              <p className="text-xs text-text-muted mb-1 ml-1">
+                                {msg.sender?.first_name}
+                              </p>
+                            </Link>
                           )}
                           <div
                             className={`px-4 py-2 rounded-2xl ${isMe
@@ -223,27 +248,31 @@ export default function ChatRoomPage() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-border p-4 bg-surface safe-bottom">
-        {error && (
-          <p className="text-error text-sm mb-2 text-center">{error}</p>
-        )}
-        <div className="flex gap-2">
-          <Input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1"
-            onKeyDown={handleKeyDown}
-            disabled={isSending}
-          />
-          <GradientButton
-            onClick={handleSend}
-            disabled={!message.trim() || isSending}
-            isLoading={isSending}
-          >
-            <Send className="h-4 w-4" />
-          </GradientButton>
+      <div className="border-t border-border bg-surface">
+        <div className="px-4 pt-3 pb-3">
+          {error && (
+            <p className="text-error text-sm mb-2 text-center">{error}</p>
+          )}
+          <div className="flex gap-2 items-end">
+            <Input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1"
+              onKeyDown={handleKeyDown}
+              disabled={isSending}
+            />
+            <GradientButton
+              onClick={handleSend}
+              disabled={!message.trim() || isSending}
+              isLoading={isSending}
+            >
+              <Send className="h-4 w-4" />
+            </GradientButton>
+          </div>
         </div>
+        {/* Safe area spacer for iOS home indicator */}
+        <div className="safe-bottom" />
       </div>
     </div>
   );

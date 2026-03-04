@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles, HelpCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles, HelpCircle, Camera, X } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
-import { Input, TextArea, GradientButton, Slider, DatePicker, CategoryIcon } from '../components/ui';
+import { Input, TextArea, GradientButton, Slider, DatePicker, CategoryIcon, PlacesAutocomplete } from '../components/ui';
 import { CATEGORIES, type Category, type SubCategory } from '../data/categories';
 import { createEvent } from '../services/events';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
+import { compressImage, validateImageSize } from '../lib/imageCompression';
+import { useUserLocation } from '../hooks/useUserLocation';
+import { getPlacePhotoUrl, type PlaceDetails } from '../services/placesService';
 import type { JoinMode, Audience } from '../types';
 
 type Step = 'category' | 'subcategory' | 'details' | 'when' | 'guests';
@@ -18,6 +22,7 @@ export default function CreateEventPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { user, profile } = useAuth();
+  const { location: userLocation } = useUserLocation();
 
   const [step, setStep] = useState<Step>('category');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -29,12 +34,22 @@ export default function CreateEventPage() {
   const [description, setDescription] = useState('');
   const [venueName, setVenueName] = useState('');
   const [venueAddress, setVenueAddress] = useState('');
+  const [venueLat, setVenueLat] = useState<number>(0);
+  const [venueLng, setVenueLng] = useState<number>(0);
+  const [venuePlaceId, setVenuePlaceId] = useState<string | null>(null);
+  const [venuePhotos, setVenuePhotos] = useState<{ name: string }[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState('12:00');
   const [capacity, setCapacity] = useState(4);
   const [joinMode, setJoinMode] = useState<JoinMode>('request');
   const [audience, setAudience] = useState<Audience>('everyone');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Cover image state
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Date constraints - up to 1 month in the future
   const now = new Date();
@@ -59,7 +74,48 @@ export default function CreateEventPage() {
       setSelectedSubcategory(subcategory);
       setCustomSubcategory('');
     }
+    // Auto-populate cover image from subcategory or category
+    const defaultImage = subcategory?.image ?? selectedCategory?.image ?? null;
+    setCoverImageUrl(defaultImage);
+    setCoverImageFile(null);
     setStep('details');
+  };
+
+  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeError = validateImageSize(file);
+    if (sizeError) {
+      showToast(sizeError, 'error');
+      return;
+    }
+
+    setCoverImageFile(file);
+    setCoverImageUrl(URL.createObjectURL(file));
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCoverImageReset = () => {
+    setCoverImageFile(null);
+    const defaultImage = selectedSubcategory?.image ?? selectedCategory?.image ?? null;
+    setCoverImageUrl(defaultImage);
+  };
+
+  const handlePlaceSelect = (place: PlaceDetails) => {
+    setVenueName(place.name);
+    setVenueAddress(place.address);
+    setVenueLat(place.lat);
+    setVenueLng(place.lng);
+    setVenuePlaceId(place.id);
+    setVenuePhotos(place.photos || []);
+
+    // If user hasn't uploaded a custom cover image, offer venue photo as cover
+    if (!coverImageFile && place.photos.length > 0) {
+      const photoUrl = getPlacePhotoUrl(place.photos[0].name, 800, 600);
+      setCoverImageUrl(photoUrl);
+    }
   };
 
   const handleBack = () => {
@@ -113,6 +169,34 @@ export default function CreateEventPage() {
       const [hours, minutes] = selectedTime.split(':').map(Number);
       eventDateTime.setHours(hours, minutes, 0, 0);
 
+      // Upload cover image if user selected a file
+      let finalCoverImageUrl = coverImageUrl;
+      if (coverImageFile) {
+        setIsUploading(true);
+        try {
+          const compressed = await compressImage(coverImageFile);
+          const fileName = `${user.id}/${Date.now()}.jpg`;
+          const { error: uploadError } = await supabase.storage
+            .from('event-images')
+            .upload(fileName, compressed, { contentType: 'image/jpeg' });
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            showToast('Failed to upload image, using default', 'error');
+          } else {
+            const { data: urlData } = supabase.storage
+              .from('event-images')
+              .getPublicUrl(fileName);
+            finalCoverImageUrl = urlData.publicUrl;
+          }
+        } catch (uploadErr) {
+          console.error('Image upload failed:', uploadErr);
+          showToast('Failed to upload image, using default', 'error');
+        } finally {
+          setIsUploading(false);
+        }
+      }
+
       const result = await createEvent(
         {
           category_name: selectedCategory.label,
@@ -120,11 +204,15 @@ export default function CreateEventPage() {
           description: description.trim() || undefined,
           custom_category: selectedCategory.value === 'other' ? customCategoryText.trim() : undefined,
           venue_name: venueName.trim(),
-          venue_address: venueAddress.trim() || venueName.trim(), // Use venue name as address fallback
+          venue_address: venueAddress.trim() || venueName.trim(),
+          venue_lat: venueLat || undefined,
+          venue_lng: venueLng || undefined,
+          venue_place_id: venuePlaceId || undefined,
           start_time: eventDateTime.toISOString(),
           capacity,
           join_mode: joinMode,
           audience,
+          cover_image_url: finalCoverImageUrl || undefined,
         },
         user.id
       );
@@ -286,6 +374,8 @@ export default function CreateEventPage() {
                     return;
                   }
                   setCustomSubcategory(customCategoryText.trim());
+                  setCoverImageUrl(selectedCategory?.image ?? null);
+                  setCoverImageFile(null);
                   setStep('details');
                 }}
               >
@@ -362,6 +452,55 @@ export default function CreateEventPage() {
               </div>
             </div>
 
+            {/* Cover image picker */}
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">Cover image</label>
+              <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100">
+                {coverImageUrl ? (
+                  <img
+                    src={coverImageUrl}
+                    alt="Cover preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full gradient-primary flex items-center justify-center">
+                    <CategoryIcon icon={selectedCategory?.icon || 'Calendar'} size="xl" className="text-white" />
+                  </div>
+                )}
+                {/* Overlay buttons */}
+                <div className="absolute bottom-2 right-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white hover:bg-black/70 transition-colors"
+                    aria-label="Upload cover image"
+                  >
+                    <Camera className="h-5 w-5" />
+                  </button>
+                  {coverImageFile && (
+                    <button
+                      type="button"
+                      onClick={handleCoverImageReset}
+                      className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white hover:bg-black/70 transition-colors"
+                      aria-label="Reset to default image"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverImageUpload}
+                  className="hidden"
+                />
+              </div>
+              <p className="text-xs text-text-muted mt-1">
+                Tap the camera to upload your own photo
+              </p>
+            </div>
+
             <Input
               label="Event title"
               value={title}
@@ -385,20 +524,44 @@ export default function CreateEventPage() {
                 <MapPin className="inline h-4 w-4 mr-1 text-coral" />
                 Where is it?
               </label>
-              <Input
-                value={venueName}
-                onChange={(e) => setVenueName(e.target.value)}
-                placeholder="Venue name (e.g., Blue Bottle Coffee)"
-                className="mb-2"
+              <PlacesAutocomplete
+                onSelect={handlePlaceSelect}
+                defaultValue={venueName}
+                userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
+                placeholder="Search for a venue..."
               />
-              <Input
-                value={venueAddress}
-                onChange={(e) => setVenueAddress(e.target.value)}
-                placeholder="Address (e.g., 123 Main St)"
-              />
-              <p className="text-xs text-text-muted mt-1">
-                Google Places integration coming soon
-              </p>
+
+              {/* Venue photo picker — only when venue has Google photos */}
+              {venuePhotos.length > 1 && !coverImageFile && (
+                <div className="mt-3">
+                  <p className="text-xs text-text-muted mb-2">Venue photos — tap to use as cover</p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {venuePhotos.map((photo, i) => {
+                      const url = getPlacePhotoUrl(photo.name, 200, 150);
+                      return (
+                        <button
+                          key={photo.name}
+                          type="button"
+                          onClick={() => setCoverImageUrl(getPlacePhotoUrl(photo.name, 800, 600))}
+                          className={cn(
+                            'flex-shrink-0 w-20 h-14 rounded-lg overflow-hidden border-2 transition-all',
+                            coverImageUrl?.includes(photo.name)
+                              ? 'border-coral ring-2 ring-coral/30'
+                              : 'border-border hover:border-coral/50'
+                          )}
+                        >
+                          <img
+                            src={url}
+                            alt={`Venue photo ${i + 1}`}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <GradientButton fullWidth onClick={handleNext}>
@@ -585,9 +748,9 @@ export default function CreateEventPage() {
               fullWidth
               size="lg"
               onClick={handleSubmit}
-              isLoading={isLoading}
+              isLoading={isLoading || isUploading}
             >
-              Create Event
+              {isUploading ? 'Uploading image...' : 'Create Event'}
             </GradientButton>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import type { Profile } from '../types';
@@ -36,6 +37,13 @@ const MOCK_PROFILE: Profile = {
   notification_preferences: null,
   last_lat: null,
   last_lng: null,
+  is_business: false,
+  business_name: null,
+  business_logo_url: null,
+  business_category: null,
+  business_description: null,
+  business_address: null,
+  business_opening_hours: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -43,15 +51,29 @@ const MOCK_PROFILE: Profile = {
 
 const LOG = '[Auth]';
 
+function checkProfileComplete(profile: Profile | null): boolean {
+  if (!profile) return false;
+  return (
+    !!profile.first_name?.trim() &&
+    !!profile.dob?.trim() &&
+    (profile.gender === 'female' || profile.gender === 'male') &&
+    Array.isArray(profile.tags) && profile.tags.length >= 1 &&
+    !!profile.avatar_url?.trim()
+  );
+}
+
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isProfileComplete: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: (userId?: string) => Promise<void>;
 }
@@ -59,6 +81,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(DEV_MODE ? MOCK_USER : null);
   const [profile, setProfile] = useState<Profile | null>(DEV_MODE ? MOCK_PROFILE : null);
   const [session, setSession] = useState<Session | null>(null);
@@ -115,7 +138,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!session?.user) {
         setProfile(null);
         setIsLoading(false);
+      } else if (event === 'PASSWORD_RECOVERY') {
+        // User clicked the password reset link in their email — redirect to reset page
+        navigate('/reset-password');
       } else if (event === 'SIGNED_IN') {
+        // Check email verification — if not confirmed, sign out immediately
+        if (session?.user && !session.user.email_confirmed_at) {
+          console.log(LOG, 'Email not verified, signing out');
+          // Schedule sign-out in next tick to avoid async work in listener
+          setTimeout(() => {
+            supabase.auth.signOut().then(() => {
+              // Toast will show after state updates
+              window.dispatchEvent(new CustomEvent('lincc:toast', {
+                detail: { message: 'Please verify your email first', type: 'error' },
+              }));
+            });
+          }, 0);
+          return;
+        }
         // User just signed in — ensure loading stays true until Effect 2 fetches profile.
         // Without this, there's a render frame with isLoading=false + profile=null,
         // which causes ProtectedRoute to redirect to /terms or /onboarding prematurely.
@@ -190,6 +230,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error ? new Error(error.message) : null };
   };
 
+  const resetPassword = async (email: string) => {
+    if (DEV_MODE) return { error: null };
+    console.log(LOG, 'resetPassword:', email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) console.error(LOG, 'resetPassword error:', error.message);
+    return { error: error ? new Error(error.message) : null };
+  };
+
+  const updatePassword = async (password: string) => {
+    if (DEV_MODE) return { error: null };
+    console.log(LOG, 'updatePassword');
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) console.error(LOG, 'updatePassword error:', error.message);
+    return { error: error ? new Error(error.message) : null };
+  };
+
   const signOut = async () => {
     if (DEV_MODE) return;
     console.log(LOG, 'Signing out');
@@ -205,9 +263,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     isLoading,
     isAuthenticated: DEV_MODE || !!user,
+    isProfileComplete: checkProfileComplete(profile),
     signUp,
     signIn,
     signInWithMagicLink,
+    resetPassword,
+    updatePassword,
     signOut,
     refreshProfile,
   };

@@ -56,7 +56,7 @@ The MVP focuses on three pillars: **Immediacy**, **Safety**, and **Simplicity**.
 ### External Services
 - **Supabase** — Database, auth, realtime, storage
 - **Mapbox** — Map rendering and static image API
-- **Google Places API** — Venue autocomplete (key configured, not yet integrated)
+- **Google Places API (New)** — Venue autocomplete, place details, venue photos (`src/services/placesService.ts`)
 - **Vercel** — Hosting with auto-deploy from main
 - **Sentry** — Error monitoring
 
@@ -336,6 +336,8 @@ Coffee, Utensils, Dumbbell, Trophy, TreePine, Heart, Film, Gamepad2, Palette, Bo
 | `src/components/pwa/InstallBanner.tsx` | PWA install prompt banner |
 | `src/components/pwa/OfflineBanner.tsx` | Offline connection indicator |
 | `src/components/pwa/UpdateNotification.tsx` | Service worker update prompt |
+| `src/services/placesService.ts` | Google Places API — autocomplete, details, photos |
+| `src/components/ui/PlacesAutocomplete.tsx` | Venue search autocomplete component |
 
 ---
 

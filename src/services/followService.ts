@@ -51,3 +51,30 @@ export async function getFollowingCount(userId: string): Promise<number> {
 
   return count || 0;
 }
+
+export interface FollowProfile {
+  id: string;
+  first_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+}
+
+export async function getFollowers(userId: string): Promise<FollowProfile[]> {
+  const { data, error } = await supabase
+    .from('follows')
+    .select('follower:profiles!follower_id(id, first_name, avatar_url, bio)')
+    .eq('followed_id', userId);
+
+  if (error || !data) return [];
+  return data.map((row: any) => row.follower).filter(Boolean);
+}
+
+export async function getFollowing(userId: string): Promise<FollowProfile[]> {
+  const { data, error } = await supabase
+    .from('follows')
+    .select('followed:profiles!followed_id(id, first_name, avatar_url, bio)')
+    .eq('follower_id', userId);
+
+  if (error || !data) return [];
+  return data.map((row: any) => row.followed).filter(Boolean);
+}

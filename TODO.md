@@ -1,6 +1,6 @@
 # LINCC TODO
 
-Last updated: 2026-02-26
+Last updated: 2026-02-27
 
 ---
 
@@ -10,7 +10,7 @@ Last updated: 2026-02-26
 - **Database**: Live Supabase with 25 Dubai/Bahrain demo events (2027 dates), 26 categories
 - **Auth**: Working (email/password, magic link)
 - **DEV_MODE**: OFF in all files
-- **Migrations**: All up to `015` applied to live Supabase
+- **Migrations**: All up to `019` applied to live Supabase
 - **Landing**: Live with waitlist form
 - **PWA**: Configured with install prompt, offline banner, update notification, service worker
 
@@ -19,7 +19,7 @@ Last updated: 2026-02-26
 ## MVP Phase 1: Auth & Profile Hardening
 
 - [ ] Profile completion enforcement — block app use until profile is complete (name, DOB, gender, at least 1 tag)
-- [ ] Password reset flow — forgot password page + Supabase reset email
+- [x] Password reset flow — forgot password page + Supabase reset email
 - [ ] Custom auth emails — branded Supabase email templates (welcome, reset, magic link)
 - [ ] Email verification — require email confirmation for new signups
 - [ ] Session management — token refresh handling, logout on all devices
@@ -164,7 +164,9 @@ Last updated: 2026-02-26
 ## Post-MVP / Future Ideas
 
 - [ ] Social login — Google/Apple sign-in
-- [ ] Event photos — cover photo upload via Supabase Storage
+- [x] Event photos — cover photo upload via Supabase Storage + Google Places venue photo selector
+- [x] Google Places API integration — venue autocomplete in CreateEventPage with session tokens, field masking, debouncing, venue photo picker for cover images
+- [x] Google Places cover image selector — venue photos from Google Places shown as selectable cover image options during event creation
 - [ ] Event reviews — rate and review after attending
 - [ ] Trust score — reputation from attendance and reviews
 - [ ] Recurring events — weekly/monthly repeat
@@ -192,7 +194,7 @@ Last updated: 2026-02-26
 
 ## Blocked / Waiting
 
-- [ ] Google Places API integration — waiting on API access approval. Wire up `VITE_GOOGLE_PLACES_API_KEY` for venue autocomplete when ready
+_(Nothing currently blocked)_
 
 ---
 
@@ -206,7 +208,8 @@ Last updated: 2026-02-26
 
 ## Open Bugs
 
-(none currently)
+- [ ] Magic link login broken — Supabase redirects back to the app with token in URL hash but `onAuthStateChange` doesn't pick up the session. User stays on login page unsigned-in. Likely the hash fragment is lost during React Router navigation or the Supabase client isn't detecting the token on page load.
+
 
 ---
 
@@ -357,5 +360,18 @@ Last updated: 2026-02-26
 - [x] Profile picture upload — upsert + error logging + success toast
 - [x] Profile UI redesign — card layout with stats row
 - [x] Profile follower/following counts
+- [x] Profile image upload — immediate DB save + refreshProfile on upload, Avatar resets error on src change
+- [x] Interest pills compacted — `size="sm"` + tighter gap on ProfilePage and UserProfilePage
+- [x] Followers/Following list page — `/user/:id/follows?tab=followers|following` with tabbed UI
+- [x] Follower/following counts now clickable links on both ProfilePage and UserProfilePage
+
+### Event Cover Image System
+- [x] Subcategory images — all ~62 subcategories have specific Unsplash images
+- [x] `cover_image_url` column — migration 019 applied to live Supabase
+- [x] TypeScript types updated — Event, supabase types, CreateEventData, UpdateEventData
+- [x] Cover image picker in CreateEventPage — auto-populates from subcategory, upload via camera button, reset to default
+- [x] Image compression + upload to `event-images` storage bucket on submit
+- [x] EventDetailPage uses `cover_image_url` with category fallback
+- [x] EventCardGrid tiles show `cover_image_url` via recommendation service + Explore/Saved pages
 
 </details>

@@ -17,7 +17,7 @@ export function ProtectedRoute({
   requireTerms = true,
   requireAdmin = false,
 }: ProtectedRouteProps) {
-  const { profile, isLoading, isAuthenticated } = useAuth();
+  const { profile, isLoading, isAuthenticated, isProfileComplete } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -43,9 +43,9 @@ export function ProtectedRoute({
     return <Navigate to="/terms" state={{ from: location }} replace />;
   }
 
-  // Check profile completion
-  if (requireProfile && !profile?.first_name) {
-    console.log(LOG_PREFIX, location.pathname, '→ redirect to /onboarding (no first_name, profile:', !!profile, ')');
+  // Check profile completion (all required fields: first_name, dob, gender, tags, avatar_url)
+  if (requireProfile && !isProfileComplete) {
+    console.log(LOG_PREFIX, location.pathname, '→ redirect to /onboarding (profile incomplete)');
     return <Navigate to="/onboarding" state={{ from: location }} replace />;
   }
 
@@ -58,7 +58,7 @@ interface PublicRouteProps {
 }
 
 export function PublicRoute({ children }: PublicRouteProps) {
-  const { isAuthenticated, profile, isLoading } = useAuth();
+  const { isAuthenticated, isProfileComplete, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -66,8 +66,8 @@ export function PublicRoute({ children }: PublicRouteProps) {
     return <FullPageSpinner />;
   }
 
-  // If authenticated and has profile, redirect to home
-  if (isAuthenticated && profile?.first_name) {
+  // If authenticated and profile complete, redirect to home
+  if (isAuthenticated && isProfileComplete) {
     const from = location.state?.from?.pathname || '/';
     console.log(LOG_PREFIX, 'PublicRoute', location.pathname, '→ redirect to', from, '(already authenticated)');
     return <Navigate to={from} replace />;

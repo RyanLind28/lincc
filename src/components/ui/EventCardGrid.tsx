@@ -3,6 +3,7 @@ import { Clock, Bookmark } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Avatar } from './Avatar';
 import { CategoryIcon } from './CategoryIcon';
+import { CATEGORIES } from '../../data/categories';
 
 export interface GridEventData {
   id: string;
@@ -50,6 +51,48 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function CapacityDots({ filled, total }: { filled: number; total: number }) {
+  const MAX_DOTS = 6;
+
+  if (total <= MAX_DOTS) {
+    // Show individual dots
+    return (
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: total }).map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              'w-1.5 h-1.5 rounded-full',
+              i < filled ? 'bg-coral' : 'bg-gray-200'
+            )}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Larger capacity: 5 proportional dots + count
+  const DOT_COUNT = 5;
+  const filledDots = Math.round((filled / total) * DOT_COUNT);
+
+  return (
+    <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: DOT_COUNT }).map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              'w-1.5 h-1.5 rounded-full',
+              i < filledDots ? 'bg-coral' : 'bg-gray-200'
+            )}
+          />
+        ))}
+      </div>
+      <span className="text-[10px] text-text-muted">{filled}/{total}</span>
+    </div>
+  );
+}
+
 function EventCardTile({
   event,
   onToggleSave,
@@ -60,13 +103,13 @@ function EventCardTile({
   isSaved?: boolean;
 }) {
   const spotsLeft = event.capacity - event.participant_count;
-  const coverImage = event.cover_image || event.category.image;
+  const coverImage = event.cover_image || event.category.image || CATEGORIES.find(c => c.label === event.category.name)?.image;
   const showSpotsWarning = spotsLeft <= 2;
 
   return (
     <Link
       to={`/event/${event.id}`}
-      className="block bg-surface rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all group"
+      className="flex flex-col bg-surface rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all group"
     >
       {/* Cover Image */}
       <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
@@ -118,11 +161,14 @@ function EventCardTile({
       </div>
 
       {/* Content */}
-      <div className="p-3">
+      <div className="p-3 flex flex-col flex-1">
         {/* Title */}
         <h3 className="font-semibold text-text text-sm line-clamp-2 mb-1.5">
           {event.title}
         </h3>
+
+        {/* Spacer pushes meta to bottom */}
+        <div className="mt-auto" />
 
         {/* Time · Location on same line */}
         <div className="flex items-center gap-1 text-xs text-text-muted mb-2 truncate">
@@ -142,9 +188,7 @@ function EventCardTile({
             />
             <span className="text-xs text-text-muted">{event.host.first_name}</span>
           </div>
-          <span className="text-xs text-text-muted">
-            {event.participant_count + 1}/{event.capacity + 1}
-          </span>
+          <CapacityDots filled={event.participant_count + 1} total={event.capacity + 1} />
         </div>
       </div>
     </Link>

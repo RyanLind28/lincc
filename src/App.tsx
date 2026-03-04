@@ -10,6 +10,8 @@ import { ErrorBoundary } from './components/layout/ErrorBoundary';
 // Auth pages (placeholder)
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import TermsPage from './pages/auth/TermsPage';
 import OnboardingPage from './pages/onboarding/OnboardingPage';
 
@@ -17,6 +19,7 @@ import OnboardingPage from './pages/onboarding/OnboardingPage';
 import HomePage from './pages/HomePage';
 import ChatsPage from './pages/ChatsPage';
 import ChatRoomPage from './pages/ChatRoomPage';
+import DMChatRoomPage from './pages/DMChatRoomPage';
 import MyEventsPage from './pages/MyEventsPage';
 import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
@@ -28,10 +31,18 @@ import CreateEventPage from './pages/CreateEventPage';
 import EventDetailPage from './pages/EventDetailPage';
 import ManageParticipantsPage from './pages/ManageParticipantsPage';
 import UserProfilePage from './pages/UserProfilePage';
+import FollowListPage from './pages/FollowListPage';
 
 // Search & Discovery pages
 import SavedEventsPage from './pages/SavedEventsPage';
 import ExplorePage from './pages/ExplorePage';
+
+// Voucher pages
+import VoucherDetailPage from './pages/VoucherDetailPage';
+import CreateVoucherPage from './pages/CreateVoucherPage';
+
+// Business pages
+import EditBusinessProfilePage from './pages/EditBusinessProfilePage';
 
 // Admin pages (placeholder)
 import AdminDashboard from './pages/admin/DashboardPage';
@@ -90,8 +101,24 @@ function App() {
               </PublicRoute>
             }
           />
+          <Route
+            path="/forgot-password"
+            element={
+              <PublicRoute>
+                <ForgotPasswordPage />
+              </PublicRoute>
+            }
+          />
 
           {/* Auth but no profile required */}
+          <Route
+            path="/reset-password"
+            element={
+              <ProtectedRoute requireProfile={false} requireTerms={false}>
+                <ResetPasswordPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/terms"
             element={
@@ -109,7 +136,7 @@ function App() {
             }
           />
 
-          {/* Protected routes with main layout */}
+          {/* Protected routes with main layout (bottom nav + app shell) */}
           <Route
             element={
               <ProtectedRoute>
@@ -121,9 +148,19 @@ function App() {
             <Route path="/chats" element={<ErrorBoundary><ChatsPage /></ErrorBoundary>} />
             <Route path="/my-events" element={<ErrorBoundary><MyEventsPage /></ErrorBoundary>} />
             <Route path="/profile" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
+            <Route path="/event/:id" element={<ErrorBoundary><EventDetailPage /></ErrorBoundary>} />
+            <Route path="/user/:id" element={<ErrorBoundary><UserProfilePage /></ErrorBoundary>} />
+            <Route path="/user/:id/follows" element={<ErrorBoundary><FollowListPage /></ErrorBoundary>} />
+            <Route path="/profile/edit" element={<ErrorBoundary><EditProfilePage /></ErrorBoundary>} />
+            <Route path="/settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
+            <Route path="/notifications" element={<ErrorBoundary><NotificationsPage /></ErrorBoundary>} />
+            <Route path="/saved" element={<ErrorBoundary><SavedEventsPage /></ErrorBoundary>} />
+            <Route path="/explore" element={<ErrorBoundary><ExplorePage /></ErrorBoundary>} />
+            <Route path="/voucher/:id" element={<ErrorBoundary><VoucherDetailPage /></ErrorBoundary>} />
+            <Route path="/event/:id/manage" element={<ErrorBoundary><ManageParticipantsPage /></ErrorBoundary>} />
           </Route>
 
-          {/* Protected routes without bottom nav */}
+          {/* Full-screen protected routes (no bottom nav — own fixed UI) */}
           <Route
             path="/event/new"
             element={
@@ -133,10 +170,18 @@ function App() {
             }
           />
           <Route
-            path="/event/:id"
+            path="/voucher/new"
             element={
               <ProtectedRoute>
-                <ErrorBoundary><EventDetailPage /></ErrorBoundary>
+                <ErrorBoundary><CreateVoucherPage /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/business/edit"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary><EditBusinessProfilePage /></ErrorBoundary>
               </ProtectedRoute>
             }
           />
@@ -149,58 +194,10 @@ function App() {
             }
           />
           <Route
-            path="/event/:id/manage"
+            path="/dm/:id"
             element={
               <ProtectedRoute>
-                <ManageParticipantsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/user/:id"
-            element={
-              <ProtectedRoute>
-                <UserProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/edit"
-            element={
-              <ProtectedRoute>
-                <EditProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <NotificationsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/saved"
-            element={
-              <ProtectedRoute>
-                <SavedEventsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/explore"
-            element={
-              <ProtectedRoute>
-                <ExplorePage />
+                <DMChatRoomPage />
               </ProtectedRoute>
             }
           />

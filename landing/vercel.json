@@ -1,11 +1,3 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "vite build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    {
-      "source": "/((?!assets|favicon|robots\\.txt|sitemap\\.xml|llms\\.txt|site\\.webmanifest|.*\\.png|.*\\.ico|.*\\.svg).*)",
-      "destination": "/index.html"
-    }
-  ]
+  "cleanUrls": true
 }

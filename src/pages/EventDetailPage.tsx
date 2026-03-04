@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, BottomSheet } from '../components/ui';
-import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert } from 'lucide-react';
+import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert, Navigation } from 'lucide-react';
+import { CATEGORIES } from '../data/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { ReportDialog } from '../components/social/ReportDialog';
+import { ShareEventSheet } from '../components/features/ShareEventSheet';
 import { blockUser, isUserBlocked } from '../services/blockService';
 import { useEventParticipants } from '../hooks/useEventParticipants';
 import { useBookmarks } from '../hooks/useBookmarks';
@@ -115,35 +117,7 @@ export default function EventDetailPage() {
     }
   };
 
-  const handleShare = useCallback(async () => {
-    if (!event) return;
-
-    const shareUrl = `${window.location.origin}/event/${event.id}`;
-    const shareData = {
-      title: event.title,
-      text: `Join me at ${event.title} on Lincc!`,
-      url: shareUrl,
-    };
-
-    // Try Web Share API first (mobile)
-    if (navigator.share && navigator.canShare?.(shareData)) {
-      try {
-        await navigator.share(shareData);
-        return;
-      } catch (err) {
-        // User cancelled or error - fall through to clipboard
-        if ((err as Error).name === 'AbortError') return;
-      }
-    }
-
-    // Fallback: copy to clipboard
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      showToast('Link copied to clipboard!', 'success');
-    } catch {
-      showToast('Failed to copy link', 'error');
-    }
-  }, [event, showToast]);
+  const [showShareSheet, setShowShareSheet] = useState(false);
 
   // Social state (report/block)
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -346,7 +320,7 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background pb-8">
       {/* Header */}
       <Header
         showBack
@@ -357,14 +331,14 @@ export default function EventDetailPage() {
               <>
                 <button
                   onClick={openEdit}
-                  className="p-2 rounded-xl text-text-muted hover:text-coral hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
                   aria-label="Edit event"
                 >
                   <Pencil className="h-4.5 w-4.5" />
                 </button>
                 <button
                   onClick={() => setIsCancelOpen(true)}
-                  className="p-2 rounded-xl text-text-muted hover:text-error hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
                   aria-label="Cancel event"
                 >
                   <Trash2 className="h-4.5 w-4.5" />
@@ -373,14 +347,14 @@ export default function EventDetailPage() {
             )}
             <button
               onClick={() => id && toggleSave(id)}
-              className="p-2 rounded-xl text-text-muted hover:text-coral hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
               aria-label={eventSaved ? 'Unsave event' : 'Save event'}
             >
               <Bookmark className={cn('h-5 w-5', eventSaved && 'fill-coral text-coral')} />
             </button>
             <button
-              onClick={handleShare}
-              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              onClick={() => setShowShareSheet(true)}
+              className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
               aria-label="Share event"
             >
               <Share2 className="h-5 w-5" />
@@ -389,7 +363,7 @@ export default function EventDetailPage() {
               <div className="relative">
                 <button
                   onClick={() => setShowMoreMenu(!showMoreMenu)}
-                  className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
                   aria-label="More options"
                 >
                   <MoreVertical className="h-5 w-5" />
@@ -424,14 +398,16 @@ export default function EventDetailPage() {
         }
       />
 
-      {/* Static map preview */}
+      {/* Cover image */}
       <div className="h-48 bg-gray-200 relative -mt-14 overflow-hidden">
         <img
-          src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-s+FF6B6B(${event.venue_lng},${event.venue_lat})/${event.venue_lng},${event.venue_lat},15,0/800x400@2x?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`}
-          alt={`Map showing ${event.venue_name}`}
+          src={event.cover_image_url || CATEGORIES.find(c => c.label === event.category?.name)?.image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop'}
+          alt={event.category?.name || 'Event'}
           className="w-full h-full object-cover"
           loading="eager"
         />
+        {/* Dark overlay for header readability */}
+        <div className="absolute inset-0 bg-black/25" />
         {/* Gradient overlay at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
@@ -483,9 +459,42 @@ export default function EventDetailPage() {
                   {event.venue_address} · {formatDistance(distanceKm)} away
                 </p>
               </div>
-              <ChevronRight className="h-5 w-5 text-text-light" />
             </div>
           </div>
+        </div>
+
+        {/* Location & Map card */}
+        <div className="bg-surface rounded-2xl shadow-lg p-5 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin className="h-5 w-5 text-coral" />
+            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">Location</h2>
+          </div>
+
+          <div className="h-36 rounded-xl overflow-hidden mb-3">
+            <img
+              src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-s+FF6B6B(${event.venue_lng},${event.venue_lat})/${event.venue_lng},${event.venue_lat},15,0/800x400@2x?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`}
+              alt={`Map showing ${event.venue_name}`}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+
+          <p className="font-medium text-text">{event.venue_name}</p>
+          <p className="text-sm text-text-muted mb-3">{event.venue_address}</p>
+
+          <a
+            href={
+              event.venue_place_id
+                ? `https://www.google.com/maps/place/?q=place_id:${event.venue_place_id}`
+                : `https://maps.google.com/?q=${encodeURIComponent(event.venue_address)}`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-coral hover:text-coral/80 transition-colors"
+          >
+            <Navigation className="h-4 w-4" />
+            Get Directions
+          </a>
         </div>
 
         {/* Host card - compact */}
@@ -661,6 +670,15 @@ export default function EventDetailPage() {
           </div>
         </div>
       </BottomSheet>
+
+      {/* Share Event Sheet */}
+      {event && (
+        <ShareEventSheet
+          isOpen={showShareSheet}
+          onClose={() => setShowShareSheet(false)}
+          event={event}
+        />
+      )}
 
       {/* Report Dialog */}
       {event && (

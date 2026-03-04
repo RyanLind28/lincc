@@ -25,6 +25,13 @@ export interface Database {
           terms_accepted_at: string | null
           role: 'user' | 'admin'
           status: 'active' | 'suspended' | 'banned'
+          is_business: boolean
+          business_name: string | null
+          business_logo_url: string | null
+          business_category: string | null
+          business_description: string | null
+          business_address: string | null
+          business_opening_hours: Json | null
           created_at: string
           updated_at: string
         }
@@ -43,6 +50,13 @@ export interface Database {
           terms_accepted_at?: string | null
           role?: 'user' | 'admin'
           status?: 'active' | 'suspended' | 'banned'
+          is_business?: boolean
+          business_name?: string | null
+          business_logo_url?: string | null
+          business_category?: string | null
+          business_description?: string | null
+          business_address?: string | null
+          business_opening_hours?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -61,6 +75,13 @@ export interface Database {
           terms_accepted_at?: string | null
           role?: 'user' | 'admin'
           status?: 'active' | 'suspended' | 'banned'
+          is_business?: boolean
+          business_name?: string | null
+          business_logo_url?: string | null
+          business_category?: string | null
+          business_description?: string | null
+          business_address?: string | null
+          business_opening_hours?: Json | null
           updated_at?: string
         }
       }
@@ -105,6 +126,7 @@ export interface Database {
           capacity: number
           join_mode: 'request' | 'auto'
           audience: 'everyone' | 'women' | 'men'
+          cover_image_url: string | null
           status: 'active' | 'full' | 'expired' | 'cancelled' | 'deleted'
           created_at: string
           expires_at: string
@@ -125,6 +147,7 @@ export interface Database {
           capacity: number
           join_mode: 'request' | 'auto'
           audience: 'everyone' | 'women' | 'men'
+          cover_image_url?: string | null
           status?: 'active' | 'full' | 'expired' | 'cancelled' | 'deleted'
           created_at?: string
         }
@@ -141,6 +164,7 @@ export interface Database {
           capacity?: number
           join_mode?: 'request' | 'auto'
           audience?: 'everyone' | 'women' | 'men'
+          cover_image_url?: string | null
           status?: 'active' | 'full' | 'expired' | 'cancelled' | 'deleted'
         }
       }
@@ -258,6 +282,27 @@ export interface Database {
         Update: {
           is_read?: boolean
         }
+      }
+      business_waitlist: {
+        Row: {
+          id: string
+          business_name: string
+          contact_name: string
+          email: string
+          business_type: string
+          message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_name: string
+          contact_name: string
+          email: string
+          business_type: string
+          message?: string | null
+          created_at?: string
+        }
+        Update: never
       }
     }
   }

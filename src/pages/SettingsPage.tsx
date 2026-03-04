@@ -4,18 +4,42 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
-import { Slider } from '../components/ui';
-import { LogOut, Ghost, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon } from 'lucide-react';
+import { Slider, Toggle, Modal, Input, Button } from '../components/ui';
+import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Building2, Edit2, Monitor } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
-import { cn } from '../lib/utils';
+import { useUserLocation } from '../hooks/useUserLocation';
+import { useLocationName } from '../hooks/useLocationName';
+import { BusinessOnboardingSheet } from '../components/business/BusinessOnboardingSheet';
+import { deactivateBusinessProfile } from '../services/businessService';
 import type { NotificationPreferences } from '../types';
 
 export default function SettingsPage() {
   const { profile, user, signOut, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const { location } = useUserLocation();
 
   const { permission, isSubscribed, isLoading: isPushLoading, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications();
+  const { locationName, isLoading: locationLoading } = useLocationName(location);
+
+  const [showBusinessOnboarding, setShowBusinessOnboarding] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeactivateBusiness = async () => {
+    if (!user?.id) return;
+    setIsDeactivating(true);
+    const result = await deactivateBusinessProfile(user.id);
+    if (result.success) {
+      await refreshProfile(user.id);
+      showToast('Switched back to personal mode', 'success');
+    } else {
+      showToast(result.error || 'Failed to deactivate', 'error');
+    }
+    setIsDeactivating(false);
+  };
 
   const defaultPrefs: NotificationPreferences = {
     join_request: true,
@@ -25,6 +49,7 @@ export default function SettingsPage() {
     event_cancelled: true,
     event_starting: true,
     nearby_event: true,
+    voucher_shared: true,
     quiet_hours_enabled: false,
     quiet_hours_start: '22:00',
     quiet_hours_end: '07:00',
@@ -33,6 +58,15 @@ export default function SettingsPage() {
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(
     () => ({ ...defaultPrefs, ...(profile?.notification_preferences || {}) })
   );
+
+  // The boolean pref keys (excluding quiet_hours_start/end which are strings)
+  const booleanPrefKeys: (keyof NotificationPreferences)[] = [
+    'join_request', 'request_approved', 'request_declined',
+    'new_message', 'event_cancelled', 'event_starting',
+    'nearby_event', 'voucher_shared',
+  ];
+
+  const allOn = booleanPrefKeys.every((k) => notifPrefs[k] === true);
 
   const updateNotifPref = useCallback(async (key: keyof NotificationPreferences, value: boolean | string) => {
     if (!user?.id) return;
@@ -50,27 +84,35 @@ export default function SettingsPage() {
     }
   }, [user?.id, notifPrefs, showToast]);
 
-  const [isGhostMode, setIsGhostMode] = useState(profile?.is_ghost_mode || false);
-  const [isWomenOnlyMode, setIsWomenOnlyMode] = useState(profile?.is_women_only_mode || false);
-  const [radius, setRadius] = useState(profile?.settings_radius || 10);
-
-  const handleToggleGhostMode = async () => {
+  const handleToggleAll = useCallback(async () => {
     if (!user?.id) return;
-    const newValue = !isGhostMode;
-    setIsGhostMode(newValue);
+    const newValue = !allOn;
+    const updated = { ...notifPrefs };
+    for (const key of booleanPrefKeys) {
+      (updated as Record<string, unknown>)[key] = newValue;
+    }
+    setNotifPrefs(updated as NotificationPreferences);
+
+    // Also toggle push subscription to match
+    if (newValue && !isSubscribed && permission !== 'denied') {
+      pushSubscribe();
+    } else if (!newValue && isSubscribed) {
+      pushUnsubscribe();
+    }
 
     const { error } = await supabase
       .from('profiles')
-      .update({ is_ghost_mode: newValue })
+      .update({ notification_preferences: updated })
       .eq('id', user.id);
 
     if (error) {
-      showToast('Failed to update setting', 'error');
-      setIsGhostMode(!newValue);
-    } else {
-      await refreshProfile(user.id);
+      showToast('Failed to update preferences', 'error');
+      setNotifPrefs(notifPrefs);
     }
-  };
+  }, [user?.id, notifPrefs, allOn, isSubscribed, permission, pushSubscribe, pushUnsubscribe, showToast]);
+
+  const [isWomenOnlyMode, setIsWomenOnlyMode] = useState(profile?.is_women_only_mode || false);
+  const [radius, setRadius] = useState(profile?.settings_radius || 10);
 
   const handleToggleWomenOnlyMode = async () => {
     if (!user?.id) return;
@@ -115,8 +157,24 @@ export default function SettingsPage() {
     showToast('Data export feature coming soon', 'info');
   };
 
-  const handleDeleteAccount = () => {
-    showToast('Account deletion feature coming soon', 'info');
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE' || !user?.id) return;
+    setIsDeleting(true);
+
+    const { error } = await supabase.rpc('delete_user_account', { target_user_id: user.id });
+
+    if (error) {
+      showToast(error.message || 'Failed to delete account', 'error');
+      setIsDeleting(false);
+    } else {
+      await signOut();
+      navigate('/landing');
+    }
+  };
+
+  const handleSignOutEverywhere = async () => {
+    await supabase.auth.signOut({ scope: 'global' });
+    navigate('/login');
   };
 
   return (
@@ -130,10 +188,30 @@ export default function SettingsPage() {
             Discovery
           </h2>
           <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+            {/* Location */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <MapPin className="h-5 w-5 text-blue" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Your Location</h3>
+                {locationLoading ? (
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <Loader2 className="h-3 w-3 animate-spin text-text-muted" />
+                    <p className="text-sm text-text-muted">Detecting location...</p>
+                  </div>
+                ) : locationName ? (
+                  <p className="text-sm text-text-muted">{locationName}</p>
+                ) : (
+                  <p className="text-sm text-text-muted">Location unavailable</p>
+                )}
+              </div>
+            </div>
+
             {/* Radius */}
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <MapPin className="h-5 w-5 text-coral" />
                 </div>
                 <div className="flex-1">
@@ -150,264 +228,271 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* Ghost Mode */}
-            <div className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-warning/10 rounded-xl flex items-center justify-center">
-                <Ghost className="h-5 w-5 text-warning" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-text">Ghost Mode</h3>
-                <p className="text-sm text-text-muted">Hide your profile temporarily</p>
-              </div>
-              <button
-                onClick={handleToggleGhostMode}
-                className={cn(
-                  'relative w-12 h-7 rounded-full transition-colors',
-                  isGhostMode ? 'bg-coral' : 'bg-gray-200'
-                )}
-              >
-                <span
-                  className={cn(
-                    'absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                    isGhostMode ? 'translate-x-6' : 'translate-x-1'
-                  )}
-                />
-              </button>
-            </div>
-
             {/* Women Only Mode - only show for women */}
             {profile?.gender === 'female' && (
               <div className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Users className="h-5 w-5 text-purple" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium text-text">Women-Only Mode</h3>
                   <p className="text-sm text-text-muted">Only see women-hosted events</p>
                 </div>
-                <button
-                  onClick={handleToggleWomenOnlyMode}
-                  className={cn(
-                    'relative w-12 h-7 rounded-full transition-colors',
-                    isWomenOnlyMode ? 'bg-coral' : 'bg-gray-200'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                      isWomenOnlyMode ? 'translate-x-6' : 'translate-x-1'
-                    )}
-                  />
-                </button>
+                <Toggle checked={isWomenOnlyMode} onChange={handleToggleWomenOnlyMode} />
               </div>
             )}
           </div>
         </section>
 
-        {/* Notifications */}
-        {'Notification' in window && 'PushManager' in window && (
-          <section>
-            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
-              Notifications
-            </h2>
-            <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
-              {/* Master push toggle */}
-              <div className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center">
-                  <Bell className="h-5 w-5 text-coral" />
+        {/* Business */}
+        <section>
+          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
+            Business
+          </h2>
+          <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+            {!profile?.is_business ? (
+              <button
+                onClick={() => setShowBusinessOnboarding(true)}
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Store className="h-5 w-5 text-coral" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-medium text-text">Push Notifications</h3>
-                  {permission === 'denied' ? (
-                    <p className="text-sm text-text-muted">Blocked in browser settings</p>
-                  ) : (
-                    <p className="text-sm text-text-muted">Get notified about events and messages</p>
-                  )}
+                  <h3 className="font-medium text-text">Switch to Business</h3>
+                  <p className="text-sm text-text-muted">Create vouchers and promote your business</p>
                 </div>
-                {permission !== 'denied' && (
-                  <button
-                    onClick={isSubscribed ? pushUnsubscribe : pushSubscribe}
-                    disabled={isPushLoading}
-                    className={cn(
-                      'relative w-12 h-7 rounded-full transition-colors',
-                      isPushLoading && 'opacity-50',
-                      isSubscribed ? 'bg-coral' : 'bg-gray-200'
+                <ChevronRight className="h-5 w-5 text-text-muted" />
+              </button>
+            ) : (
+              <>
+                <div className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Building2 className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-text">{profile.business_name || 'Business Mode'}</h3>
+                    <p className="text-sm text-green-500 font-medium">Active</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/business/edit')}
+                  className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Edit2 className="h-5 w-5 text-purple" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-text">Edit Business Profile</h3>
+                    <p className="text-sm text-text-muted">Update your business details</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-text-muted" />
+                </button>
+                <button
+                  onClick={handleDeactivateBusiness}
+                  disabled={isDeactivating}
+                  className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-error/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    {isDeactivating ? (
+                      <Loader2 className="h-5 w-5 text-error animate-spin" />
+                    ) : (
+                      <Store className="h-5 w-5 text-error" />
                     )}
-                  >
-                    <span
-                      className={cn(
-                        'absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                        isSubscribed ? 'translate-x-6' : 'translate-x-1'
-                      )}
-                    />
-                  </button>
-                )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-error">Deactivate Business</h3>
+                    <p className="text-sm text-text-muted">Switch back to personal mode</p>
+                  </div>
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* Business Onboarding Sheet */}
+        <BusinessOnboardingSheet
+          isOpen={showBusinessOnboarding}
+          onClose={() => setShowBusinessOnboarding(false)}
+        />
+
+        {/* Notifications */}
+        <section>
+          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
+            Notifications
+          </h2>
+          <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+            {/* Master toggle — all notifications on/off */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Bell className="h-5 w-5 text-coral" />
               </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">All Notifications</h3>
+                <p className="text-sm text-text-muted">Enable or disable all notifications</p>
+              </div>
+              <Toggle
+                checked={allOn}
+                onChange={handleToggleAll}
+                disabled={isPushLoading}
+              />
+            </div>
 
-              {/* Per-type toggles — only show when subscribed */}
-              {isSubscribed && (
-                <>
-                  {/* Join Requests */}
-                  <div className="p-4 pl-8 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-coral/10 rounded-lg flex items-center justify-center">
-                      <UserPlus className="h-4 w-4 text-coral" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-text">Join Requests</h3>
-                      <p className="text-xs text-text-muted">When someone wants to join your event</p>
-                    </div>
-                    <button
-                      onClick={() => updateNotifPref('join_request', !notifPrefs.join_request)}
-                      className={cn(
-                        'relative w-11 h-6 rounded-full transition-colors',
-                        notifPrefs.join_request ? 'bg-coral' : 'bg-gray-200'
-                      )}
-                    >
-                      <span className={cn(
-                        'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                        notifPrefs.join_request ? 'translate-x-5.5' : 'translate-x-0.5'
-                      )} />
-                    </button>
-                  </div>
+            {/* Join Requests */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <UserPlus className="h-5 w-5 text-coral" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Join Requests</h3>
+                <p className="text-sm text-text-muted">When someone wants to join your event</p>
+              </div>
+              <Toggle
+                checked={notifPrefs.join_request}
+                onChange={() => updateNotifPref('join_request', !notifPrefs.join_request)}
+              />
+            </div>
 
-                  {/* Messages */}
-                  <div className="p-4 pl-8 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-purple/10 rounded-lg flex items-center justify-center">
-                      <MessageCircle className="h-4 w-4 text-purple" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-text">Messages</h3>
-                      <p className="text-xs text-text-muted">New messages in event chats</p>
-                    </div>
-                    <button
-                      onClick={() => updateNotifPref('new_message', !notifPrefs.new_message)}
-                      className={cn(
-                        'relative w-11 h-6 rounded-full transition-colors',
-                        notifPrefs.new_message ? 'bg-coral' : 'bg-gray-200'
-                      )}
-                    >
-                      <span className={cn(
-                        'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                        notifPrefs.new_message ? 'translate-x-5.5' : 'translate-x-0.5'
-                      )} />
-                    </button>
-                  </div>
+            {/* Request Approved */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Request Approved</h3>
+                <p className="text-sm text-text-muted">When a host approves your join request</p>
+              </div>
+              <Toggle
+                checked={notifPrefs.request_approved}
+                onChange={() => updateNotifPref('request_approved', !notifPrefs.request_approved)}
+              />
+            </div>
 
-                  {/* Event Reminders */}
-                  <div className="p-4 pl-8 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
-                      <Clock className="h-4 w-4 text-warning" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-text">Event Reminders</h3>
-                      <p className="text-xs text-text-muted">Reminders before events start</p>
-                    </div>
-                    <button
-                      onClick={() => updateNotifPref('event_starting', !notifPrefs.event_starting)}
-                      className={cn(
-                        'relative w-11 h-6 rounded-full transition-colors',
-                        notifPrefs.event_starting ? 'bg-coral' : 'bg-gray-200'
-                      )}
-                    >
-                      <span className={cn(
-                        'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                        notifPrefs.event_starting ? 'translate-x-5.5' : 'translate-x-0.5'
-                      )} />
-                    </button>
-                  </div>
+            {/* Request Declined */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-error/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <XCircle className="h-5 w-5 text-error" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Request Declined</h3>
+                <p className="text-sm text-text-muted">When a host declines your join request</p>
+              </div>
+              <Toggle
+                checked={notifPrefs.request_declined}
+                onChange={() => updateNotifPref('request_declined', !notifPrefs.request_declined)}
+              />
+            </div>
 
-                  {/* Event Cancellations */}
-                  <div className="p-4 pl-8 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center">
-                      <AlertCircle className="h-4 w-4 text-error" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-text">Cancellations</h3>
-                      <p className="text-xs text-text-muted">When an event you joined is cancelled</p>
-                    </div>
-                    <button
-                      onClick={() => updateNotifPref('event_cancelled', !notifPrefs.event_cancelled)}
-                      className={cn(
-                        'relative w-11 h-6 rounded-full transition-colors',
-                        notifPrefs.event_cancelled ? 'bg-coral' : 'bg-gray-200'
-                      )}
-                    >
-                      <span className={cn(
-                        'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                        notifPrefs.event_cancelled ? 'translate-x-5.5' : 'translate-x-0.5'
-                      )} />
-                    </button>
-                  </div>
+            {/* Messages */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="h-5 w-5 text-purple" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Messages</h3>
+                <p className="text-sm text-text-muted">New messages in chats</p>
+              </div>
+              <Toggle
+                checked={notifPrefs.new_message}
+                onChange={() => updateNotifPref('new_message', !notifPrefs.new_message)}
+              />
+            </div>
 
-                  {/* Nearby Events */}
-                  <div className="p-4 pl-8 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue/10 rounded-lg flex items-center justify-center">
-                      <MapPin className="h-4 w-4 text-blue" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-text">Nearby Events</h3>
-                      <p className="text-xs text-text-muted">When a new event is posted near you</p>
-                    </div>
-                    <button
-                      onClick={() => updateNotifPref('nearby_event', !notifPrefs.nearby_event)}
-                      className={cn(
-                        'relative w-11 h-6 rounded-full transition-colors',
-                        notifPrefs.nearby_event ? 'bg-coral' : 'bg-gray-200'
-                      )}
-                    >
-                      <span className={cn(
-                        'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                        notifPrefs.nearby_event ? 'translate-x-5.5' : 'translate-x-0.5'
-                      )} />
-                    </button>
-                  </div>
+            {/* Event Reminders */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-warning/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Clock className="h-5 w-5 text-warning" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Event Reminders</h3>
+                <p className="text-sm text-text-muted">Reminders before events start</p>
+              </div>
+              <Toggle
+                checked={notifPrefs.event_starting}
+                onChange={() => updateNotifPref('event_starting', !notifPrefs.event_starting)}
+              />
+            </div>
 
-                  {/* Quiet Hours */}
-                  <div className="p-4 pl-8">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple/10 rounded-lg flex items-center justify-center">
-                        <Moon className="h-4 w-4 text-purple" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-medium text-text">Quiet Hours</h3>
-                        <p className="text-xs text-text-muted">Silence push notifications during set times</p>
-                      </div>
-                      <button
-                        onClick={() => updateNotifPref('quiet_hours_enabled', !notifPrefs.quiet_hours_enabled)}
-                        className={cn(
-                          'relative w-11 h-6 rounded-full transition-colors',
-                          notifPrefs.quiet_hours_enabled ? 'bg-coral' : 'bg-gray-200'
-                        )}
-                      >
-                        <span className={cn(
-                          'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
-                          notifPrefs.quiet_hours_enabled ? 'translate-x-5.5' : 'translate-x-0.5'
-                        )} />
-                      </button>
-                    </div>
-                    {notifPrefs.quiet_hours_enabled && (
-                      <div className="mt-3 ml-11 flex items-center gap-2">
-                        <input
-                          type="time"
-                          value={notifPrefs.quiet_hours_start}
-                          onChange={(e) => updateNotifPref('quiet_hours_start', e.target.value)}
-                          className="px-2 py-1 text-sm bg-background border border-border rounded-lg text-text"
-                        />
-                        <span className="text-sm text-text-muted">to</span>
-                        <input
-                          type="time"
-                          value={notifPrefs.quiet_hours_end}
-                          onChange={(e) => updateNotifPref('quiet_hours_end', e.target.value)}
-                          className="px-2 py-1 text-sm bg-background border border-border rounded-lg text-text"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </>
+            {/* Event Cancellations */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-error/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-error" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Cancellations</h3>
+                <p className="text-sm text-text-muted">When an event you joined is cancelled</p>
+              </div>
+              <Toggle
+                checked={notifPrefs.event_cancelled}
+                onChange={() => updateNotifPref('event_cancelled', !notifPrefs.event_cancelled)}
+              />
+            </div>
+
+            {/* Nearby Events */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <MapPin className="h-5 w-5 text-blue" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Nearby Events</h3>
+                <p className="text-sm text-text-muted">When a new event is posted near you</p>
+              </div>
+              <Toggle
+                checked={notifPrefs.nearby_event}
+                onChange={() => updateNotifPref('nearby_event', !notifPrefs.nearby_event)}
+              />
+            </div>
+
+            {/* Voucher Shares */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Tag className="h-5 w-5 text-coral" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Shared Vouchers</h3>
+                <p className="text-sm text-text-muted">When a friend shares a voucher with you</p>
+              </div>
+              <Toggle
+                checked={notifPrefs.voucher_shared}
+                onChange={() => updateNotifPref('voucher_shared', !notifPrefs.voucher_shared)}
+              />
+            </div>
+
+            {/* Quiet Hours */}
+            <div className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Moon className="h-5 w-5 text-purple" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-text">Quiet Hours</h3>
+                  <p className="text-sm text-text-muted">Silence notifications during set times</p>
+                </div>
+                <Toggle
+                  checked={notifPrefs.quiet_hours_enabled}
+                  onChange={() => updateNotifPref('quiet_hours_enabled', !notifPrefs.quiet_hours_enabled)}
+                />
+              </div>
+              {notifPrefs.quiet_hours_enabled && (
+                <div className="mt-3 ml-13 flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={notifPrefs.quiet_hours_start}
+                    onChange={(e) => updateNotifPref('quiet_hours_start', e.target.value)}
+                    className="px-2 py-1 text-sm bg-background border border-border rounded-lg text-text"
+                  />
+                  <span className="text-sm text-text-muted">to</span>
+                  <input
+                    type="time"
+                    value={notifPrefs.quiet_hours_end}
+                    onChange={(e) => updateNotifPref('quiet_hours_end', e.target.value)}
+                    className="px-2 py-1 text-sm bg-background border border-border rounded-lg text-text"
+                  />
+                </div>
               )}
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* Account Settings */}
         <section>
@@ -430,7 +515,7 @@ export default function SettingsPage() {
             </button>
 
             <button
-              onClick={handleDeleteAccount}
+              onClick={() => setShowDeleteModal(true)}
               className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
             >
               <div className="w-10 h-10 bg-error/10 rounded-xl flex items-center justify-center">
@@ -445,19 +530,67 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Sign Out */}
-        <button
-          onClick={handleSignOut}
-          className="w-full p-4 flex items-center justify-center gap-2 bg-surface rounded-2xl border border-border text-text-muted hover:text-text hover:border-coral transition-colors"
-        >
-          <LogOut className="h-5 w-5" />
-          <span className="font-medium">Sign Out</span>
-        </button>
+        {/* Session */}
+        <div className="space-y-3">
+          <button
+            onClick={handleSignOut}
+            className="w-full p-4 flex items-center justify-center gap-2 bg-surface rounded-2xl border border-border text-text-muted hover:text-text hover:border-coral transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="font-medium">Sign Out</span>
+          </button>
+
+          <button
+            onClick={handleSignOutEverywhere}
+            className="w-full p-4 flex items-center justify-center gap-2 bg-surface rounded-2xl border border-border text-text-muted hover:text-text hover:border-coral transition-colors"
+          >
+            <Monitor className="h-5 w-5" />
+            <span className="font-medium">Sign Out Everywhere</span>
+          </button>
+        </div>
 
         {/* Version */}
         <p className="text-center text-sm text-text-light">
           Lincc v0.1.0
         </p>
+
+        {/* Delete Account Confirmation Modal */}
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+          title="Delete Account"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-text-muted">
+              This action is permanent and cannot be undone. All your data — events, messages, connections — will be permanently deleted.
+            </p>
+            <Input
+              label='Type "DELETE" to confirm'
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+            />
+            <div className="flex gap-3">
+              <Button
+                variant="ghost"
+                className="flex-1"
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                className="flex-1"
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'DELETE'}
+                isLoading={isDeleting}
+              >
+                Delete Forever
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </div>
   );
