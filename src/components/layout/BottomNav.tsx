@@ -40,7 +40,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom lg:hidden">
       {/* SVG gradient definition */}
       <svg width="0" height="0" className="absolute">
         <defs>

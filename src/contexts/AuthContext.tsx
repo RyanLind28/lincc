@@ -87,27 +87,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(!DEV_MODE);
 
-  // Fetch profile — standalone, no race conditions
+  // Fetch profile — standalone, with single retry on failure
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     if (DEV_MODE) return MOCK_PROFILE;
     console.log(LOG, 'Fetching profile for', userId);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
 
-      if (error) {
-        console.error(LOG, 'Profile fetch error:', error.message, error.code);
+    const attempt = async (): Promise<Profile | null> => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (error) {
+          console.error(LOG, 'Profile fetch error:', error.message, error.code);
+          return null;
+        }
+        console.log(LOG, 'Profile loaded:', data?.first_name, '| terms:', !!data?.terms_accepted_at);
+        return data as Profile;
+      } catch (err) {
+        console.error(LOG, 'Profile fetch exception:', err);
         return null;
       }
-      console.log(LOG, 'Profile loaded:', data?.first_name, '| terms:', !!data?.terms_accepted_at);
-      return data as Profile;
-    } catch (err) {
-      console.error(LOG, 'Profile fetch exception:', err);
-      return null;
-    }
+    };
+
+    const result = await attempt();
+    if (result) return result;
+
+    // Single retry after 1s — handles transient DB hiccups
+    console.log(LOG, 'Profile fetch failed, retrying in 1s...');
+    await new Promise(r => setTimeout(r, 1000));
+    return attempt();
   }, []);
 
   const refreshProfile = useCallback(async (userId?: string) => {
@@ -131,6 +142,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log(LOG, 'onAuthStateChange:', event, session?.user?.email || 'no user');
 
+      // TOKEN_REFRESHED — just update session, don't touch profile or loading
+      if (event === 'TOKEN_REFRESHED') {
+        console.log(LOG, 'Token refreshed');
+        setSession(session);
+        setUser(session?.user ?? null);
+        return;
+      }
+
       // Synchronously update session and user — no async work here
       setSession(session);
       setUser(session?.user ?? null);
@@ -141,14 +160,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (event === 'PASSWORD_RECOVERY') {
         // User clicked the password reset link in their email — redirect to reset page
         navigate('/reset-password');
-      } else if (event === 'SIGNED_IN') {
+      } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         // Check email verification — if not confirmed, sign out immediately
+        // (Magic link logins auto-verify, so this only catches unverified email/password signups)
         if (session?.user && !session.user.email_confirmed_at) {
           console.log(LOG, 'Email not verified, signing out');
-          // Schedule sign-out in next tick to avoid async work in listener
           setTimeout(() => {
             supabase.auth.signOut().then(() => {
-              // Toast will show after state updates
               window.dispatchEvent(new CustomEvent('lincc:toast', {
                 detail: { message: 'Please verify your email first', type: 'error' },
               }));
@@ -157,10 +175,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         // User just signed in — ensure loading stays true until Effect 2 fetches profile.
-        // Without this, there's a render frame with isLoading=false + profile=null,
-        // which causes ProtectedRoute to redirect to /terms or /onboarding prematurely.
         setProfile(null);
         setIsLoading(true);
+      }
+    });
+
+    // Bootstrap: explicitly check for existing session (handles magic link hash tokens
+    // that may have been exchanged before the listener was ready)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log(LOG, 'getSession bootstrap:', session?.user?.email || 'no session');
+      if (session?.user) {
+        setSession(session);
+        setUser(session.user);
+        setIsLoading(true); // Effect 2 will fetch profile
+      } else {
+        setIsLoading(false);
       }
     });
 

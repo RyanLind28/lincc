@@ -1,9 +1,8 @@
-// Google Places API (New) service
-// Uses session tokens to group autocomplete + detail calls into single billing sessions
-// Field masking to only request what we need (reduces cost per call)
+// Google Places API service
+// Uses the Google Maps JavaScript SDK (Places library) for browser-compatible autocomplete
+// Session tokens group autocomplete + detail calls into single billing sessions
 
 const API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-const BASE_URL = 'https://places.googleapis.com/v1';
 
 // --- Types ---
 
@@ -29,19 +28,54 @@ export interface PlaceDetails {
 }
 
 export interface PlacePhoto {
-  name: string; // e.g. "places/PLACE_ID/photos/PHOTO_REF"
+  name: string; // Full photo URL (from JS API getUrl())
   widthPx: number;
   heightPx: number;
 }
 
+// --- Google Maps JS API Loader ---
+
+let loadPromise: Promise<void> | null = null;
+
+function loadGoogleMapsApi(): Promise<void> {
+  if (window.google?.maps?.places) return Promise.resolve();
+  if (loadPromise) return loadPromise;
+
+  loadPromise = new Promise((resolve, reject) => {
+    // Check if script is already in DOM (e.g. from another component)
+    if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+      const check = setInterval(() => {
+        if (window.google?.maps?.places) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 50);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      loadPromise = null;
+      reject(new Error('Failed to load Google Maps API'));
+    };
+    document.head.appendChild(script);
+  });
+
+  return loadPromise;
+}
+
 // --- Session Token Management ---
-// Groups autocomplete keystrokes + final detail fetch into one billing session (~$0.017)
+// Groups autocomplete keystrokes + final detail fetch into one billing session
 
-let currentSessionToken: string | null = null;
+let currentSessionToken: google.maps.places.AutocompleteSessionToken | null = null;
 
-function getSessionToken(): string {
+function getSessionToken(): google.maps.places.AutocompleteSessionToken {
   if (!currentSessionToken) {
-    currentSessionToken = crypto.randomUUID();
+    currentSessionToken = new google.maps.places.AutocompleteSessionToken();
   }
   return currentSessionToken;
 }
@@ -58,53 +92,32 @@ export async function searchPlaces(
 ): Promise<PlacePrediction[]> {
   if (!API_KEY || !query.trim() || query.trim().length < 2) return [];
 
-  const body: Record<string, unknown> = {
-    input: query,
-    sessionToken: getSessionToken(),
-    languageCode: 'en',
-  };
-
-  // Bias results toward user's current location (50km radius)
-  if (location) {
-    body.locationBias = {
-      circle: {
-        center: { latitude: location.lat, longitude: location.lng },
-        radius: 50000,
-      },
-    };
-  }
-
   try {
-    const res = await fetch(`${BASE_URL}/places:autocomplete?key=${API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
+    await loadGoogleMapsApi();
 
-    if (!res.ok) {
-      console.error('Places autocomplete error:', res.status, await res.text());
-      return [];
+    const service = new google.maps.places.AutocompleteService();
+
+    const request: google.maps.places.AutocompletionRequest = {
+      input: query,
+      sessionToken: getSessionToken(),
+    };
+
+    // Bias results toward user's current location (50km radius)
+    if (location) {
+      request.locationBias = new google.maps.Circle({
+        center: { lat: location.lat, lng: location.lng },
+        radius: 50000,
+      });
     }
 
-    const data = await res.json();
+    const response = await service.getPlacePredictions(request);
 
-    return (data.suggestions || [])
-      .filter((s: Record<string, unknown>) => s.placePrediction)
-      .map((s: { placePrediction: Record<string, unknown> }) => {
-        const p = s.placePrediction;
-        const structured = p.structuredFormat as {
-          mainText?: { text?: string };
-          secondaryText?: { text?: string };
-        } | undefined;
-        return {
-          placeId: (p.placeId || p.place_id || '') as string,
-          mainText: structured?.mainText?.text || '',
-          secondaryText: structured?.secondaryText?.text || '',
-          description: (p.text as { text?: string })?.text || '',
-        };
-      });
+    return (response.predictions || []).map((p) => ({
+      placeId: p.place_id,
+      mainText: p.structured_formatting?.main_text || '',
+      secondaryText: p.structured_formatting?.secondary_text || '',
+      description: p.description || '',
+    }));
   } catch (err) {
     console.error('Places autocomplete failed:', err);
     return [];
@@ -112,63 +125,64 @@ export async function searchPlaces(
 }
 
 // --- Place Details ---
-// Uses field mask to only fetch what we need (keeps cost low)
-
-const DETAIL_FIELDS = [
-  'id',
-  'displayName',
-  'formattedAddress',
-  'location',
-  'rating',
-  'userRatingCount',
-  'photos',
-  'currentOpeningHours',
-  'websiteUri',
-  'googleMapsUri',
-].join(',');
 
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | null> {
   if (!API_KEY || !placeId) return null;
 
   try {
-    // Pass session token as query param (not header) to avoid CORS preflight issues
-    const sessionParam = currentSessionToken ? `&sessionToken=${currentSessionToken}` : '';
-    const res = await fetch(
-      `${BASE_URL}/places/${placeId}?key=${API_KEY}${sessionParam}`,
-      {
-        headers: {
-          'X-Goog-FieldMask': DETAIL_FIELDS,
+    await loadGoogleMapsApi();
+
+    // PlacesService requires a DOM element
+    const div = document.createElement('div');
+    const service = new google.maps.places.PlacesService(div);
+
+    return new Promise((resolve) => {
+      service.getDetails(
+        {
+          placeId,
+          fields: [
+            'place_id',
+            'name',
+            'formatted_address',
+            'geometry',
+            'rating',
+            'user_ratings_total',
+            'photos',
+            'opening_hours',
+            'website',
+            'url',
+          ],
+          sessionToken: getSessionToken(),
         },
-      },
-    );
+        (place, status) => {
+          resetSessionToken();
 
-    // Reset session after detail fetch (session is now closed)
-    resetSessionToken();
+          if (status !== google.maps.places.PlacesServiceStatus.OK || !place) {
+            console.error('Places detail error:', status);
+            resolve(null);
+            return;
+          }
 
-    if (!res.ok) {
-      console.error('Places detail error:', res.status, await res.text());
-      return null;
-    }
-
-    const place = await res.json();
-
-    return {
-      id: place.id || placeId,
-      name: place.displayName?.text || '',
-      address: place.formattedAddress || '',
-      lat: place.location?.latitude || 0,
-      lng: place.location?.longitude || 0,
-      rating: place.rating,
-      userRatingCount: place.userRatingCount,
-      photos: (place.photos || []).slice(0, 5).map((p: Record<string, unknown>) => ({
-        name: p.name as string,
-        widthPx: p.widthPx as number,
-        heightPx: p.heightPx as number,
-      })),
-      openingHours: place.currentOpeningHours?.weekdayDescriptions,
-      websiteUri: place.websiteUri,
-      googleMapsUri: place.googleMapsUri,
-    };
+          resolve({
+            id: place.place_id || placeId,
+            name: place.name || '',
+            address: place.formatted_address || '',
+            lat: place.geometry?.location?.lat() || 0,
+            lng: place.geometry?.location?.lng() || 0,
+            rating: place.rating,
+            userRatingCount: place.user_ratings_total,
+            photos: (place.photos || []).slice(0, 5).map((photo) => ({
+              name: photo.getUrl({ maxWidth: 800, maxHeight: 600 }),
+              widthPx: photo.width,
+              heightPx: photo.height,
+            })),
+            openingHours: place.opening_hours?.weekday_text,
+            websiteUri: place.website,
+            googleMapsUri: place.url,
+          });
+        },
+      );
+    });
   } catch (err) {
     console.error('Places detail failed:', err);
     resetSessionToken();
@@ -177,13 +191,15 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
 }
 
 // --- Photo URL ---
-// Returns a URL for a place photo at the given max dimensions
+// With the JS API, photo URLs are already full URLs stored in the name field.
+// This function returns the URL directly, or constructs a resized variant.
 
 export function getPlacePhotoUrl(
-  photoName: string,
-  maxWidth = 800,
-  maxHeight = 600,
+  photoNameOrUrl: string,
+  _maxWidth = 800,
+  _maxHeight = 600,
 ): string {
-  if (!API_KEY || !photoName) return '';
-  return `${BASE_URL}/${photoName}/media?maxWidthPx=${maxWidth}&maxHeightPx=${maxHeight}&key=${API_KEY}`;
+  if (!photoNameOrUrl) return '';
+  // JS API photo URLs are already complete — return as-is
+  return photoNameOrUrl;
 }
