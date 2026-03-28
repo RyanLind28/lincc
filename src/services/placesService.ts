@@ -112,7 +112,7 @@ export async function searchPlaces(
 
     const response = await service.getPlacePredictions(request);
 
-    return (response.predictions || []).map((p) => ({
+    return (response.predictions || []).map((p: google.maps.places.AutocompletePrediction) => ({
       placeId: p.place_id,
       mainText: p.structured_formatting?.main_text || '',
       secondaryText: p.structured_formatting?.secondary_text || '',
@@ -154,7 +154,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
           ],
           sessionToken: getSessionToken(),
         },
-        (place, status) => {
+        (place: google.maps.places.PlaceResult | null, status: google.maps.places.PlacesServiceStatus) => {
           resetSessionToken();
 
           if (status !== google.maps.places.PlacesServiceStatus.OK || !place) {
@@ -171,7 +171,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
             lng: place.geometry?.location?.lng() || 0,
             rating: place.rating,
             userRatingCount: place.user_ratings_total,
-            photos: (place.photos || []).slice(0, 5).map((photo) => ({
+            photos: (place.photos || []).slice(0, 5).map((photo: google.maps.places.PlacePhoto) => ({
               name: photo.getUrl({ maxWidth: 800, maxHeight: 600 }),
               widthPx: photo.width,
               heightPx: photo.height,

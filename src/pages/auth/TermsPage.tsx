@@ -82,8 +82,10 @@ export default function TermsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
+      <div className="w-full max-w-sm relative">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img src={LOGO_URL} alt="Lincc" className="h-8" />

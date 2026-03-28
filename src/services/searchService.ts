@@ -41,7 +41,7 @@ export async function searchEvents(query: string, limit = 20): Promise<SearchRes
  * Fallback substring search when full-text isn't available
  */
 async function fallbackSearch(query: string, limit: number): Promise<SearchResult[]> {
-  const searchTerm = `%${query.trim()}%`;
+  const searchTerm = `%${query.trim().replace(/[,.()\[\]]/g, '')}%`;
 
   const { data, error } = await supabase
     .from('events')
@@ -71,7 +71,7 @@ async function fallbackSearch(query: string, limit: number): Promise<SearchResul
 export async function getSearchSuggestions(query: string): Promise<string[]> {
   if (!query.trim() || query.length < 2) return [];
 
-  const searchTerm = `%${query.trim()}%`;
+  const searchTerm = `%${query.trim().replace(/[,.()\[\]]/g, '')}%`;
 
   const { data, error } = await supabase
     .from('events')

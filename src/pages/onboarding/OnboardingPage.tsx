@@ -4,7 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { GradientButton, Input, TextArea, Avatar, ChipGroup } from '../../components/ui';
-import { Camera, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Camera, ArrowLeft, ArrowRight, Download, Bell } from 'lucide-react';
+import { usePWA } from '../../hooks/usePWA';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { validateImageSize, compressImage } from '../../lib/imageCompression';
 import type { Gender } from '../../types';
 
@@ -49,6 +51,8 @@ export default function OnboardingPage() {
   const { user, isProfileComplete, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const { isInstallable, isInstalled, promptInstall } = usePWA();
+  const { permission: pushPermission, subscribe: pushSubscribe } = usePushNotifications();
 
   // If profile is already complete, redirect to home
   useEffect(() => {
@@ -57,7 +61,7 @@ export default function OnboardingPage() {
     }
   }, [isProfileComplete, navigate]);
 
-  const totalSteps = 4;
+  const totalSteps = 5;
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -141,23 +145,31 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validateStep()) return;
 
-    if (step < totalSteps) {
-      setStep(step + 1);
-    } else {
-      handleComplete();
+    // After bio (step 4), save profile then advance to setup step
+    if (step === 4) {
+      await saveProfile();
+      return;
     }
+
+    // Step 5 (setup) — done, go home
+    if (step === totalSteps) {
+      navigate('/');
+      return;
+    }
+
+    setStep(step + 1);
   };
 
   const handleBack = () => {
-    if (step > 1) {
+    if (step > 1 && step < 5) {
       setStep(step - 1);
     }
   };
 
-  const handleComplete = async () => {
+  const saveProfile = async () => {
     if (!user?.id) return;
 
     setIsLoading(true);
@@ -173,7 +185,6 @@ export default function OnboardingPage() {
       bio: bio.trim() || null,
     };
 
-    // Use upsert so it works whether the profile row exists or not
     const { error } = await supabase
       .from('profiles')
       .upsert(profileData, { onConflict: 'id' });
@@ -183,15 +194,25 @@ export default function OnboardingPage() {
       console.error(error);
     } else {
       await refreshProfile(user.id);
-      navigate('/');
+      setStep(5);
     }
 
     setIsLoading(false);
   };
 
+  const handleInstall = async () => {
+    await promptInstall();
+  };
+
+  const handleEnableNotifications = async () => {
+    await pushSubscribe();
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto px-4 py-12">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
+      <div className="max-w-sm mx-auto px-4 py-12 relative">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img src={LOGO_URL} alt="Lincc" className="h-8" />
@@ -328,11 +349,61 @@ export default function OnboardingPage() {
               />
             </div>
           )}
+
+          {/* Step 5: Install & Notifications */}
+          {step === 5 && (
+            <div className="text-center">
+              <h1 className="text-2xl font-bold gradient-text mb-2">You're all set!</h1>
+              <p className="text-text-muted mb-8">
+                A couple more things to get the best experience.
+              </p>
+
+              <div className="space-y-4 text-left">
+                {/* Install prompt */}
+                {isInstallable && !isInstalled && (
+                  <button
+                    onClick={handleInstall}
+                    className="w-full p-4 bg-background rounded-xl border border-border flex items-center gap-4 hover:border-coral transition-colors"
+                  >
+                    <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Download className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h3 className="font-semibold text-text">Install Lincc</h3>
+                      <p className="text-sm text-text-muted">Add to your home screen for quick access</p>
+                    </div>
+                  </button>
+                )}
+
+                {/* Notification prompt */}
+                {pushPermission !== 'granted' && 'Notification' in window && (
+                  <button
+                    onClick={handleEnableNotifications}
+                    className="w-full p-4 bg-background rounded-xl border border-border flex items-center gap-4 hover:border-coral transition-colors"
+                  >
+                    <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Bell className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h3 className="font-semibold text-text">Enable Notifications</h3>
+                      <p className="text-sm text-text-muted">Get notified about events, messages, and more</p>
+                    </div>
+                  </button>
+                )}
+
+                {pushPermission === 'granted' && !isInstallable && (
+                  <p className="text-center text-text-muted text-sm py-4">
+                    You're good to go!
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
         <div className="flex gap-3 mt-6">
-          {step > 1 && (
+          {step > 1 && step < 5 && (
             <GradientButton
               variant="outline"
               onClick={handleBack}
@@ -345,9 +416,9 @@ export default function OnboardingPage() {
             onClick={handleNext}
             fullWidth
             isLoading={isLoading}
-            rightIcon={step < totalSteps ? <ArrowRight className="h-4 w-4" /> : undefined}
+            rightIcon={step < 4 ? <ArrowRight className="h-4 w-4" /> : undefined}
           >
-            {step < totalSteps ? 'Continue' : 'Complete'}
+            {step < 4 ? 'Continue' : step === 4 ? 'Save Profile' : 'Get Started'}
           </GradientButton>
         </div>
       </div>

@@ -100,13 +100,16 @@ export default function NotificationsPage() {
         <Header title="Notifications" showBack />
 
         <div className="flex flex-col items-center justify-center p-8 mt-20">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <Bell className="h-8 w-8 text-primary" />
+          <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
+            <Bell className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-xl font-semibold text-text mb-2">No notifications</h2>
-          <p className="text-text-muted text-center max-w-xs">
+          <p className="text-text-muted text-center max-w-xs mb-4">
             You're all caught up! Notifications about events and messages will appear here.
           </p>
+          <GradientButton variant="outline" onClick={() => window.location.href = '/'}>
+            Browse Events
+          </GradientButton>
         </div>
       </div>
     );

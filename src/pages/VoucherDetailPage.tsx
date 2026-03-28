@@ -153,6 +153,7 @@ export default function VoucherDetailPage() {
             <img
               src={voucher.cover_image_url}
               alt={voucher.title}
+              loading="lazy"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />

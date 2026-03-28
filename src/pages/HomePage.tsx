@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { SlidersHorizontal, MapPin, Ticket, Clock, LayoutGrid, Calendar, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { SlidersHorizontal, MapPin, Ticket, Clock, LayoutGrid, Calendar, RotateCcw, Loader2 } from 'lucide-react';
 import {
   SearchBar,
   FilterPills,
@@ -11,6 +11,7 @@ import {
   CategoryIcon,
   MapView,
   VoucherTile,
+  EventCardGridSkeleton,
   QUICK_DATE_OPTIONS,
 } from '../components/ui';
 import { useUserLocation } from '../hooks/useUserLocation';
@@ -21,6 +22,7 @@ import { useViewMode } from '../contexts/ViewModeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { CATEGORIES } from '../data/categories';
 import { getActiveVouchers } from '../services/voucherService';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import type { VoucherWithDetails } from '../types';
 
 // Map categories from data file to filter format (exclude "Other" — not useful as a filter)
@@ -61,6 +63,7 @@ export default function HomePage() {
     hasActiveFilters,
     hasLocation,
     refreshLocation,
+    refresh,
   } = useRecommendedEvents({ maxDistance: debouncedDistance });
 
   // Get user location for map + readable name
@@ -69,6 +72,14 @@ export default function HomePage() {
 
   // Bookmarks
   const { savedIds, toggleSave } = useBookmarks();
+
+  // Pull to refresh
+  const handleRefresh = useCallback(async () => {
+    refresh();
+    // Allow time for the re-fetch to complete
+    await new Promise(r => setTimeout(r, 800));
+  }, [refresh]);
+  const { pullDistance, isRefreshing, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
 
   // Result count + reset state
   const resultCount = events.length;
@@ -130,24 +141,21 @@ export default function HomePage() {
       <div className="flex-1 overflow-hidden relative">
         {viewMode === 'list' ? (
           /* List View - Grid of cards */
-          <div className="h-full overflow-y-auto scrollbar-hide p-4 pb-24">
+          <div className="h-full overflow-y-auto scrollbar-hide p-4 pb-24" {...pullHandlers}>
+            {/* Pull to refresh indicator */}
+            {(pullDistance > 0 || isRefreshing) && (
+              <div
+                className="flex items-center justify-center transition-all duration-200 overflow-hidden"
+                style={{ height: pullDistance > 0 ? pullDistance : isRefreshing ? 40 : 0 }}
+              >
+                <Loader2 className={`h-5 w-5 text-coral ${isRefreshing ? 'animate-spin' : ''}`}
+                  style={{ opacity: Math.min(pullDistance / 60, 1), transform: `rotate(${pullDistance * 3}deg)` }}
+                />
+              </div>
+            )}
             {/* Loading state */}
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="bg-surface rounded-2xl border border-border overflow-hidden animate-pulse"
-                  >
-                    <div className="aspect-[4/3] bg-gray-200" />
-                    <div className="p-3 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-3/4" />
-                      <div className="h-3 bg-gray-200 rounded w-1/2" />
-                      <div className="h-3 bg-gray-200 rounded w-1/3" />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <EventCardGridSkeleton count={4} />
             ) : (
               <>
                 {/* Vouchers Near You section */}
@@ -183,21 +191,47 @@ export default function HomePage() {
                   </div>
                 )}
 
-                <EventCardGrid
-                  events={events}
-                  onToggleSave={toggleSave}
-                  savedIds={savedIds}
-                />
-
-                {/* End of list CTA */}
-                <div className="mt-6 mb-4 text-center">
-                  <div className="inline-block p-6 bg-surface rounded-2xl border border-border">
-                    <p className="text-text-muted mb-3">Can't find what you're looking for?</p>
-                    <GradientButton onClick={() => (window.location.href = '/event/new')}>
-                      Create Your Own Event
-                    </GradientButton>
+                {events.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
+                      <Calendar className="h-8 w-8 text-white" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-text mb-1">No events found</h2>
+                    <p className="text-sm text-text-muted text-center mb-4 max-w-xs">
+                      {hasActiveFilters || filters.search
+                        ? 'Try adjusting your filters or search to find more events.'
+                        : 'There are no events near you right now. Be the first to create one!'}
+                    </p>
+                    {hasActiveFilters || filters.search ? (
+                      <GradientButton variant="outline" onClick={clearAll}>
+                        <RotateCcw className="h-4 w-4 mr-1.5" />
+                        Clear Filters
+                      </GradientButton>
+                    ) : (
+                      <GradientButton onClick={() => (window.location.href = '/event/new')}>
+                        Create Event
+                      </GradientButton>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <EventCardGrid
+                      events={events}
+                      onToggleSave={toggleSave}
+                      savedIds={savedIds}
+                    />
+
+                    {/* End of list CTA */}
+                    <div className="mt-6 mb-4 text-center">
+                      <div className="inline-block p-6 bg-surface rounded-2xl border border-border">
+                        <p className="text-text-muted mb-3">Can't find what you're looking for?</p>
+                        <GradientButton onClick={() => (window.location.href = '/event/new')}>
+                          Create Your Own Event
+                        </GradientButton>
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { GradientButton, Spinner, CategoryIcon, Avatar } from '../components/ui';
+import { GradientButton, CategoryIcon, Avatar, ChatListSkeleton } from '../components/ui';
 import { MessageCircle, ChevronRight, Users } from 'lucide-react';
 import { useUserChats } from '../hooks/useEventChat';
 import { useUserDMs } from '../hooks/useDMChat';
@@ -61,9 +61,7 @@ export default function ChatsPage() {
         <div className="p-4">
           <h1 className="text-2xl font-bold text-text mb-4">Chats</h1>
           {renderTabButtons()}
-          <div className="flex items-center justify-center p-8">
-            <Spinner size="lg" />
-          </div>
+          <ChatListSkeleton count={5} />
         </div>
       </div>
     );
@@ -77,7 +75,11 @@ export default function ChatsPage() {
           <h1 className="text-2xl font-bold text-text mb-4">Chats</h1>
           {renderTabButtons()}
           <div className="flex flex-col items-center justify-center p-8">
-            <p className="text-error mb-4">{error}</p>
+            <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center mb-4">
+              <MessageCircle className="h-8 w-8 text-error" />
+            </div>
+            <h2 className="text-lg font-semibold text-text mb-1">Something went wrong</h2>
+            <p className="text-sm text-text-muted text-center mb-4">{error}</p>
             <GradientButton onClick={refresh}>Try Again</GradientButton>
           </div>
         </div>
@@ -171,9 +173,12 @@ export default function ChatsPage() {
                   <Users className="h-8 w-8 text-white" />
                 </div>
                 <h2 className="text-xl font-semibold text-text mb-2">No messages yet</h2>
-                <p className="text-text-muted text-center max-w-xs mb-6">
+                <p className="text-text-muted text-center max-w-xs mb-4">
                   Share a voucher or event with a friend to start a conversation.
                 </p>
+                <Link to="/">
+                  <GradientButton variant="outline">Browse Events</GradientButton>
+                </Link>
               </div>
             ) : (
               <div className="space-y-2">

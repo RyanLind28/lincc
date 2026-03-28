@@ -323,9 +323,16 @@ export default function ProfilePage() {
         <div className="space-y-3">
           {activeTab === 'vouchers' ? (
             isVouchersLoading ? (
-              <div className="text-center py-8">
-                <div className="w-8 h-8 border-2 border-coral border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-sm text-text-muted">Loading vouchers...</p>
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-surface rounded-2xl border border-border overflow-hidden animate-pulse">
+                    <div className="aspect-[4/3] bg-gray-200" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4" />
+                      <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : businessVouchers.length > 0 ? (
               <div className="grid grid-cols-2 gap-3">
@@ -342,9 +349,17 @@ export default function ProfilePage() {
               />
             )
           ) : (isLoading || (activeTab === 'saved' && isSavedLoading)) ? (
-            <div className="text-center py-8">
-              <div className="w-8 h-8 border-2 border-coral border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-sm text-text-muted">Loading events...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-surface rounded-xl border border-border p-3 flex gap-3 animate-pulse">
+                  <div className="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-2/3" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    <div className="h-3 bg-gray-200 rounded w-1/3" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : activeEvents.length > 0 ? (
             activeEvents.map((event) => (

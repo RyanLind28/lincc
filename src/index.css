@@ -55,6 +55,17 @@
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
+/* Dark mode overrides */
+.dark {
+  --color-background: #0F0F1A;
+  --color-surface: #1A1A2E;
+  --color-text: #F0F0F5;
+  --color-text-muted: #9CA3AF;
+  --color-text-light: #6B7280;
+  --color-border: #2D2D44;
+  --color-border-dark: #3D3D5C;
+}
+
 /* Base Styles */
 @layer base {
   html {

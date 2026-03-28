@@ -3,6 +3,8 @@ import { BottomNav } from './BottomNav';
 import { SideNav } from './SideNav';
 import { InstallBanner } from '../pwa/InstallBanner';
 import { NotificationPermissionPrompt } from '../ui/NotificationPermissionPrompt';
+import { WelcomeGuide } from '../ui/WelcomeGuide';
+import { AnnouncementBanner } from '../ui/AnnouncementBanner';
 import { cn } from '../../lib/utils';
 
 interface MainLayoutProps {
@@ -13,12 +15,18 @@ interface MainLayoutProps {
 export function MainLayout({ showBottomNav = true, className }: MainLayoutProps) {
   return (
     <div className={cn('min-h-screen bg-background lg:flex', className)}>
+      {/* Skip to content link (accessibility) */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-coral focus:text-white focus:rounded-lg">
+        Skip to content
+      </a>
+
       {/* Desktop sidebar - hidden on mobile */}
       {showBottomNav && <SideNav />}
 
       {/* Main content area */}
-      <main className={cn('flex-1', showBottomNav && 'pb-20 lg:pb-0')}>
+      <main id="main-content" className={cn('flex-1', showBottomNav && 'pb-20 lg:pb-0')}>
         <div className="lg:max-w-6xl lg:mx-auto">
+          <AnnouncementBanner />
           <NotificationPermissionPrompt />
           <Outlet />
         </div>
@@ -29,6 +37,9 @@ export function MainLayout({ showBottomNav = true, className }: MainLayoutProps)
 
       {/* PWA install banner */}
       <InstallBanner />
+
+      {/* First-time user welcome guide */}
+      <WelcomeGuide />
     </div>
   );
 }

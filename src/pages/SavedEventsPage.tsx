@@ -60,8 +60,8 @@ export default function SavedEventsPage() {
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Bookmark className="h-8 w-8 text-text-light" />
+            <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mb-4">
+              <Bookmark className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-lg font-semibold text-text mb-2">No saved events</h2>
             <p className="text-text-muted text-center text-sm mb-6 max-w-xs">

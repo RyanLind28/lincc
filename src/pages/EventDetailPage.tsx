@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, BottomSheet } from '../components/ui';
+import { Avatar, Badge, GradientButton, CategoryIcon, BottomSheet, EventDetailSkeleton } from '../components/ui';
 import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert, Navigation } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,6 +10,9 @@ import { ReportDialog } from '../components/social/ReportDialog';
 import { ShareEventSheet } from '../components/features/ShareEventSheet';
 import { blockUser, isUserBlocked } from '../services/blockService';
 import { useEventParticipants } from '../hooks/useEventParticipants';
+import { hapticSuccess } from '../lib/haptics';
+import { EventReviews } from '../components/features/EventReviews';
+import { useWeather } from '../hooks/useWeather';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { updateEvent, deleteEvent } from '../services/events';
 import { supabase } from '../lib/supabase';
@@ -42,6 +45,7 @@ export default function EventDetailPage() {
 
   const isHost = user?.id === event?.host_id;
   const approvedParticipants = participants.filter(p => p.status === 'approved');
+  const { weather } = useWeather(event?.venue_lat ?? null, event?.venue_lng ?? null);
   const spotsLeft = event ? event.capacity - approvedParticipants.length : 0;
   const totalSpots = event ? event.capacity + 1 : 0; // +1 for host
   const isFull = spotsLeft <= 0;
@@ -98,6 +102,7 @@ export default function EventDetailPage() {
   const handleJoin = async () => {
     const result = await join();
     if (result.success) {
+      hapticSuccess();
       if (event?.join_mode === 'auto') {
         showToast('You have joined the event!', 'success');
       } else {
@@ -297,11 +302,7 @@ export default function EventDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <EventDetailSkeleton />;
   }
 
   if (error || !event) {
@@ -309,8 +310,11 @@ export default function EventDetailPage() {
       <div className="min-h-screen bg-background">
         <Header showBack />
         <div className="flex flex-col items-center justify-center p-8 mt-20">
+          <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="h-8 w-8 text-white" />
+          </div>
           <h2 className="text-xl font-semibold text-text mb-2">Event not found</h2>
-          <p className="text-text-muted text-center mb-4">
+          <p className="text-text-muted text-center mb-4 max-w-xs">
             This event may have been removed or doesn't exist.
           </p>
           <GradientButton onClick={() => navigate('/')}>Browse Events</GradientButton>
@@ -468,6 +472,11 @@ export default function EventDetailPage() {
           <div className="flex items-center gap-2 mb-3">
             <MapPin className="h-5 w-5 text-coral" />
             <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">Location</h2>
+            {weather && (
+              <span className="ml-auto text-sm text-text-muted flex items-center gap-1">
+                {weather.icon} {weather.temp}°C
+              </span>
+            )}
           </div>
 
           <div className="h-36 rounded-xl overflow-hidden mb-3">
@@ -593,6 +602,15 @@ export default function EventDetailPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Reviews */}
+      <div className="px-4">
+        <EventReviews
+          eventId={event.id}
+          isExpired={event.status === 'expired'}
+          isParticipant={userStatus === 'approved'}
+        />
       </div>
 
       {/* Fixed bottom actions */}
