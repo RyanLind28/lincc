@@ -62,6 +62,8 @@ const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
 const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
 const FeatureFlagsPage = lazy(() => import('./pages/admin/FeatureFlagsPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
+const SearchPeoplePage = lazy(() => import('./pages/SearchPeoplePage'));
+const BusinessDirectoryPage = lazy(() => import('./pages/BusinessDirectoryPage'));
 
 // Lazy-loaded landing/demo
 const DemoPage = lazy(() => import('./pages/DemoPage'));
@@ -165,6 +167,8 @@ function App() {
             <Route path="/explore" element={<ErrorBoundary><ExplorePage /></ErrorBoundary>} />
             <Route path="/voucher/:id" element={<ErrorBoundary><VoucherDetailPage /></ErrorBoundary>} />
             <Route path="/event/:id/manage" element={<ErrorBoundary><ManageParticipantsPage /></ErrorBoundary>} />
+            <Route path="/people" element={<ErrorBoundary><SearchPeoplePage /></ErrorBoundary>} />
+            <Route path="/businesses" element={<ErrorBoundary><BusinessDirectoryPage /></ErrorBoundary>} />
           </Route>
 
           {/* Full-screen protected routes (no bottom nav — own fixed UI) */}

@@ -69,7 +69,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isProfileComplete: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, options?: { isBusiness?: boolean }) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
@@ -257,10 +257,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user, fetchProfile]);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, options?: { isBusiness?: boolean }) => {
     if (DEV_MODE) return { error: null };
     log('signUp:', email);
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: options?.isBusiness ? { data: { is_business: true } } : undefined,
+    });
     if (error) log('signUp error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };

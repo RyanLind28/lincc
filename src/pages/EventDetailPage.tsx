@@ -12,9 +12,9 @@ import { blockUser, isUserBlocked } from '../services/blockService';
 import { useEventParticipants } from '../hooks/useEventParticipants';
 import { hapticSuccess } from '../lib/haptics';
 import { EventReviews } from '../components/features/EventReviews';
-import { useWeather } from '../hooks/useWeather';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { updateEvent, deleteEvent } from '../services/events';
+import { getOrCreateConversation } from '../services/chat/dmService';
 import { supabase } from '../lib/supabase';
 import { cn, calculateAge, calculateDistance } from '../lib/utils';
 import { useUserLocation } from '../hooks/useUserLocation';
@@ -45,7 +45,6 @@ export default function EventDetailPage() {
 
   const isHost = user?.id === event?.host_id;
   const approvedParticipants = participants.filter(p => p.status === 'approved');
-  const { weather } = useWeather(event?.venue_lat ?? null, event?.venue_lng ?? null);
   const spotsLeft = event ? event.capacity - approvedParticipants.length : 0;
   const totalSpots = event ? event.capacity + 1 : 0; // +1 for host
   const isFull = spotsLeft <= 0;
@@ -207,6 +206,16 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleMessageHost = async () => {
+    if (!user?.id || !event?.host_id || user.id === event.host_id) return;
+    const result = await getOrCreateConversation(user.id, event.host_id);
+    if (result.success && result.data) {
+      navigate(`/dm/${result.data.id}`);
+    } else {
+      showToast('Failed to start conversation', 'error');
+    }
+  };
+
   // Render join button based on status
   const renderJoinButton = () => {
     if (isHost) {
@@ -231,14 +240,14 @@ export default function EventDetailPage() {
           <button
             onClick={handleLeave}
             disabled={isJoining}
-            className="px-4 py-3 rounded-xl border border-border text-text-muted hover:text-error hover:border-error transition-colors"
+            className="px-4 py-3 rounded-xl border border-border text-text-muted hover:text-error hover:border-error transition-colors text-sm"
           >
             {isJoining ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Leave'}
           </button>
           <Link to={`/event/${id}/chat`} className="flex-1">
             <GradientButton fullWidth size="lg">
               <MessageCircle className="h-5 w-5 mr-2" />
-              Open Chat
+              Message Group
             </GradientButton>
           </Link>
         </>
@@ -283,6 +292,7 @@ export default function EventDetailPage() {
     return (
       <>
         <button
+          onClick={handleMessageHost}
           className="p-3 rounded-xl border border-border text-text-muted hover:text-coral hover:border-coral transition-colors"
           aria-label="Message host"
         >
@@ -324,7 +334,7 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <Header
         showBack
@@ -472,11 +482,6 @@ export default function EventDetailPage() {
           <div className="flex items-center gap-2 mb-3">
             <MapPin className="h-5 w-5 text-coral" />
             <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">Location</h2>
-            {weather && (
-              <span className="ml-auto text-sm text-text-muted flex items-center gap-1">
-                {weather.icon} {weather.temp}°C
-              </span>
-            )}
           </div>
 
           <div className="h-36 rounded-xl overflow-hidden mb-3">

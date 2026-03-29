@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, EventCardMini, VoucherTile, type EventCardEvent } from '../components/ui';
-import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Store, Tag, Plus, MapPin } from 'lucide-react';
+import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Store, Tag, Plus, MapPin, Users } from 'lucide-react';
 import { calculateAge } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { getFollowerCount, getFollowingCount } from '../services/followService';
@@ -55,7 +55,7 @@ export default function ProfilePage() {
       const { data: hostedData } = await supabase
         .from('events')
         .select(`
-          id, title, venue_name, start_time, capacity, join_mode, participant_count,
+          id, title, venue_name, start_time, capacity, join_mode, participant_count, cover_image_url,
           category:categories!category_id(name, icon),
           host:profiles!host_id(first_name, avatar_url)
         `)
@@ -69,7 +69,7 @@ export default function ProfilePage() {
         .from('event_participants')
         .select(`
           event:events!event_id(
-            id, title, venue_name, start_time, capacity, join_mode, participant_count,
+            id, title, venue_name, start_time, capacity, join_mode, participant_count, cover_image_url,
             category:categories!category_id(name, icon),
             host:profiles!host_id(first_name, avatar_url)
           )
@@ -89,6 +89,7 @@ export default function ProfilePage() {
       const mapEvent = (e: any): EventCardEvent => ({
         id: e.id as string,
         title: e.title as string,
+        cover_image_url: e.cover_image_url as string | null,
         venue_name: e.venue_name as string,
         start_time: e.start_time as string,
         capacity: e.capacity as number,
@@ -140,13 +141,22 @@ export default function ProfilePage() {
       <Header
         showLogo
         rightContent={
-          <Link
-            to="/settings"
-            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
-            aria-label="Settings"
-          >
-            <Settings className="h-5 w-5" />
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link
+              to="/people"
+              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              aria-label="Find people"
+            >
+              <Users className="h-5 w-5" />
+            </Link>
+            <Link
+              to="/settings"
+              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              aria-label="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Link>
+          </div>
         }
       />
 
@@ -199,11 +209,11 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* Interest tags */}
+              {/* Interest tags — horizontal scroll */}
               {profile.tags && profile.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
+                <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-hide -mr-6 pr-6">
                   {profile.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" size="sm">
+                    <Badge key={tag} variant="outline" size="sm" className="whitespace-nowrap flex-shrink-0">
                       {tag}
                     </Badge>
                   ))}

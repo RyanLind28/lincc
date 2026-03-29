@@ -161,7 +161,7 @@ export default function VoucherDetailPage() {
         ) : (
           <div className="h-48 gradient-primary flex items-center justify-center">
             {voucher.category && (
-              <CategoryIcon icon={voucher.category.icon} size="lg" />
+              <CategoryIcon icon={voucher.category.icon} size="xl" className="text-white" />
             )}
           </div>
         )}

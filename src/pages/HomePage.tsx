@@ -223,18 +223,20 @@ export default function HomePage() {
 
                 {/* Events header */}
                 {!hasActiveFilters && !filters.search && events.length > 0 && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapPin className="h-4 w-4 text-coral" />
-                    <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
-                      {fallbackUsed === 'any' ? 'Events Further Away' : fallbackUsed === 'distance' ? 'Events Nearby' : 'Events Near You'}
-                    </h2>
-                    {fallbackUsed === 'any' && (
-                      <span className="px-2 py-0.5 text-[10px] font-medium bg-coral/10 text-coral rounded-full">
-                        Expanded search
-                      </span>
-                    )}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className={`h-4 w-4 ${fallbackUsed === 'any' ? 'text-purple' : 'text-coral'}`} />
+                      <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
+                        {fallbackUsed === 'any' ? 'Events Further Away' : 'Events Near You'}
+                      </h2>
+                      {fallbackUsed === 'any' && (
+                        <span className="px-2 py-0.5 text-[10px] font-medium bg-purple/10 text-purple rounded-full">
+                          {events.length}
+                        </span>
+                      )}
+                    </div>
                     {locationName && (
-                      <span className="ml-auto text-xs text-text-muted">{locationName}</span>
+                      <p className="text-xs text-text-muted mt-0.5 ml-6">{locationName}</p>
                     )}
                   </div>
                 )}

@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { GradientButton, Input } from '../../components/ui';
-import { Mail, CheckCircle } from 'lucide-react';
+import { Mail, CheckCircle, Store } from 'lucide-react';
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
 export default function SignupPage() {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showVerificationSent, setShowVerificationSent] = useState(false);
+  const [isBusiness, setIsBusiness] = useState(searchParams.get('business') === 'true');
   const { signUp, signInWithMagicLink } = useAuth();
   const { showToast } = useToast();
 
@@ -36,7 +38,7 @@ export default function SignupPage() {
 
     setIsLoading(true);
 
-    const { error } = await signUp(email, password);
+    const { error } = await signUp(email, password, isBusiness ? { isBusiness: true } : undefined);
 
     if (error) {
       showToast(error.message, 'error');
@@ -130,6 +132,23 @@ export default function SignupPage() {
               placeholder="Confirm your password"
               required
             />
+
+            {/* Business toggle */}
+            <button
+              type="button"
+              onClick={() => setIsBusiness(!isBusiness)}
+              className={`w-full p-3 rounded-xl border text-sm font-medium flex items-center gap-3 transition-colors ${
+                isBusiness
+                  ? 'border-coral bg-coral/5 text-coral'
+                  : 'border-border bg-surface text-text-muted hover:border-coral'
+              }`}
+            >
+              <Store className="h-5 w-5" />
+              <span className="flex-1 text-left">{isBusiness ? 'Signing up as a business' : 'I have a business'}</span>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isBusiness ? 'border-coral bg-coral' : 'border-border'}`}>
+                {isBusiness && <div className="w-2 h-2 rounded-full bg-white" />}
+              </div>
+            </button>
 
             <GradientButton type="submit" fullWidth isLoading={isLoading}>
               Create Account
