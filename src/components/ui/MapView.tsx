@@ -450,7 +450,7 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
 
     const handleClick = (e: mapboxgl.MapMouseEvent) => {
       const features = m.queryRenderedFeatures(e.point, {
-        layers: ['clusters', 'unclustered-point'],
+        layers: ['clusters', 'unclustered-point', 'unclustered-circle'],
       });
       if (features.length === 0) {
         setSelectedEvent(null);

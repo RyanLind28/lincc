@@ -619,7 +619,7 @@ export default function EventDetailPage() {
       </div>
 
       {/* Fixed bottom actions */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom z-30 lg:left-64">
         <div className="flex gap-3 max-w-lg mx-auto">
           {renderJoinButton()}
         </div>
