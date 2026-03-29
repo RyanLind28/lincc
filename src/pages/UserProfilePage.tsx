@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, Button, VoucherTile } from '../components/ui';
+import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, VoucherTile } from '../components/ui';
 import { ReportDialog } from '../components/social/ReportDialog';
-import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, UserPlus, UserMinus, ShieldAlert, Ban, Store, MapPin, MessageCircle } from 'lucide-react';
+import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, ShieldAlert, Ban, Store, MapPin, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';

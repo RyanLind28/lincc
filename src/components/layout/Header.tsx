@@ -40,7 +40,7 @@ export function Header({
   showBack = false,
   showNotifications = false,
   showSettings = false,
-  showLogo = false,
+  showLogo: _showLogo = false,
   showCreateEvent = false,
   leftContent,
   rightContent,
