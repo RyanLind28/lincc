@@ -25,6 +25,14 @@ import { getActiveVouchers } from '../services/voucherService';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import type { VoucherWithDetails } from '../types';
 
+function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 // Map categories from data file to filter format (exclude "Other" — not useful as a filter)
 const ALL_CATEGORIES = CATEGORIES
   .filter((cat) => cat.value !== 'other')
@@ -64,6 +72,7 @@ export default function HomePage() {
     hasLocation,
     refreshLocation,
     refresh,
+    fallbackUsed,
   } = useRecommendedEvents({ maxDistance: debouncedDistance });
 
   // Get user location for map + readable name
@@ -85,10 +94,24 @@ export default function HomePage() {
   const resultCount = events.length;
   const hasFiltersToReset = hasActiveFilters || distance !== 10 || selectedDate !== null;
 
-  // Fetch vouchers
+  // Fetch vouchers and split by distance
   useEffect(() => {
     getActiveVouchers().then(setVouchers).catch(console.error);
   }, []);
+
+  // Split vouchers into nearby vs further away
+  const nearbyVouchers = userLocation
+    ? vouchers.filter((v) => {
+        const d = haversine(userLocation.latitude, userLocation.longitude, v.venue_lat, v.venue_lng);
+        return d <= debouncedDistance;
+      })
+    : vouchers;
+  const farVouchers = userLocation
+    ? vouchers.filter((v) => {
+        const d = haversine(userLocation.latitude, userLocation.longitude, v.venue_lat, v.venue_lng);
+        return d > debouncedDistance;
+      })
+    : [];
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -159,7 +182,7 @@ export default function HomePage() {
             ) : (
               <>
                 {/* Vouchers Near You section */}
-                {vouchers.length > 0 && !filters.search && (
+                {nearbyVouchers.length > 0 && !filters.search && (
                   <div className="mb-5">
                     <div className="flex items-center gap-2 mb-3">
                       <Ticket className="h-4 w-4 text-coral" />
@@ -171,7 +194,27 @@ export default function HomePage() {
                       )}
                     </div>
                     <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
-                      {vouchers.map((voucher) => (
+                      {nearbyVouchers.map((voucher) => (
+                        <VoucherTile key={voucher.id} voucher={voucher} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Vouchers Further Away */}
+                {farVouchers.length > 0 && !filters.search && (
+                  <div className="mb-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Ticket className="h-4 w-4 text-purple" />
+                      <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
+                        Vouchers Further Away
+                      </h2>
+                      <span className="px-2 py-0.5 text-[10px] font-medium bg-purple/10 text-purple rounded-full">
+                        {farVouchers.length} available
+                      </span>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                      {farVouchers.map((voucher) => (
                         <VoucherTile key={voucher.id} voucher={voucher} />
                       ))}
                     </div>
@@ -183,8 +226,13 @@ export default function HomePage() {
                   <div className="flex items-center gap-2 mb-3">
                     <MapPin className="h-4 w-4 text-coral" />
                     <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
-                      Events Near You
+                      {fallbackUsed === 'any' ? 'Events Further Away' : fallbackUsed === 'distance' ? 'Events Nearby' : 'Events Near You'}
                     </h2>
+                    {fallbackUsed === 'any' && (
+                      <span className="px-2 py-0.5 text-[10px] font-medium bg-coral/10 text-coral rounded-full">
+                        Expanded search
+                      </span>
+                    )}
                     {locationName && (
                       <span className="ml-auto text-xs text-text-muted">{locationName}</span>
                     )}
