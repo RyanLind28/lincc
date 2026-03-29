@@ -367,8 +367,7 @@ export default function SettingsPage() {
               <Toggle
                 checked={allOn}
                 onChange={handleToggleAll}
-                disabled={permission === 'denied'}
-                disabled={isPushLoading}
+                disabled={permission === 'denied' || isPushLoading}
               />
             </div>
 

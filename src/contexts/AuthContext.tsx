@@ -49,8 +49,7 @@ const MOCK_PROFILE: Profile = {
 };
 // ===========================================
 
-const LOG = '[Auth]';
-const log = (...args: unknown[]) => { if (DEV_MODE) log(...args); };
+const log = (...args: unknown[]) => { if (DEV_MODE) console.log('[Auth]', ...args); };
 
 function checkProfileComplete(profile: Profile | null): boolean {
   if (!profile) return false;
