@@ -203,7 +203,7 @@ export default function ExplorePage() {
 
   // Category grid view
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background max-w-3xl mx-auto">
       <Header showBack title="Explore" />
 
       <div className="p-4 space-y-4">

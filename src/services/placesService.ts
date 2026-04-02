@@ -1,5 +1,6 @@
 // Google Places API service
-// Uses the Google Maps JavaScript SDK (Places library) for browser-compatible autocomplete
+// Uses the Google Maps JavaScript SDK — Places API (New)
+// AutocompleteSuggestion + Place classes (replaces legacy AutocompleteService)
 // Session tokens group autocomplete + detail calls into single billing sessions
 
 const API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
@@ -28,7 +29,7 @@ export interface PlaceDetails {
 }
 
 export interface PlacePhoto {
-  name: string; // Full photo URL (from JS API getUrl())
+  name: string; // Full photo URL
   widthPx: number;
   heightPx: number;
 }
@@ -54,10 +55,18 @@ function loadGoogleMapsApi(): Promise<void> {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places&loading=async`;
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve();
+    script.onload = () => {
+      // Wait for places library to be available
+      const check = setInterval(() => {
+        if (window.google?.maps?.places) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 50);
+    };
     script.onerror = () => {
       loadPromise = null;
       reject(new Error('Failed to load Google Maps API'));
@@ -84,34 +93,64 @@ function resetSessionToken(): void {
   currentSessionToken = null;
 }
 
-// --- Autocomplete ---
+// --- Autocomplete (New API) ---
 
 export async function searchPlaces(
   query: string,
   location?: { lat: number; lng: number },
 ): Promise<PlacePrediction[]> {
-  if (!API_KEY || !query.trim() || query.trim().length < 2) return [];
+  if (!API_KEY || !query.trim() || query.trim().length < 2) {
+    if (!API_KEY) console.warn('[Places] No API key found');
+    return [];
+  }
 
   try {
     await loadGoogleMapsApi();
 
-    const service = new google.maps.places.AutocompleteService();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const placesLib = google.maps.places as any;
 
+    // Use new AutocompleteSuggestion API
+    if (placesLib.AutocompleteSuggestion) {
+      const request: Record<string, unknown> = {
+        input: query,
+        sessionToken: getSessionToken(),
+      };
+
+      if (location) {
+        request.locationBias = {
+          center: { lat: location.lat, lng: location.lng },
+          radius: 50000,
+        };
+      }
+
+      const { suggestions } = await placesLib.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+      return (suggestions || [])
+        .filter((s: any) => s.placePrediction)
+        .map((s: any) => ({
+          placeId: s.placePrediction.placeId,
+          mainText: s.placePrediction.mainText?.text || '',
+          secondaryText: s.placePrediction.secondaryText?.text || '',
+          description: s.placePrediction.text?.text || '',
+        }));
+    }
+
+    // Fallback to legacy AutocompleteService if new API not available
+    const service = new google.maps.places.AutocompleteService();
     const request: google.maps.places.AutocompletionRequest = {
       input: query,
       sessionToken: getSessionToken(),
     };
 
-    // Bias results toward user's current location (50km radius)
     if (location) {
-      request.locationBias = new google.maps.Circle({
+      request.locationBias = {
         center: { lat: location.lat, lng: location.lng },
         radius: 50000,
-      });
+      };
     }
 
     const response = await service.getPlacePredictions(request);
-
     return (response.predictions || []).map((p: google.maps.places.AutocompletePrediction) => ({
       placeId: p.place_id,
       mainText: p.structured_formatting?.main_text || '',
@@ -124,7 +163,7 @@ export async function searchPlaces(
   }
 }
 
-// --- Place Details ---
+// --- Place Details (New API) ---
 
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | null> {
   if (!API_KEY || !placeId) return null;
@@ -132,7 +171,53 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
   try {
     await loadGoogleMapsApi();
 
-    // PlacesService requires a DOM element
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const placesLib = google.maps.places as any;
+
+    // Use new Place class
+    if (placesLib.Place) {
+      const place = new placesLib.Place({ id: placeId });
+
+      await place.fetchFields({
+        fields: [
+          'id',
+          'displayName',
+          'formattedAddress',
+          'location',
+          'rating',
+          'userRatingCount',
+          'photos',
+          'regularOpeningHours',
+          'websiteURI',
+          'googleMapsURI',
+        ],
+        sessionToken: getSessionToken(),
+      });
+
+      resetSessionToken();
+
+      const photos: PlacePhoto[] = (place.photos || []).slice(0, 5).map((photo: any) => ({
+        name: photo.getURI ? photo.getURI({ maxWidth: 800, maxHeight: 600 }) : '',
+        widthPx: photo.widthPx || 800,
+        heightPx: photo.heightPx || 600,
+      }));
+
+      return {
+        id: place.id || placeId,
+        name: place.displayName || '',
+        address: place.formattedAddress || '',
+        lat: place.location?.lat() || 0,
+        lng: place.location?.lng() || 0,
+        rating: place.rating,
+        userRatingCount: place.userRatingCount,
+        photos,
+        openingHours: place.regularOpeningHours?.weekdayDescriptions,
+        websiteUri: place.websiteURI,
+        googleMapsUri: place.googleMapsURI,
+      };
+    }
+
+    // Fallback to legacy PlacesService
     const div = document.createElement('div');
     const service = new google.maps.places.PlacesService(div);
 
@@ -191,8 +276,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
 }
 
 // --- Photo URL ---
-// With the JS API, photo URLs are already full URLs stored in the name field.
-// This function returns the URL directly, or constructs a resized variant.
+// Photo URLs are already full URLs from getURI() / getUrl().
 
 export function getPlacePhotoUrl(
   photoNameOrUrl: string,
@@ -200,6 +284,5 @@ export function getPlacePhotoUrl(
   _maxHeight = 600,
 ): string {
   if (!photoNameOrUrl) return '';
-  // JS API photo URLs are already complete — return as-is
   return photoNameOrUrl;
 }

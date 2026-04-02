@@ -51,6 +51,10 @@ const CreateVoucherPage = lazy(() => import('./pages/CreateVoucherPage'));
 
 // Lazy-loaded business pages
 const EditBusinessProfilePage = lazy(() => import('./pages/EditBusinessProfilePage'));
+const CreateBusinessPage = lazy(() => import('./pages/CreateBusinessPage'));
+const BusinessPage = lazy(() => import('./pages/BusinessPage'));
+const BusinessDashboardPage = lazy(() => import('./pages/BusinessDashboardPage'));
+const MyBusinessesPage = lazy(() => import('./pages/MyBusinessesPage'));
 
 // Lazy-loaded admin pages
 const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage'));
@@ -169,6 +173,8 @@ function App() {
             <Route path="/event/:id/manage" element={<ErrorBoundary><ManageParticipantsPage /></ErrorBoundary>} />
             <Route path="/people" element={<ErrorBoundary><SearchPeoplePage /></ErrorBoundary>} />
             <Route path="/businesses" element={<ErrorBoundary><BusinessDirectoryPage /></ErrorBoundary>} />
+            <Route path="/my-businesses" element={<ErrorBoundary><MyBusinessesPage /></ErrorBoundary>} />
+            <Route path="/business/:id" element={<ErrorBoundary><BusinessPage /></ErrorBoundary>} />
           </Route>
 
           {/* Full-screen protected routes (no bottom nav — own fixed UI) */}
@@ -189,7 +195,23 @@ function App() {
             }
           />
           <Route
-            path="/business/edit"
+            path="/business/new"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary><CreateBusinessPage /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/business/:id/dashboard"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary><BusinessDashboardPage /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/business/:id/edit"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><EditBusinessProfilePage /></ErrorBoundary>

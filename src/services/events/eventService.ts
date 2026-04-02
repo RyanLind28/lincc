@@ -132,6 +132,8 @@ export interface CreateEventData {
   join_mode: 'request' | 'auto';
   audience: Audience;
   cover_image_url?: string;
+  allow_dms?: boolean;
+  business_id?: string;
 }
 
 /**
@@ -195,6 +197,8 @@ export async function createEvent(
         join_mode: eventData.join_mode,
         audience: eventData.audience,
         cover_image_url: eventData.cover_image_url || null,
+        allow_dms: eventData.allow_dms ?? true,
+        business_id: eventData.business_id || null,
         status: 'active',
         expires_at: expiresAt.toISOString(),
       })

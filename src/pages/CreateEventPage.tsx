@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles, HelpCircle, Camera, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles, HelpCircle, Camera, X, MessageCircle } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
@@ -9,10 +9,11 @@ import { CATEGORIES, type Category, type SubCategory } from '../data/categories'
 import { createEvent } from '../services/events';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
-import { compressImage, validateImageSize } from '../lib/imageCompression';
+import { compressImage, validateImage, MAX_DIMENSION_COVER } from '../lib/imageCompression';
 import { useUserLocation } from '../hooks/useUserLocation';
+import { getBusinessById, getLocationsByBusiness } from '../services/businessService';
 import { getPlacePhotoUrl, type PlaceDetails } from '../services/placesService';
-import type { JoinMode, Audience } from '../types';
+import type { JoinMode, Audience, Business, BusinessLocation } from '../types';
 
 type Step = 'category' | 'subcategory' | 'details' | 'when' | 'guests';
 
@@ -20,9 +21,25 @@ const STEPS: Step[] = ['category', 'subcategory', 'details', 'when', 'guests'];
 
 export default function CreateEventPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const { user, profile } = useAuth();
   const { location: userLocation } = useUserLocation();
+
+  // Business context (when creating event for a business)
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [businessLocations, setBusinessLocations] = useState<BusinessLocation[]>([]);
+
+  useEffect(() => {
+    const bizId = searchParams.get('business');
+    if (!bizId) return;
+    getBusinessById(bizId).then((biz) => {
+      if (biz) {
+        setBusiness(biz);
+        getLocationsByBusiness(biz.id).then(setBusinessLocations);
+      }
+    });
+  }, [searchParams]);
 
   const [step, setStep] = useState<Step>('category');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -43,6 +60,7 @@ export default function CreateEventPage() {
   const [capacity, setCapacity] = useState(4);
   const [joinMode, setJoinMode] = useState<JoinMode>('request');
   const [audience, setAudience] = useState<Audience>('everyone');
+  const [allowDms, setAllowDms] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   // Cover image state
@@ -81,13 +99,15 @@ export default function CreateEventPage() {
     setStep('details');
   };
 
-  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const sizeError = validateImageSize(file);
-    if (sizeError) {
-      showToast(sizeError, 'error');
+    // Validate file type, size, and magic bytes
+    const error = await validateImage(file);
+    if (error) {
+      showToast(error, 'error');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -174,7 +194,7 @@ export default function CreateEventPage() {
       if (coverImageFile) {
         setIsUploading(true);
         try {
-          const compressed = await compressImage(coverImageFile);
+          const compressed = await compressImage(coverImageFile, MAX_DIMENSION_COVER);
           const fileName = `${user.id}/${Date.now()}.jpg`;
           const { error: uploadError } = await supabase.storage
             .from('event-images')
@@ -213,6 +233,8 @@ export default function CreateEventPage() {
           join_mode: joinMode,
           audience,
           cover_image_url: finalCoverImageUrl || undefined,
+          allow_dms: allowDms,
+          business_id: business?.id,
         },
         user.id
       );
@@ -272,7 +294,7 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background max-w-2xl mx-auto">
       <Header
         showBack={step === 'category'}
         showLogo
@@ -525,12 +547,43 @@ export default function CreateEventPage() {
                 <MapPin className="inline h-4 w-4 mr-1 text-coral" />
                 Where is it?
               </label>
-              <PlacesAutocomplete
-                onSelect={handlePlaceSelect}
-                defaultValue={venueName}
-                userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
-                placeholder="Search for a venue..."
-              />
+
+              {/* Business locations selector or PlacesAutocomplete */}
+              {business && businessLocations.length > 0 ? (
+                <div className="space-y-2">
+                  {businessLocations.map((loc) => (
+                    <button
+                      key={loc.id}
+                      type="button"
+                      onClick={() => {
+                        setVenueName(loc.name);
+                        setVenueAddress(loc.address);
+                        setVenueLat(loc.lat);
+                        setVenueLng(loc.lng);
+                      }}
+                      className={cn(
+                        'w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
+                        venueName === loc.name && venueAddress === loc.address
+                          ? 'border-coral bg-coral/5'
+                          : 'border-border hover:border-coral/50'
+                      )}
+                    >
+                      <MapPin className={cn('h-4 w-4 flex-shrink-0', venueName === loc.name ? 'text-coral' : 'text-text-muted')} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-text">{loc.name}</p>
+                        <p className="text-xs text-text-muted truncate">{loc.address}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <PlacesAutocomplete
+                  onSelect={handlePlaceSelect}
+                  defaultValue={venueName}
+                  userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
+                  placeholder="Search for a venue..."
+                />
+              )}
 
               {/* Venue photo picker — only when venue has Google photos */}
               {venuePhotos.length > 1 && !coverImageFile && (
@@ -700,6 +753,41 @@ export default function CreateEventPage() {
               </div>
             )}
 
+            {/* Allow DMs */}
+            <div>
+              <label className="block text-sm font-medium text-text mb-3">
+                <MessageCircle className="inline h-4 w-4 mr-1 text-coral" />
+                Allow direct messages?
+              </label>
+              <button
+                onClick={() => setAllowDms(!allowDms)}
+                className={cn(
+                  'w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all',
+                  allowDms
+                    ? 'border-coral bg-coral/5'
+                    : 'border-border'
+                )}
+              >
+                <div>
+                  <p className="font-semibold text-text text-left">{allowDms ? 'DMs enabled' : 'DMs disabled'}</p>
+                  <p className="text-xs text-text-muted text-left">
+                    {allowDms
+                      ? 'Attendees can message you about the event'
+                      : 'No one can DM you about this event'}
+                  </p>
+                </div>
+                <div className={cn(
+                  'w-12 h-7 rounded-full transition-colors relative',
+                  allowDms ? 'bg-coral' : 'bg-gray-300'
+                )}>
+                  <div className={cn(
+                    'absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform',
+                    allowDms ? 'translate-x-5' : 'translate-x-0.5'
+                  )} />
+                </div>
+              </button>
+            </div>
+
             {/* Summary */}
             <div className="bg-surface rounded-2xl border border-border p-4 space-y-3">
               <h3 className="font-semibold text-text">Event Summary</h3>
@@ -741,6 +829,10 @@ export default function CreateEventPage() {
                 <div className="flex justify-between">
                   <span className="text-text-muted">Join mode</span>
                   <span className="text-text">{joinMode === 'request' ? 'Request' : 'Open'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">DMs</span>
+                  <span className="text-text">{allowDms ? 'Enabled' : 'Disabled'}</span>
                 </div>
               </div>
             </div>

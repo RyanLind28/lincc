@@ -103,7 +103,13 @@ export function PlacesAutocomplete({
           type="text"
           value={query}
           onChange={handleInputChange}
-          onFocus={() => predictions.length > 0 && setIsOpen(true)}
+          onFocus={() => {
+            if (predictions.length > 0) {
+              setIsOpen(true);
+            } else if (query.trim().length >= 2 && !selectedPlace) {
+              handleSearch(query);
+            }
+          }}
           placeholder={placeholder}
           className={cn(
             'w-full pl-10 pr-10 py-2.5 bg-surface border rounded-lg text-text placeholder:text-text-light',

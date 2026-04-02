@@ -220,17 +220,25 @@ export default function EventDetailPage() {
   const renderJoinButton = () => {
     if (isHost) {
       return (
-        <Link to={`/event/${id}/manage`} className="flex-1">
-          <GradientButton fullWidth size="lg">
-            <Users className="h-5 w-5 mr-2" />
-            Manage Participants
-            {pendingCount > 0 && (
-              <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-sm">
-                {pendingCount}
-              </span>
-            )}
-          </GradientButton>
-        </Link>
+        <>
+          <Link to={`/event/${id}/chat`} className="flex-1">
+            <GradientButton fullWidth size="lg">
+              <MessageCircle className="h-5 w-5 mr-2" />
+              Group Chat
+            </GradientButton>
+          </Link>
+          <Link to={`/event/${id}/manage`} className="flex-1">
+            <GradientButton fullWidth size="lg" variant="secondary">
+              <Users className="h-5 w-5 mr-2" />
+              Manage
+              {pendingCount > 0 && (
+                <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-sm">
+                  {pendingCount}
+                </span>
+              )}
+            </GradientButton>
+          </Link>
+        </>
       );
     }
 
@@ -244,10 +252,19 @@ export default function EventDetailPage() {
           >
             {isJoining ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Leave'}
           </button>
+          {event?.allow_dms !== false && (
+            <button
+              onClick={handleMessageHost}
+              className="p-3 rounded-xl border border-border text-text-muted hover:text-coral hover:border-coral transition-colors"
+              aria-label="Message host"
+            >
+              <MessageCircle className="h-6 w-6" />
+            </button>
+          )}
           <Link to={`/event/${id}/chat`} className="flex-1">
             <GradientButton fullWidth size="lg">
               <MessageCircle className="h-5 w-5 mr-2" />
-              Message Group
+              Group Chat
             </GradientButton>
           </Link>
         </>
@@ -291,13 +308,6 @@ export default function EventDetailPage() {
 
     return (
       <>
-        <button
-          onClick={handleMessageHost}
-          className="p-3 rounded-xl border border-border text-text-muted hover:text-coral hover:border-coral transition-colors"
-          aria-label="Message host"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </button>
         <GradientButton
           fullWidth
           size="lg"
@@ -334,146 +344,149 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <Header
-        showBack
-        transparent
-        rightContent={
-          <div className="flex items-center gap-1">
-            {isHost && (
-              <>
-                <button
-                  onClick={openEdit}
-                  className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
-                  aria-label="Edit event"
-                >
-                  <Pencil className="h-4.5 w-4.5" />
-                </button>
-                <button
-                  onClick={() => setIsCancelOpen(true)}
-                  className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
-                  aria-label="Cancel event"
-                >
-                  <Trash2 className="h-4.5 w-4.5" />
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => id && toggleSave(id)}
-              className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
-              aria-label={eventSaved ? 'Unsave event' : 'Save event'}
-            >
-              <Bookmark className={cn('h-5 w-5', eventSaved && 'fill-coral text-coral')} />
-            </button>
-            <button
-              onClick={() => setShowShareSheet(true)}
-              className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
-              aria-label="Share event"
-            >
-              <Share2 className="h-5 w-5" />
-            </button>
-            {!isHost && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowMoreMenu(!showMoreMenu)}
-                  className="p-2 rounded-xl text-white hover:text-white/80 transition-colors"
-                  aria-label="More options"
-                >
-                  <MoreVertical className="h-5 w-5" />
-                </button>
-                {showMoreMenu && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-xl border border-border shadow-lg z-50 overflow-hidden">
-                      <button
-                        onClick={handleBlockHost}
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                      >
-                        <Ban className="h-4 w-4" />
-                        {hostBlocked ? 'Blocked' : 'Block host'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowMoreMenu(false);
-                          setShowReportDialog(true);
-                        }}
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                      >
-                        <ShieldAlert className="h-4 w-4" />
-                        Report event
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        }
-      />
+    <div className="min-h-screen bg-background pb-6 max-w-3xl mx-auto">
+      {/* Header — global unified bar */}
+      <Header showBack showLogo showCreateEvent showNotifications />
 
-      {/* Cover image */}
-      <div className="h-48 bg-gray-200 relative -mt-14 overflow-hidden">
-        <img
-          src={event.cover_image_url || CATEGORIES.find(c => c.label === event.category?.name)?.image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop'}
-          alt={event.category?.name || 'Event'}
-          className="w-full h-full object-cover"
-          loading="eager"
-        />
-        {/* Dark overlay for header readability */}
-        <div className="absolute inset-0 bg-black/25" />
-        {/* Gradient overlay at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
-      </div>
-
-      <div className="px-4 -mt-6 relative">
-        {/* Event header card */}
-        <div className="bg-surface rounded-2xl shadow-lg p-5 mb-4">
-          {/* Category badge */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <CategoryIcon icon={event.category?.icon || 'Calendar'} size="md" className="text-white" />
+      <div className="px-4 mt-2">
+        {/* Event card with cover image */}
+        <div className="bg-surface rounded-2xl shadow-lg overflow-hidden mb-4">
+          {/* Cover image */}
+          <div className="relative h-44 bg-gray-200 overflow-hidden">
+            <img
+              src={event.cover_image_url || CATEGORIES.find(c => c.label === event.category?.name)?.image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=450&fit=crop'}
+              alt={event.category?.name || 'Event'}
+              className="w-full h-full object-cover"
+              loading="eager"
+            />
+            {/* Action buttons overlaid on image */}
+            <div className="absolute top-3 right-3 flex items-center gap-1.5">
+              {isHost && (
+                <>
+                  <button
+                    onClick={openEdit}
+                    className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+                    aria-label="Edit event"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setIsCancelOpen(true)}
+                    className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+                    aria-label="Cancel event"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => id && toggleSave(id)}
+                className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+                aria-label={eventSaved ? 'Unsave event' : 'Save event'}
+              >
+                <Bookmark className={cn('h-4 w-4', eventSaved && 'fill-coral text-coral')} />
+              </button>
+              <button
+                onClick={() => setShowShareSheet(true)}
+                className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+                aria-label="Share event"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+              {!isHost && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMoreMenu(!showMoreMenu)}
+                    className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+                    aria-label="More options"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                  {showMoreMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+                      <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-xl border border-border shadow-lg z-50 overflow-hidden">
+                        <button
+                          onClick={handleBlockHost}
+                          className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                        >
+                          <Ban className="h-4 w-4" />
+                          {hostBlocked ? 'Blocked' : 'Block host'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowMoreMenu(false);
+                            setShowReportDialog(true);
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                        >
+                          <ShieldAlert className="h-4 w-4" />
+                          Report event
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-            <Badge variant="primary">{event.category?.name || 'Event'}</Badge>
-            {event.audience === 'women' && (
-              <Badge variant="secondary">Women only</Badge>
-            )}
-            {event.audience === 'men' && (
-              <Badge variant="secondary">Men only</Badge>
-            )}
-            {isHost && <Badge variant="outline">Your Event</Badge>}
+            {/* Category badge overlaid bottom-left */}
+            <div className="absolute bottom-3 left-3 flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5">
+                <CategoryIcon icon={event.category?.icon || 'Calendar'} size="sm" className="text-white" />
+                <span className="text-white text-sm font-medium">{event.category?.name || 'Event'}</span>
+              </div>
+              {event.audience === 'women' && (
+                <span className="bg-purple/80 backdrop-blur-sm text-white text-xs font-medium rounded-full px-2.5 py-1">Women only</span>
+              )}
+              {event.audience === 'men' && (
+                <span className="bg-purple/80 backdrop-blur-sm text-white text-xs font-medium rounded-full px-2.5 py-1">Men only</span>
+              )}
+              {isHost && (
+                <span className="bg-coral/80 backdrop-blur-sm text-white text-xs font-medium rounded-full px-2.5 py-1">Your Event</span>
+              )}
+            </div>
           </div>
 
-          {/* Title */}
-          <h1 className="text-2xl font-bold text-text mb-4">{event.title}</h1>
+          {/* Event details inside card */}
+          <div className="p-5">
+            {/* Title */}
+            <h1 className="text-2xl font-bold text-text mb-2">{event.title}</h1>
 
-          {/* Description */}
-          {event.description && (
-            <p className="text-text-muted mb-4">{event.description}</p>
-          )}
+            {/* Description */}
+            {event.description && (
+              <p className="text-text-muted mb-4">{event.description}</p>
+            )}
 
-          {/* Details */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 text-text">
-              <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center">
-                <Clock className="h-5 w-5 text-coral" />
-              </div>
-              <div>
-                <p className="font-medium">{formatTime(event.start_time)}</p>
-              </div>
+            {/* Time & Location — single line */}
+            <div className="flex items-center gap-4 text-sm text-text-muted flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-coral" />
+                {formatTime(event.start_time)}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 text-coral" />
+                {event.venue_name} · {formatDistance(distanceKm)}
+              </span>
             </div>
 
-            <div className="flex items-center gap-3 text-text">
-              <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center">
-                <MapPin className="h-5 w-5 text-coral" />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium">{event.venue_name}</p>
-                <p className="text-sm text-text-muted">
-                  {event.venue_address} · {formatDistance(distanceKm)} away
+            {/* Host — inside card */}
+            <Link
+              to={`/user/${event.host.id}`}
+              className="flex items-center gap-3 mt-4 pt-4 border-t border-border group"
+            >
+              <Avatar
+                src={event.host.avatar_url}
+                name={event.host.first_name}
+                size="sm"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-text-muted">Hosted by</p>
+                <p className="font-medium text-text group-hover:text-coral transition-colors truncate">
+                  {event.host.first_name}{hostAge ? `, ${hostAge}` : ''}
                 </p>
               </div>
-            </div>
+              <ChevronRight className="h-4 w-4 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
+            </Link>
           </div>
         </div>
 
@@ -493,42 +506,26 @@ export default function EventDetailPage() {
             />
           </div>
 
-          <p className="font-medium text-text">{event.venue_name}</p>
-          <p className="text-sm text-text-muted mb-3">{event.venue_address}</p>
-
-          <a
-            href={
-              event.venue_place_id
-                ? `https://www.google.com/maps/place/?q=place_id:${event.venue_place_id}`
-                : `https://maps.google.com/?q=${encodeURIComponent(event.venue_address)}`
-            }
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-coral hover:text-coral/80 transition-colors"
-          >
-            <Navigation className="h-4 w-4" />
-            Get Directions
-          </a>
-        </div>
-
-        {/* Host card - compact */}
-        <Link
-          to={`/user/${event.host.id}`}
-          className="flex items-center gap-3 bg-surface rounded-2xl p-4 mb-4 group hover:bg-gray-50 transition-colors"
-        >
-          <Avatar
-            src={event.host.avatar_url}
-            name={event.host.first_name}
-            size="md"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-text-muted uppercase tracking-wide">Hosted by</p>
-            <h3 className="font-semibold text-text group-hover:text-coral transition-colors truncate">
-              {event.host.first_name}{hostAge ? `, ${hostAge}` : ''}
-            </h3>
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-text">{event.venue_name}</p>
+              <p className="text-sm text-text-muted truncate">{event.venue_address}</p>
+            </div>
+            <a
+              href={
+                event.venue_place_id
+                  ? `https://www.google.com/maps/place/?q=place_id:${event.venue_place_id}`
+                  : `https://maps.google.com/?q=${encodeURIComponent(event.venue_address)}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm font-semibold text-coral hover:text-coral/80 transition-colors flex-shrink-0 ml-4"
+            >
+              <Navigation className="h-4 w-4" />
+              Directions
+            </a>
           </div>
-          <ChevronRight className="h-5 w-5 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
-        </Link>
+        </div>
 
         {/* Participants card */}
         <div className="bg-surface rounded-2xl p-5">
@@ -543,7 +540,7 @@ export default function EventDetailPage() {
 
           <div className="flex items-center gap-3 flex-wrap">
             {/* Host */}
-            <div className="relative">
+            <Link to={`/user/${event.host.id}`} className="relative">
               <Avatar
                 src={event.host.avatar_url}
                 name={event.host.first_name}
@@ -552,16 +549,17 @@ export default function EventDetailPage() {
               <span className="absolute -bottom-1 -right-1 bg-coral text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full">
                 Host
               </span>
-            </div>
+            </Link>
 
             {/* Approved Participants */}
             {approvedParticipants.map((participant) => (
-              <Avatar
-                key={participant.id}
-                src={participant.user?.avatar_url}
-                name={participant.user?.first_name || 'User'}
-                size="md"
-              />
+              <Link key={participant.id} to={`/user/${participant.user_id}`}>
+                <Avatar
+                  src={participant.user?.avatar_url}
+                  name={participant.user?.first_name || 'User'}
+                  size="md"
+                />
+              </Link>
             ))}
 
             {/* Empty spots */}
@@ -618,9 +616,9 @@ export default function EventDetailPage() {
         />
       </div>
 
-      {/* Fixed bottom actions */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom z-30 lg:left-64">
-        <div className="flex gap-3 max-w-lg mx-auto">
+      {/* Action buttons */}
+      <div className="px-4 mt-4">
+        <div className="flex gap-3">
           {renderJoinButton()}
         </div>
       </div>

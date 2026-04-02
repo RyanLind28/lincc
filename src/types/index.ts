@@ -66,6 +66,47 @@ export interface CreateVoucherForm {
   expires_at: string;
 }
 
+// Business Types (separate entity — one user can own multiple)
+export interface Business {
+  id: string;
+  owner_id: string;
+  name: string;
+  slug: string | null;
+  logo_url: string | null;
+  category: string;
+  description: string | null;
+  address: string | null;
+  opening_hours: BusinessOpeningHours | null;
+  status: 'active' | 'inactive' | 'suspended';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessWithOwner extends Business {
+  owner: Profile;
+}
+
+export interface BusinessLocation {
+  id: string;
+  business_id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  is_primary: boolean;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateBusinessForm {
+  name: string;
+  category: string;
+  description?: string;
+  address?: string;
+  logo_url?: string;
+}
+
 export const BUSINESS_CATEGORIES = [
   'Restaurant',
   'Cafe',
@@ -113,6 +154,8 @@ export interface Event {
   audience: Audience;
   custom_category: string | null;
   cover_image_url: string | null;
+  allow_dms: boolean;
+  business_id: string | null;
   status: EventStatus;
   created_at: string;
   expires_at: string;
@@ -310,6 +353,6 @@ export interface Voucher {
 }
 
 export interface VoucherWithDetails extends Voucher {
-  business: Profile;
+  business: Business;
   category: Category | null;
 }

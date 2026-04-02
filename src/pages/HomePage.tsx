@@ -90,6 +90,10 @@ export default function HomePage() {
   }, [refresh]);
   const { pullDistance, isRefreshing, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
 
+  // Split events into nearby and further away
+  const nearbyEvents = events.filter((e) => e.distance_km !== undefined && e.distance_km <= debouncedDistance);
+  const furtherEvents = events.filter((e) => e.distance_km === undefined || e.distance_km > debouncedDistance);
+
   // Result count + reset state
   const resultCount = events.length;
   const hasFiltersToReset = hasActiveFilters || distance !== 10 || selectedDate !== null;
@@ -114,12 +118,12 @@ export default function HomePage() {
     : [];
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background max-w-4xl mx-auto">
       {/* Header - Instagram style */}
       <Header showLogo showCreateEvent showNotifications />
 
       {/* Search and Filters */}
-      <div className="px-4 py-3 space-y-3 bg-surface border-b border-border">
+      <div className="px-4 py-3 space-y-3 bg-background">
         {/* Search bar with filter button */}
         <div className="flex gap-2">
           <SearchBar
@@ -221,26 +225,6 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {/* Events header */}
-                {!hasActiveFilters && !filters.search && events.length > 0 && (
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2">
-                      <MapPin className={`h-4 w-4 ${fallbackUsed === 'any' ? 'text-purple' : 'text-coral'}`} />
-                      <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
-                        {fallbackUsed === 'any' ? 'Events Further Away' : 'Events Near You'}
-                      </h2>
-                      {fallbackUsed === 'any' && (
-                        <span className="px-2 py-0.5 text-[10px] font-medium bg-purple/10 text-purple rounded-full">
-                          {events.length}
-                        </span>
-                      )}
-                    </div>
-                    {locationName && (
-                      <p className="text-xs text-text-muted mt-0.5 ml-6">{locationName}</p>
-                    )}
-                  </div>
-                )}
-
                 {events.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
@@ -265,11 +249,45 @@ export default function HomePage() {
                   </div>
                 ) : (
                   <>
-                    <EventCardGrid
-                      events={events}
-                      onToggleSave={toggleSave}
-                      savedIds={savedIds}
-                    />
+                    {/* Events Near You */}
+                    {nearbyEvents.length > 0 && (
+                      <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <MapPin className="h-4 w-4 text-coral" />
+                          <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
+                            Events Near You
+                          </h2>
+                          {locationName && (
+                            <span className="ml-auto text-xs text-text-muted">{locationName}</span>
+                          )}
+                        </div>
+                        <EventCardGrid
+                          events={nearbyEvents}
+                          onToggleSave={toggleSave}
+                          savedIds={savedIds}
+                        />
+                      </div>
+                    )}
+
+                    {/* Events Further Away */}
+                    {furtherEvents.length > 0 && (
+                      <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <MapPin className="h-4 w-4 text-purple" />
+                          <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
+                            {nearbyEvents.length > 0 ? 'Events Further Away' : 'Events Near You'}
+                          </h2>
+                          <span className="px-2 py-0.5 text-[10px] font-medium bg-purple/10 text-purple rounded-full">
+                            {furtherEvents.length}
+                          </span>
+                        </div>
+                        <EventCardGrid
+                          events={furtherEvents}
+                          onToggleSave={toggleSave}
+                          savedIds={savedIds}
+                        />
+                      </div>
+                    )}
 
                     {/* End of list CTA */}
                     <div className="mt-6 mb-4 text-center">

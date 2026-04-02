@@ -219,7 +219,7 @@ export default function EditProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 max-w-2xl mx-auto">
       <Header title="Edit Profile" showBack />
 
       <div className="p-4 space-y-6">

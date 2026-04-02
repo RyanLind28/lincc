@@ -13,7 +13,7 @@ export async function getActiveVouchers(): Promise<VoucherWithDetails[]> {
       .from('vouchers')
       .select(`
         *,
-        business:profiles!business_id(*),
+        business:businesses!business_id(*),
         category:categories!category_id(*)
       `)
       .eq('status', 'active')
@@ -37,7 +37,7 @@ export async function getVoucherById(id: string): Promise<VoucherWithDetails | n
     .from('vouchers')
     .select(`
       *,
-      business:profiles!business_id(*),
+      business:businesses!business_id(*),
       category:categories!category_id(*)
     `)
     .eq('id', id)
@@ -135,7 +135,7 @@ export async function getVouchersByBusiness(businessId: string): Promise<Voucher
     .from('vouchers')
     .select(`
       *,
-      business:profiles!business_id(*),
+      business:businesses!business_id(*),
       category:categories!category_id(*)
     `)
     .eq('business_id', businessId)
@@ -157,7 +157,7 @@ export async function getActiveVouchersByBusiness(businessId: string): Promise<V
     .from('vouchers')
     .select(`
       *,
-      business:profiles!business_id(*),
+      business:businesses!business_id(*),
       category:categories!category_id(*)
     `)
     .eq('business_id', businessId)

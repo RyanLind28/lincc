@@ -18,30 +18,57 @@ export interface ParticipantsListResult {
 /**
  * Request to join an event
  * Status depends on event's join_mode: 'approved' for auto, 'pending' for request
+ * Handles re-joining after leaving by updating existing 'left' record
  */
 export async function requestToJoin(
   eventId: string,
   userId: string,
   joinMode: JoinMode
 ): Promise<ParticipantResult> {
-  const status: ParticipantStatus = joinMode === 'auto' ? 'approved' : 'pending';
+  const newStatus: ParticipantStatus = joinMode === 'auto' ? 'approved' : 'pending';
 
+  // Check if user has an existing record (e.g. previously left or was rejected)
+  const { data: existing } = await supabase
+    .from('event_participants')
+    .select('*')
+    .eq('event_id', eventId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existing) {
+    // Re-join: update existing record
+    if (existing.status === 'left' || existing.status === 'rejected') {
+      const { data, error } = await supabase
+        .from('event_participants')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error re-joining event:', error);
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    }
+    // Already pending or approved
+    return { success: false, error: 'You have already requested to join this event' };
+  }
+
+  // New join: insert record
   const { data, error } = await supabase
     .from('event_participants')
     .insert({
       event_id: eventId,
       user_id: userId,
-      status,
+      status: newStatus,
     })
     .select()
     .single();
 
   if (error) {
     console.error('Error requesting to join:', error);
-    // Handle duplicate entry
-    if (error.code === '23505') {
-      return { success: false, error: 'You have already requested to join this event' };
-    }
     return { success: false, error: error.message };
   }
 
@@ -50,20 +77,23 @@ export async function requestToJoin(
 
 /**
  * Cancel a join request or leave an event
+ * Sets status to 'left' instead of deleting to keep history
  */
 export async function cancelRequest(eventId: string, userId: string): Promise<ParticipantResult> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('event_participants')
-    .delete()
+    .update({ status: 'left', updated_at: new Date().toISOString() })
     .eq('event_id', eventId)
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .select()
+    .single();
 
   if (error) {
     console.error('Error canceling request:', error);
     return { success: false, error: error.message };
   }
 
-  return { success: true };
+  return { success: true, data };
 }
 
 /**
@@ -123,6 +153,7 @@ export async function getParticipants(eventId: string): Promise<ParticipantsList
       user:profiles!user_id(*)
     `)
     .eq('event_id', eventId)
+    .neq('status', 'left')
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -174,8 +205,10 @@ export async function getUserParticipation(
     return { status: null, participant: null };
   }
 
+  // Treat 'left' as no active participation (user can re-join)
+  const status = data?.status === 'left' ? null : (data?.status || null);
   return {
-    status: data?.status || null,
+    status,
     participant: data,
   };
 }

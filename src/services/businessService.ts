@@ -1,27 +1,65 @@
 import { supabase } from '../lib/supabase';
-import type { BusinessOnboardingForm } from '../types';
+import type { Business, BusinessWithOwner, BusinessLocation, CreateBusinessForm, BusinessOpeningHours } from '../types';
+
+interface ServiceResult {
+  success: boolean;
+  error?: string;
+}
+
+interface BusinessResult extends ServiceResult {
+  data?: Business;
+}
 
 /**
- * Activate business profile — sets is_business = true and populates business fields
+ * Create a new business page
  */
-export async function activateBusinessProfile(
-  userId: string,
-  data: BusinessOnboardingForm
-): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      is_business: true,
-      business_name: data.business_name,
-      business_category: data.business_category,
-      business_description: data.business_description || null,
-      business_address: data.business_address || null,
-      business_logo_url: data.business_logo_url || null,
+export async function createBusiness(
+  ownerId: string,
+  data: CreateBusinessForm
+): Promise<BusinessResult> {
+  const { data: business, error } = await supabase
+    .from('businesses')
+    .insert({
+      owner_id: ownerId,
+      name: data.name,
+      category: data.category,
+      description: data.description || null,
+      address: data.address || null,
+      logo_url: data.logo_url || null,
     })
-    .eq('id', userId);
+    .select()
+    .single();
 
   if (error) {
-    console.error('Error activating business profile:', error);
+    console.error('Error creating business:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: business as Business };
+}
+
+/**
+ * Update an existing business
+ */
+export async function updateBusiness(
+  businessId: string,
+  data: Partial<{
+    name: string;
+    category: string;
+    description: string | null;
+    address: string | null;
+    logo_url: string | null;
+    opening_hours: BusinessOpeningHours | null;
+    status: 'active' | 'inactive';
+  }>
+): Promise<ServiceResult> {
+  const { error } = await supabase
+    .from('businesses')
+    .update(data)
+    .eq('id', businessId);
+
+  if (error) {
+    console.error('Error updating business:', error);
     return { success: false, error: error.message };
   }
 
@@ -29,18 +67,16 @@ export async function activateBusinessProfile(
 }
 
 /**
- * Deactivate business profile — sets is_business = false (keeps fields for re-activation)
+ * Delete a business and all its vouchers (cascade)
  */
-export async function deactivateBusinessProfile(
-  userId: string
-): Promise<{ success: boolean; error?: string }> {
+export async function deleteBusiness(businessId: string): Promise<ServiceResult> {
   const { error } = await supabase
-    .from('profiles')
-    .update({ is_business: false })
-    .eq('id', userId);
+    .from('businesses')
+    .delete()
+    .eq('id', businessId);
 
   if (error) {
-    console.error('Error deactivating business profile:', error);
+    console.error('Error deleting business:', error);
     return { success: false, error: error.message };
   }
 
@@ -48,28 +84,137 @@ export async function deactivateBusinessProfile(
 }
 
 /**
- * Update business profile fields (partial update)
+ * Get a business by ID with owner profile
  */
-export async function updateBusinessProfile(
-  userId: string,
-  data: Partial<Omit<BusinessOnboardingForm, 'business_name'>> & { business_name?: string; business_opening_hours?: Record<string, unknown> | null }
-): Promise<{ success: boolean; error?: string }> {
-  const updateData: Record<string, unknown> = {};
-
-  if (data.business_name !== undefined) updateData.business_name = data.business_name;
-  if (data.business_category !== undefined) updateData.business_category = data.business_category;
-  if (data.business_description !== undefined) updateData.business_description = data.business_description;
-  if (data.business_address !== undefined) updateData.business_address = data.business_address;
-  if (data.business_logo_url !== undefined) updateData.business_logo_url = data.business_logo_url;
-  if (data.business_opening_hours !== undefined) updateData.business_opening_hours = data.business_opening_hours;
-
-  const { error } = await supabase
-    .from('profiles')
-    .update(updateData)
-    .eq('id', userId);
+export async function getBusinessById(id: string): Promise<BusinessWithOwner | null> {
+  const { data, error } = await supabase
+    .from('businesses')
+    .select(`
+      *,
+      owner:profiles!owner_id(*)
+    `)
+    .eq('id', id)
+    .single();
 
   if (error) {
-    console.error('Error updating business profile:', error);
+    console.error('Error fetching business:', error);
+    return null;
+  }
+
+  return data as BusinessWithOwner;
+}
+
+/**
+ * Get all businesses owned by a user
+ */
+export async function getBusinessesByOwner(ownerId: string): Promise<Business[]> {
+  const { data, error } = await supabase
+    .from('businesses')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching user businesses:', error);
+    return [];
+  }
+
+  return data as Business[];
+}
+
+/**
+ * Get active businesses for the directory, with optional search and category filter
+ */
+export async function getActiveBusinesses(
+  query?: string,
+  category?: string,
+  limit = 30
+): Promise<Business[]> {
+  let q = supabase
+    .from('businesses')
+    .select('*')
+    .eq('status', 'active')
+    .order('name', { ascending: true })
+    .limit(limit);
+
+  if (category) {
+    q = q.eq('category', category);
+  }
+
+  if (query) {
+    q = q.or(`name.ilike.%${query}%,description.ilike.%${query}%`);
+  }
+
+  const { data, error } = await q;
+
+  if (error) {
+    console.error('Error fetching active businesses:', error);
+    return [];
+  }
+
+  return data as Business[];
+}
+
+// ---- Location CRUD ----
+
+/**
+ * Get all locations for a business
+ */
+export async function getLocationsByBusiness(businessId: string): Promise<BusinessLocation[]> {
+  const { data, error } = await supabase
+    .from('business_locations')
+    .select('*')
+    .eq('business_id', businessId)
+    .eq('status', 'active')
+    .order('is_primary', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching locations:', error);
+    return [];
+  }
+
+  return data as BusinessLocation[];
+}
+
+/**
+ * Add a location to a business
+ */
+export async function addLocation(
+  businessId: string,
+  locationData: { name: string; address: string; lat: number; lng: number; is_primary?: boolean }
+): Promise<{ success: boolean; error?: string; data?: BusinessLocation }> {
+  const { data: location, error } = await supabase
+    .from('business_locations')
+    .insert({
+      business_id: businessId,
+      name: locationData.name,
+      address: locationData.address,
+      lat: locationData.lat,
+      lng: locationData.lng,
+      is_primary: locationData.is_primary ?? false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error adding location:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: location as BusinessLocation };
+}
+
+/**
+ * Delete a location
+ */
+export async function deleteLocation(locationId: string): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('business_locations')
+    .delete()
+    .eq('id', locationId);
+
+  if (error) {
+    console.error('Error deleting location:', error);
     return { success: false, error: error.message };
   }
 

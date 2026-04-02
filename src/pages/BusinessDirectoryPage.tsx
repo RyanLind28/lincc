@@ -1,55 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Input, Avatar, Badge, ChatListSkeleton, VoucherTile } from '../components/ui';
+import { Input, Badge, ChatListSkeleton, VoucherTile } from '../components/ui';
 import { Search, Store, MapPin } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { Link } from 'react-router-dom';
+import { getActiveBusinesses } from '../services/businessService';
 import { getActiveVouchersByBusiness } from '../services/voucherService';
 import { BUSINESS_CATEGORIES } from '../types';
-import type { VoucherWithDetails } from '../types';
-
-interface BusinessResult {
-  id: string;
-  first_name: string;
-  avatar_url: string | null;
-  business_name: string | null;
-  business_logo_url: string | null;
-  business_category: string | null;
-  business_description: string | null;
-  business_address: string | null;
-}
+import type { Business, VoucherWithDetails } from '../types';
 
 export default function BusinessDirectoryPage() {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [businesses, setBusinesses] = useState<BusinessResult[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [vouchers, setVouchers] = useState<Record<string, VoucherWithDetails[]>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const timeout = setTimeout(async () => {
       setIsLoading(true);
-      let q = supabase
-        .from('profiles')
-        .select('id, first_name, avatar_url, business_name, business_logo_url, business_category, business_description, business_address')
-        .eq('is_business', true)
-        .eq('status', 'active')
-        .order('business_name', { ascending: true })
-        .limit(30);
-
-      if (query.trim()) {
-        const sanitized = query.trim().replace(/[,.()\[\]]/g, '');
-        q = q.or(`business_name.ilike.%${sanitized}%,business_description.ilike.%${sanitized}%`);
-      }
-      if (categoryFilter) {
-        q = q.eq('business_category', categoryFilter);
-      }
-
-      const { data } = await q;
-      const results = (data ?? []) as BusinessResult[];
+      const results = await getActiveBusinesses(query.trim() || undefined, categoryFilter || undefined);
       setBusinesses(results);
 
-      // Fetch vouchers for each business
+      // Fetch vouchers for first 10 businesses
       const voucherMap: Record<string, VoucherWithDetails[]> = {};
       await Promise.all(
         results.slice(0, 10).map(async (biz) => {
@@ -65,7 +37,7 @@ export default function BusinessDirectoryPage() {
   }, [query, categoryFilter]);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 max-w-3xl mx-auto">
       <Header showBack />
 
       <div className="p-4 space-y-4">
@@ -122,24 +94,28 @@ export default function BusinessDirectoryPage() {
             {businesses.map((biz) => (
               <div key={biz.id} className="bg-surface rounded-2xl border border-border overflow-hidden">
                 <Link
-                  to={`/user/${biz.id}`}
+                  to={`/business/${biz.id}`}
                   className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
                 >
-                  <Avatar src={biz.business_logo_url || biz.avatar_url} size="lg" />
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+                    {biz.logo_url ? (
+                      <img src={biz.logo_url} alt={biz.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full gradient-primary flex items-center justify-center text-white font-bold text-lg">
+                        {biz.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-text truncate">{biz.business_name || biz.first_name}</p>
-                    </div>
-                    {biz.business_category && (
-                      <Badge variant="primary" size="sm" className="mt-0.5">{biz.business_category}</Badge>
+                    <p className="font-semibold text-text truncate">{biz.name}</p>
+                    <Badge variant="primary" className="mt-0.5">{biz.category}</Badge>
+                    {biz.description && (
+                      <p className="text-sm text-text-muted truncate mt-1">{biz.description}</p>
                     )}
-                    {biz.business_description && (
-                      <p className="text-sm text-text-muted truncate mt-1">{biz.business_description}</p>
-                    )}
-                    {biz.business_address && (
+                    {biz.address && (
                       <p className="text-xs text-text-light flex items-center gap-1 mt-1">
                         <MapPin className="h-3 w-3" />
-                        {biz.business_address}
+                        {biz.address}
                       </p>
                     )}
                   </div>

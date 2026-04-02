@@ -33,7 +33,7 @@ export default function SavedEventsPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background max-w-3xl mx-auto">
       <Header showBack title="Saved Events" />
 
       <div className="p-4">

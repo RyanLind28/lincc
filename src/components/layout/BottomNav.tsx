@@ -32,6 +32,7 @@ export function BottomNav() {
 
   const isOnHomePage = location.pathname === '/';
 
+
   // Nav items - Discover is special, handled separately
   const navItems = [
     { to: '/chats', icon: MessageCircle, label: 'Chats' },

@@ -146,7 +146,7 @@ export default function NotificationsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 max-w-2xl mx-auto">
       <Header
         title="Notifications"
         showBack

@@ -180,7 +180,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 max-w-2xl mx-auto">
       <Header showBack showLogo />
 
       <div className="p-4 space-y-6">
@@ -271,71 +271,21 @@ export default function SettingsPage() {
             Business
           </h2>
           <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
-            {!profile?.is_business ? (
-              <button
-                onClick={() => setShowBusinessOnboarding(true)}
-                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Store className="h-5 w-5 text-coral" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-text">Switch to Business</h3>
-                  <p className="text-sm text-text-muted">Create vouchers and promote your business</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-text-muted" />
-              </button>
-            ) : (
-              <>
-                <div className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Building2 className="h-5 w-5 text-green-500" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-text">{profile.business_name || 'Business Mode'}</h3>
-                    <p className="text-sm text-green-500 font-medium">Active</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => navigate('/business/edit')}
-                  className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Edit2 className="h-5 w-5 text-purple" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-text">Edit Business Profile</h3>
-                    <p className="text-sm text-text-muted">Update your business details</p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-text-muted" />
-                </button>
-                <button
-                  onClick={handleDeactivateBusiness}
-                  disabled={isDeactivating}
-                  className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <div className="w-10 h-10 bg-error/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    {isDeactivating ? (
-                      <Loader2 className="h-5 w-5 text-error animate-spin" />
-                    ) : (
-                      <Store className="h-5 w-5 text-error" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-error">Deactivate Business</h3>
-                    <p className="text-sm text-text-muted">Switch back to personal mode</p>
-                  </div>
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => navigate('/my-businesses')}
+              className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Store className="h-5 w-5 text-coral" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">My Businesses</h3>
+                <p className="text-sm text-text-muted">Create and manage your business pages</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-text-muted" />
+            </button>
           </div>
         </section>
-
-        {/* Business Onboarding Sheet */}
-        <BusinessOnboardingSheet
-          isOpen={showBusinessOnboarding}
-          onClose={() => setShowBusinessOnboarding(false)}
-        />
 
         {/* Notifications */}
         <section>

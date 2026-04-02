@@ -12,8 +12,6 @@ interface UserResult {
   avatar_url: string | null;
   bio: string | null;
   tags: string[] | null;
-  is_business: boolean;
-  business_name: string | null;
 }
 
 export default function SearchPeoplePage() {
@@ -33,8 +31,8 @@ export default function SearchPeoplePage() {
       const sanitized = query.trim().replace(/[,.()\[\]]/g, '');
       const { data } = await supabase
         .from('profiles')
-        .select('id, first_name, avatar_url, bio, tags, is_business, business_name')
-        .or(`first_name.ilike.%${sanitized}%,business_name.ilike.%${sanitized}%`)
+        .select('id, first_name, avatar_url, bio, tags')
+        .ilike('first_name', `%${sanitized}%`)
         .neq('id', user?.id || '')
         .eq('status', 'active')
         .limit(20);
@@ -46,7 +44,7 @@ export default function SearchPeoplePage() {
   }, [query, user?.id]);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 max-w-2xl mx-auto">
       <Header showBack />
 
       <div className="p-4 space-y-4">
@@ -82,11 +80,8 @@ export default function SearchPeoplePage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-text truncate">
-                      {person.is_business ? person.business_name || person.first_name : person.first_name || 'User'}
+                      {person.first_name || 'User'}
                     </p>
-                    {person.is_business && (
-                      <Badge variant="primary" size="sm">Business</Badge>
-                    )}
                   </div>
                   {person.bio && (
                     <p className="text-sm text-text-muted truncate">{person.bio}</p>

@@ -137,7 +137,7 @@ export default function ProfilePage() {
     savedEventCards;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 max-w-2xl mx-auto">
       <Header
         showLogo
         rightContent={
@@ -184,29 +184,9 @@ export default function ProfilePage() {
                 </Link>
               </div>
 
-              {/* Business badge */}
-              {profile.is_business && (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Badge variant="primary" size="sm">
-                    <Store className="h-3 w-3 mr-1" /> Business
-                  </Badge>
-                  {profile.business_category && (
-                    <span className="text-xs text-text-muted">{profile.business_category}</span>
-                  )}
-                </div>
-              )}
-
               {/* Bio */}
               {profile.bio && (
                 <p className="text-text-muted text-sm mt-1">{profile.bio}</p>
-              )}
-
-              {/* Business address */}
-              {profile.is_business && profile.business_address && (
-                <div className="flex items-center gap-1 text-sm text-text-muted mt-1">
-                  <MapPin className="h-3 w-3" />
-                  <span>{profile.business_address}</span>
-                </div>
               )}
 
               {/* Interest tags — horizontal scroll */}
@@ -258,13 +238,23 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Business opening hours */}
-          {profile.is_business && profile.business_opening_hours && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <BusinessHoursDisplay hours={profile.business_opening_hours} />
-            </div>
-          )}
         </div>
+      </div>
+
+      {/* My Businesses section */}
+      <div className="px-4 mb-4">
+        <Link
+          to="/my-businesses"
+          className="flex items-center gap-3 bg-surface rounded-2xl p-4 border border-border hover:border-coral/30 transition-colors group"
+        >
+          <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
+            <Store className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-text group-hover:text-coral transition-colors">My Businesses</p>
+            <p className="text-xs text-text-muted">Manage your business pages</p>
+          </div>
+        </Link>
       </div>
 
       {/* Events section */}
@@ -312,21 +302,6 @@ export default function ProfilePage() {
             <Bookmark className="h-3.5 w-3.5" />
             Saved
           </button>
-          {profile.is_business && (
-            <button
-              onClick={() => setActiveTab('vouchers')}
-              className={`
-                flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5
-                ${activeTab === 'vouchers'
-                  ? 'gradient-primary text-white shadow-sm'
-                  : 'bg-surface border border-border text-text-muted hover:border-coral hover:text-coral'
-                }
-              `}
-            >
-              <Tag className="h-3.5 w-3.5" />
-              Vouchers
-            </button>
-          )}
         </div>
 
         {/* Event/Voucher list */}
@@ -400,16 +375,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Floating Create Voucher CTA */}
-      {profile.is_business && (
-        <Link
-          to="/voucher/new"
-          className="fixed bottom-24 right-4 z-40 w-14 h-14 gradient-primary rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow"
-          aria-label="Create Voucher"
-        >
-          <Plus className="h-6 w-6 text-white" />
-        </Link>
-      )}
     </div>
   );
 }

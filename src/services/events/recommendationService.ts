@@ -260,10 +260,8 @@ function applyFilters(events: ScoredEvent[], options: FilterOptions): ScoredEven
     filtered = filtered.filter((e) => options.categories.includes(e.category_value));
   }
 
-  // Distance filter
-  if (options.userLocation) {
-    filtered = filtered.filter((e) => e.distance_km <= options.maxDistance);
-  }
+  // Distance filter — no longer hard-filters; HomePage splits nearby vs further
+  // Events are still scored by distance so nearby ones rank higher
 
   // Time range filter
   if (options.timeRange) {

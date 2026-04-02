@@ -24,8 +24,8 @@ export function MainLayout({ showBottomNav = true, className }: MainLayoutProps)
       {showBottomNav && <SideNav />}
 
       {/* Main content area */}
-      <main id="main-content" className={cn('flex-1', showBottomNav && 'pb-20 lg:pb-0')}>
-        <div className="lg:max-w-7xl lg:mx-auto">
+      <main id="main-content" className={cn('flex-1', showBottomNav && 'pb-20 lg:pb-0 lg:pl-16')}>
+        <div>
           <AnnouncementBanner />
           <NotificationPermissionPrompt />
           <Outlet />

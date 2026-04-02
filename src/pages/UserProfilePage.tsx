@@ -125,10 +125,15 @@ export default function UserProfilePage() {
         );
       }
 
-      // Fetch vouchers if user is a business
-      if (profileData.is_business) {
-        const vouchers = await getActiveVouchersByBusiness(id);
-        setUserVouchers(vouchers);
+      // Fetch businesses owned by this user
+      const { getBusinessesByOwner } = await import('../services/businessService');
+      const userBusinesses = await getBusinessesByOwner(id);
+      // Fetch vouchers for each business
+      if (userBusinesses.length > 0) {
+        const allVouchers = await Promise.all(
+          userBusinesses.map((b) => getActiveVouchersByBusiness(b.id))
+        );
+        setUserVouchers(allVouchers.flat());
       }
 
       setIsLoading(false);
@@ -254,7 +259,7 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 max-w-2xl mx-auto">
       <Header
         showBack
         rightContent={
@@ -350,34 +355,12 @@ export default function UserProfilePage() {
             <div className="min-w-0 flex-1">
               {/* Name and Age */}
               <h1 className="text-2xl font-bold text-text">
-                {profile.is_business ? profile.business_name || profile.first_name : profile.first_name}{age ? `, ${age}` : ''}
+                {profile.first_name}{age ? `, ${age}` : ''}
               </h1>
 
-              {/* Business badge */}
-              {profile.is_business && (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Badge variant="primary" size="sm">
-                    <Store className="h-3 w-3 mr-1" /> Business
-                  </Badge>
-                  {profile.business_category && (
-                    <span className="text-xs text-text-muted">{profile.business_category}</span>
-                  )}
-                </div>
-              )}
-
-              {/* Bio or Business Description */}
-              {(profile.is_business && profile.business_description) ? (
-                <p className="text-text-muted text-sm mt-1">{profile.business_description}</p>
-              ) : profile.bio ? (
+              {/* Bio */}
+              {profile.bio && (
                 <p className="text-text-muted text-sm mt-1">{profile.bio}</p>
-              ) : null}
-
-              {/* Business address */}
-              {profile.is_business && profile.business_address && (
-                <div className="flex items-center gap-1 text-sm text-text-muted mt-1">
-                  <MapPin className="h-3 w-3" />
-                  <span>{profile.business_address}</span>
-                </div>
               )}
 
               {/* Tags/Interests — horizontal scroll */}
@@ -473,8 +456,8 @@ export default function UserProfilePage() {
           </div>
         )}
 
-        {/* Business Vouchers */}
-        {profile.is_business && userVouchers.length > 0 && (
+        {/* Vouchers from user's businesses */}
+        {userVouchers.length > 0 && (
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-text mb-3">Vouchers & Deals</h2>
             <div className="grid grid-cols-2 gap-3">
@@ -482,13 +465,6 @@ export default function UserProfilePage() {
                 <VoucherTile key={voucher.id} voucher={voucher} />
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Business Opening Hours */}
-        {profile.is_business && profile.business_opening_hours && (
-          <div className="bg-surface rounded-2xl p-4 mb-4">
-            <BusinessHoursDisplay hours={profile.business_opening_hours as any} />
           </div>
         )}
 
