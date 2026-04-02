@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, VoucherTile } from '../components/ui';
 import { ReportDialog } from '../components/social/ReportDialog';
-import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, ShieldAlert, Ban, Store, MapPin, MessageCircle } from 'lucide-react';
+import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, ShieldAlert, Ban, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -12,7 +12,6 @@ import { followUser, unfollowUser, isFollowing, getFollowerCount, getFollowingCo
 import { blockUser, unblockUser, isUserBlocked } from '../services/blockService';
 import { getOrCreateConversation } from '../services/chat/dmService';
 import { getActiveVouchersByBusiness } from '../services/voucherService';
-import { BusinessHoursDisplay } from '../components/business/BusinessHoursDisplay';
 import type { Profile, EventWithDetails, VoucherWithDetails } from '../types';
 
 interface UserProfile extends Profile {

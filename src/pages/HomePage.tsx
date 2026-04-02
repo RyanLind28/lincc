@@ -72,7 +72,6 @@ export default function HomePage() {
     hasLocation,
     refreshLocation,
     refresh,
-    fallbackUsed,
   } = useRecommendedEvents({ maxDistance: debouncedDistance });
 
   // Get user location for map + readable name

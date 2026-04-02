@@ -5,12 +5,10 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
 import { Slider, Toggle, Modal, Input, Button } from '../components/ui';
-import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Building2, Edit2, Monitor, Mail, Lock, HelpCircle, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus } from 'lucide-react';
+import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Monitor, Mail, Lock, HelpCircle, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { useLocationName } from '../hooks/useLocationName';
-import { BusinessOnboardingSheet } from '../components/business/BusinessOnboardingSheet';
-import { deactivateBusinessProfile } from '../services/businessService';
 import { useDarkMode } from '../hooks/useDarkMode';
 import type { NotificationPreferences } from '../types';
 
@@ -24,24 +22,9 @@ export default function SettingsPage() {
   const { locationName, isLoading: locationLoading } = useLocationName(location);
 
   const { isDark, toggle: toggleDarkMode } = useDarkMode();
-  const [showBusinessOnboarding, setShowBusinessOnboarding] = useState(false);
-  const [isDeactivating, setIsDeactivating] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDeactivateBusiness = async () => {
-    if (!user?.id) return;
-    setIsDeactivating(true);
-    const result = await deactivateBusinessProfile(user.id);
-    if (result.success) {
-      await refreshProfile(user.id);
-      showToast('Switched back to personal mode', 'success');
-    } else {
-      showToast(result.error || 'Failed to deactivate', 'error');
-    }
-    setIsDeactivating(false);
-  };
 
   const defaultPrefs: NotificationPreferences = {
     join_request: true,

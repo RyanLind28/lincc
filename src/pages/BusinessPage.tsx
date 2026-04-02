@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Clock, Share2, AlertTriangle } from 'lucide-react';
+import { MapPin, AlertTriangle } from 'lucide-react';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, EventDetailSkeleton } from '../components/ui';
 import { VoucherTile } from '../components/ui/VoucherTile';

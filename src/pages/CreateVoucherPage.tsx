@@ -19,7 +19,7 @@ export default function CreateVoucherPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { showToast } = useToast();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
 
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -502,7 +502,7 @@ export default function CreateVoucherPage() {
                 )}
                 <div className="flex justify-between">
                   <span className="text-text-muted">Venue</span>
-                  <span className="text-text truncate ml-4">{venueName}</span>
+                  <span className="text-text truncate ml-4">{selectedLocation?.name || '—'}</span>
                 </div>
                 {expiryDate && (
                   <div className="flex justify-between">

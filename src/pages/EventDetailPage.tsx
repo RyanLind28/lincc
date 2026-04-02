@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, CategoryIcon, BottomSheet, EventDetailSkeleton } from '../components/ui';
+import { Avatar, GradientButton, CategoryIcon, BottomSheet, EventDetailSkeleton } from '../components/ui';
 import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert, Navigation } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 import { useAuth } from '../contexts/AuthContext';

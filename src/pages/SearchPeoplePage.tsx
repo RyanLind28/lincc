@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Input, Avatar, Badge, ChatListSkeleton } from '../components/ui';
+import { Input, Avatar, ChatListSkeleton } from '../components/ui';
 import { Search, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';

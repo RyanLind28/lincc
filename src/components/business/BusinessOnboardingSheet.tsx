@@ -3,7 +3,7 @@ import { BottomSheet, Input, TextArea, GradientButton } from '../ui';
 import { Camera, X, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { activateBusinessProfile } from '../../services/businessService';
+import { createBusiness } from '../../services/businessService';
 import { supabase } from '../../lib/supabase';
 import { compressImage, validateImageSize } from '../../lib/imageCompression';
 import { BUSINESS_CATEGORIES } from '../../types';
@@ -78,12 +78,12 @@ export function BusinessOnboardingSheet({ isOpen, onClose }: Props) {
         }
       }
 
-      const result = await activateBusinessProfile(user.id, {
-        business_name: businessName.trim(),
-        business_category: category,
-        business_description: description.trim() || undefined,
-        business_address: address.trim() || undefined,
-        business_logo_url: uploadedLogoUrl,
+      const result = await createBusiness(user.id, {
+        name: businessName.trim(),
+        category: category,
+        description: description.trim() || undefined,
+        address: address.trim() || undefined,
+        logo_url: uploadedLogoUrl,
       });
 
       if (result.success) {

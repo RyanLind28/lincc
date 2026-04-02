@@ -3,13 +3,12 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, EventCardMini, VoucherTile, type EventCardEvent } from '../components/ui';
-import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Store, Tag, Plus, MapPin, Users } from 'lucide-react';
+import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Store, Users } from 'lucide-react';
 import { calculateAge } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { getFollowerCount, getFollowingCount } from '../services/followService';
 import { getVouchersByBusiness } from '../services/voucherService';
 import { useBookmarks } from '../hooks/useBookmarks';
-import { BusinessHoursDisplay } from '../components/business/BusinessHoursDisplay';
 import type { VoucherWithDetails } from '../types';
 
 type EventTab = 'hosting' | 'joined' | 'saved' | 'vouchers';
