@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Avatar, CategoryIcon, GradientButton, Input, Spinner } from '../components/ui';
 import { Send, Lock, ChevronRight, MapPin, Clock } from 'lucide-react';
+import { hapticLight } from '../lib/haptics';
 import { useAuth } from '../contexts/AuthContext';
 import { useEventChat } from '../hooks/useEventChat';
 import { supabase } from '../lib/supabase';
@@ -54,6 +55,7 @@ export default function ChatRoomPage() {
 
     const result = await sendMessage(message);
     if (result.success) {
+      hapticLight();
       setMessage('');
     }
   };

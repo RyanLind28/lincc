@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Search } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { ArrowLeft, Search, Store, Users } from 'lucide-react';
 import { Header } from '../components/layout';
 import {
   SearchBar,
@@ -216,6 +216,34 @@ export default function ExplorePage() {
           showSuggestions={false}
           size="sm"
         />
+
+        {/* Quick links */}
+        <div className="flex gap-3">
+          <Link
+            to="/people"
+            className="flex-1 flex items-center gap-3 p-4 bg-surface rounded-2xl border border-border hover:border-coral transition-colors"
+          >
+            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+              <Users className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="font-medium text-text text-sm">Find People</p>
+              <p className="text-xs text-text-muted">Search by name</p>
+            </div>
+          </Link>
+          <Link
+            to="/businesses"
+            className="flex-1 flex items-center gap-3 p-4 bg-surface rounded-2xl border border-border hover:border-coral transition-colors"
+          >
+            <div className="w-10 h-10 rounded-xl gradient-secondary flex items-center justify-center">
+              <Store className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="font-medium text-text text-sm">Businesses</p>
+              <p className="text-xs text-text-muted">Browse & deals</p>
+            </div>
+          </Link>
+        </div>
 
         {/* Categories grid */}
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">

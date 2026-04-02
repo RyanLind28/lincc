@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import { AuthProvider } from './contexts/AuthContext';
@@ -6,64 +7,71 @@ import { ViewModeProvider } from './contexts/ViewModeContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute, PublicRoute } from './components/layout/ProtectedRoute';
 import { ErrorBoundary } from './components/layout/ErrorBoundary';
+import { FullPageSpinner } from './components/ui';
 
-// Auth pages (placeholder)
-import LoginPage from './pages/auth/LoginPage';
-import SignupPage from './pages/auth/SignupPage';
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import ResetPasswordPage from './pages/auth/ResetPasswordPage';
-import TermsPage from './pages/auth/TermsPage';
-import OnboardingPage from './pages/onboarding/OnboardingPage';
-
-// Main pages (placeholder)
-import HomePage from './pages/HomePage';
-import ChatsPage from './pages/ChatsPage';
-import ChatRoomPage from './pages/ChatRoomPage';
-import DMChatRoomPage from './pages/DMChatRoomPage';
-import MyEventsPage from './pages/MyEventsPage';
-import ProfilePage from './pages/ProfilePage';
-import EditProfilePage from './pages/EditProfilePage';
-import SettingsPage from './pages/SettingsPage';
-import NotificationsPage from './pages/NotificationsPage';
-
-// Event pages (placeholder)
-import CreateEventPage from './pages/CreateEventPage';
-import EventDetailPage from './pages/EventDetailPage';
-import ManageParticipantsPage from './pages/ManageParticipantsPage';
-import UserProfilePage from './pages/UserProfilePage';
-import FollowListPage from './pages/FollowListPage';
-
-// Search & Discovery pages
-import SavedEventsPage from './pages/SavedEventsPage';
-import ExplorePage from './pages/ExplorePage';
-
-// Voucher pages
-import VoucherDetailPage from './pages/VoucherDetailPage';
-import CreateVoucherPage from './pages/CreateVoucherPage';
-
-// Business pages
-import EditBusinessProfilePage from './pages/EditBusinessProfilePage';
-
-// Admin pages (placeholder)
-import AdminDashboard from './pages/admin/DashboardPage';
-import AdminUsersPage from './pages/admin/UsersPage';
-import AdminEventsPage from './pages/admin/EventsPage';
-import AdminReportsPage from './pages/admin/ReportsPage';
-import AdminCategoriesPage from './pages/admin/CategoriesPage';
-
-// PWA components
+// PWA components (always loaded)
 import { OfflineBanner } from './components/pwa/OfflineBanner';
 import { UpdateNotification } from './components/pwa/UpdateNotification';
 
-// Demo page (no auth required)
-import DemoPage from './pages/DemoPage';
-import LandingPage from './pages/LandingPage';
+// Auth pages (small, loaded eagerly for fast first paint)
+import LoginPage from './pages/auth/LoginPage';
+import SignupPage from './pages/auth/SignupPage';
 
-// Landing sub-pages (no auth required)
-import LandingAboutPage from './pages/landing/AboutPage';
-import LandingPrivacyPage from './pages/landing/PrivacyPage';
-import LandingTermsPage from './pages/landing/TermsPage';
-import LandingContactPage from './pages/landing/ContactPage';
+// Lazy-loaded auth pages
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
+const TermsPage = lazy(() => import('./pages/auth/TermsPage'));
+const OnboardingPage = lazy(() => import('./pages/onboarding/OnboardingPage'));
+
+// Lazy-loaded main pages
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ChatsPage = lazy(() => import('./pages/ChatsPage'));
+const ChatRoomPage = lazy(() => import('./pages/ChatRoomPage'));
+const DMChatRoomPage = lazy(() => import('./pages/DMChatRoomPage'));
+const MyEventsPage = lazy(() => import('./pages/MyEventsPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const EditProfilePage = lazy(() => import('./pages/EditProfilePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+
+// Lazy-loaded event pages
+const CreateEventPage = lazy(() => import('./pages/CreateEventPage'));
+const EventDetailPage = lazy(() => import('./pages/EventDetailPage'));
+const ManageParticipantsPage = lazy(() => import('./pages/ManageParticipantsPage'));
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
+const FollowListPage = lazy(() => import('./pages/FollowListPage'));
+
+// Lazy-loaded search & discovery
+const SavedEventsPage = lazy(() => import('./pages/SavedEventsPage'));
+const ExplorePage = lazy(() => import('./pages/ExplorePage'));
+
+// Lazy-loaded voucher pages
+const VoucherDetailPage = lazy(() => import('./pages/VoucherDetailPage'));
+const CreateVoucherPage = lazy(() => import('./pages/CreateVoucherPage'));
+
+// Lazy-loaded business pages
+const EditBusinessProfilePage = lazy(() => import('./pages/EditBusinessProfilePage'));
+
+// Lazy-loaded admin pages
+const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage'));
+const AdminUsersPage = lazy(() => import('./pages/admin/UsersPage'));
+const AdminEventsPage = lazy(() => import('./pages/admin/EventsPage'));
+const AdminReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
+const AdminCategoriesPage = lazy(() => import('./pages/admin/CategoriesPage'));
+const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
+const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
+const FeatureFlagsPage = lazy(() => import('./pages/admin/FeatureFlagsPage'));
+const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
+const SearchPeoplePage = lazy(() => import('./pages/SearchPeoplePage'));
+const BusinessDirectoryPage = lazy(() => import('./pages/BusinessDirectoryPage'));
+
+// Lazy-loaded landing/demo
+const DemoPage = lazy(() => import('./pages/DemoPage'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const LandingAboutPage = lazy(() => import('./pages/landing/AboutPage'));
+const LandingPrivacyPage = lazy(() => import('./pages/landing/PrivacyPage'));
+const LandingTermsPage = lazy(() => import('./pages/landing/TermsPage'));
+const LandingContactPage = lazy(() => import('./pages/landing/ContactPage'));
 
 function App() {
   return (
@@ -73,6 +81,7 @@ function App() {
         <ViewModeProvider>
         <OfflineBanner />
         <UpdateNotification />
+        <Suspense fallback={<FullPageSpinner />}>
         <Routes>
           {/* Demo route (no auth required) */}
           <Route path="/demo" element={<DemoPage />} />
@@ -158,6 +167,8 @@ function App() {
             <Route path="/explore" element={<ErrorBoundary><ExplorePage /></ErrorBoundary>} />
             <Route path="/voucher/:id" element={<ErrorBoundary><VoucherDetailPage /></ErrorBoundary>} />
             <Route path="/event/:id/manage" element={<ErrorBoundary><ManageParticipantsPage /></ErrorBoundary>} />
+            <Route path="/people" element={<ErrorBoundary><SearchPeoplePage /></ErrorBoundary>} />
+            <Route path="/businesses" element={<ErrorBoundary><BusinessDirectoryPage /></ErrorBoundary>} />
           </Route>
 
           {/* Full-screen protected routes (no bottom nav — own fixed UI) */}
@@ -182,6 +193,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ErrorBoundary><EditBusinessProfilePage /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <FeedbackPage />
               </ProtectedRoute>
             }
           />
@@ -243,7 +262,32 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/audit-log"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AuditLogPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/announcements"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AnnouncementsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/feature-flags"
+            element={
+              <ProtectedRoute requireAdmin>
+                <FeatureFlagsPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
+        </Suspense>
         </ViewModeProvider>
       </ToastProvider>
     </AuthProvider>

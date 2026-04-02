@@ -159,6 +159,9 @@ VitePWA({
 npm run dev              # Dev server (localhost:5173)
 npm run build            # TypeScript check + Vite build
 npx tsc --noEmit         # Type-check only
+npm run test             # Vitest watch mode
+npm run test:run         # Vitest single run (42 tests)
+npm run test:e2e         # Playwright E2E tests
 
 # Landing site
 cd landing && npm run dev    # Landing dev server
@@ -196,16 +199,27 @@ curl -s -X POST "https://api.supabase.com/v1/projects/srrubyupwiiqnehshszd/datab
 ### Database Tables
 | Table | Purpose |
 |-------|---------|
-| `profiles` | User profiles (name, gender, bio, tags, avatar, settings) |
-| `categories` | 21 event categories with Lucide icon names |
-| `events` | Events with location, capacity, join_mode, audience, status |
+| `profiles` | User profiles (name, gender, bio, tags, avatar, settings, business fields) |
+| `categories` | 26 event categories with Lucide icon names |
+| `events` | Events with location, capacity, join_mode, audience, status, cover_image_url, is_flagged |
 | `event_participants` | Join requests (pending/approved/rejected/left) |
+| `event_reviews` | Post-event star ratings + comments |
 | `messages` | Event chat messages (realtime enabled) |
 | `notifications` | User notifications (realtime enabled) |
 | `reports` | User/event reports for moderation |
 | `blocks` | User blocks |
 | `saved_events` | Bookmarked/saved events per user |
 | `follows` | User-to-user follow relationships |
+| `vouchers` | Business vouchers with pricing, redemption codes, location |
+| `voucher_redemptions` | Tracks which users redeemed which vouchers |
+| `conversations` | 1-on-1 DM conversation pairs |
+| `direct_messages` | DM messages (text, voucher_share, event_share) |
+| `push_subscriptions` | Web push subscription endpoints per user |
+| `announcements` | Admin broadcast messages to all users |
+| `feature_flags` | Toggle features on/off (dark_mode, social_login, etc.) |
+| `feedback` | In-app feedback, bug reports, feature requests |
+| `admin_audit_log` | Tracks all admin actions |
+| `business_waitlist` | Early interest signups for business accounts |
 
 ### Migrations
 Located in `supabase/migrations/`:
@@ -219,10 +233,27 @@ Located in `supabase/migrations/`:
 - `008_search_and_bookmarks.sql` — Full-text search (tsvector + GIN on events), `search_events()` function, `saved_events` table with RLS
 - `009_gender_and_tags_update.sql` — Gender enum: `woman/man/non-binary` → `female/male`, remove 3-tag limit on profiles
 - `010_handle_new_user_trigger.sql` — Auto-create `profiles` row on signup (trigger on `auth.users`), defaults for first_name/dob/gender, backfills missing profiles
-- `011_follows_table.sql` — User-to-user follow system with RLS (follower can view/create/delete own follows)
+- `011_follows_table.sql` — User-to-user follow system with RLS
+- `013_push_subscriptions.sql` — Web push subscription storage
+- `014_push_notification_trigger.sql` — Push notification triggers
+- `015_notification_preferences.sql` — Per-type notification preferences + quiet hours
+- `016_vouchers.sql` — Vouchers + redemptions tables
+- `017_direct_messages.sql` — Conversations + DM tables
+- `018_notifications_insert_policy.sql` — Notification RLS
+- `019_event_cover_image.sql` — Cover image column on events
+- `020_business_profiles.sql` — Business fields on profiles + business waitlist
+- `022_delete_account.sql` — Account deletion RPC
+- `024_admin_policies.sql` — Admin RLS policies
+- `025_admin_audit_log.sql` — Audit log table + content moderation flags
+- `026_announcements_and_feature_flags.sql` — Announcements + feature flags tables
+- `027_feedback_table.sql` — In-app feedback table
+- `028_reviews_and_admin_roles.sql` — Event reviews + admin role tiers
+- `029_fix_delete_account.sql` — Fixed column names + added REVOKE/GRANT
+- `030_security_hardening.sql` — Notification INSERT restriction, storage policies, host/participant event visibility
+- `031_fix_circular_rls.sql` — is_admin() + user_is_event_participant() SECURITY DEFINER functions
 
 ### Realtime
-Enabled for: `messages`, `notifications`, `event_participants`, `events`
+Enabled for: `messages`, `notifications`, `event_participants`, `events`, `conversations`, `direct_messages`
 
 ---
 
@@ -236,22 +267,37 @@ Enabled for: `messages`, `notifications`, `event_participants`, `events`
 
 ### Protected routes (auth required, MainLayout with BottomNav)
 - `/` — HomePage (event feed)
-- `/chats` — ChatsPage
+- `/chats` — ChatsPage (Events + Friends tabs)
 - `/my-events` — MyEventsPage
 - `/profile` — ProfilePage
+- `/event/:id` — EventDetailPage
+- `/user/:id` — UserProfilePage
+- `/user/:id/follows` — FollowListPage
+- `/notifications`, `/settings`, `/profile/edit`
+- `/saved` — SavedEventsPage
+- `/explore` — ExplorePage (category browsing + people/business links)
+- `/people` — SearchPeoplePage (find users by name)
+- `/businesses` — BusinessDirectoryPage (browse businesses + vouchers)
+- `/voucher/:id` — VoucherDetailPage
 
 ### Protected routes (no MainLayout)
 - `/event/new` — CreateEventPage
-- `/event/:id` — EventDetailPage
 - `/event/:id/chat` — ChatRoomPage
 - `/event/:id/manage` — ManageParticipantsPage
-- `/user/:id` — UserProfilePage
-- `/notifications`, `/settings`, `/profile/edit`
-- `/saved` — SavedEventsPage (bookmarked events)
-- `/explore` — ExplorePage (category browsing with drill-down)
+- `/dm/:id` — DMChatRoomPage
+- `/voucher/new` — CreateVoucherPage
+- `/business/edit` — EditBusinessProfilePage
+- `/feedback` — FeedbackPage
 
 ### Admin routes (admin role required)
-- `/admin`, `/admin/users`, `/admin/events`, `/admin/reports`, `/admin/categories`
+- `/admin` — Dashboard with stats, charts, activity feed
+- `/admin/users` — User management with search, bulk actions, CSV export
+- `/admin/events` — Event management with filters, analytics, CSV export
+- `/admin/reports` — Report queue with review/dismiss/action workflow
+- `/admin/categories` — Category CRUD
+- `/admin/announcements` — Announcement management
+- `/admin/feature-flags` — Feature flag toggles
+- `/admin/audit-log` — Admin action history
 
 ---
 
@@ -338,6 +384,28 @@ Coffee, Utensils, Dumbbell, Trophy, TreePine, Heart, Film, Gamepad2, Palette, Bo
 | `src/components/pwa/UpdateNotification.tsx` | Service worker update prompt |
 | `src/services/placesService.ts` | Google Places API — autocomplete, details, photos |
 | `src/components/ui/PlacesAutocomplete.tsx` | Venue search autocomplete component |
+| `src/services/adminService.ts` | Admin dashboard queries, CRUD, export, audit log |
+| `src/services/businessService.ts` | Business profile activate/deactivate/update |
+| `src/services/voucherService.ts` | Voucher CRUD, redemption, nearby filtering |
+| `src/services/reviewService.ts` | Event reviews — submit, fetch, average rating |
+| `src/services/trustScoreService.ts` | Trust score calculation (0-100) |
+| `src/services/chat/dmService.ts` | DM conversations + messages |
+| `src/services/pushService.ts` | Push notification subscription management |
+| `src/hooks/useDarkMode.ts` | Dark mode toggle with system preference |
+| `src/hooks/useFeatureFlags.ts` | Feature flag checks from DB |
+| `src/hooks/usePullToRefresh.ts` | Touch-based pull-to-refresh |
+| `src/hooks/useGeocode.ts` | Mapbox geocoding for location search |
+| `src/hooks/useWeather.ts` | Weather data from Open-Meteo API |
+| `src/hooks/useInfiniteScroll.ts` | IntersectionObserver-based infinite scroll |
+| `src/lib/haptics.ts` | Vibration API for mobile haptic feedback |
+| `src/lib/abTest.ts` | A/B testing with persistent variant assignment |
+| `src/lib/recommendationAnalytics.ts` | Impression/click/fallback tracking |
+| `src/components/ui/Skeleton.tsx` | Skeleton loaders (6 variants) |
+| `src/components/ui/WelcomeGuide.tsx` | First-time user walkthrough modal |
+| `src/components/ui/AnnouncementBanner.tsx` | Dismissible announcement banner |
+| `src/components/admin/ActivityChart.tsx` | CSS bar chart for admin dashboard |
+| `src/components/admin/ActivityFeed.tsx` | Recent activity timeline |
+| `src/components/features/EventReviews.tsx` | Star rating + review UI |
 
 ---
 

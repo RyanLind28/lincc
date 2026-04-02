@@ -117,6 +117,7 @@ function EventCardTile({
           <img
             src={coverImage}
             alt={event.title}
+            loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (

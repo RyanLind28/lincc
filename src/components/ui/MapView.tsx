@@ -348,7 +348,21 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
         },
       });
 
-      // Individual event markers (unclustered)
+      // Individual event markers — background circle
+      m.addLayer({
+        id: 'unclustered-circle',
+        type: 'circle',
+        source: sourceId,
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-radius': 18,
+          'circle-color': '#FF6B6B',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+        },
+      });
+
+      // Individual event markers — emoji on top
       m.addLayer({
         id: 'unclustered-point',
         type: 'symbol',
@@ -356,7 +370,7 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
         filter: ['!', ['has', 'point_count']],
         layout: {
           'text-field': ['get', 'emoji'],
-          'text-size': 22,
+          'text-size': 16,
           'text-allow-overlap': true,
         },
       });
@@ -393,11 +407,23 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
         }
       });
 
+      // Circle layer also opens preview
+      m.on('click', 'unclustered-circle', (e) => {
+        const features = m.queryRenderedFeatures(e.point, { layers: ['unclustered-circle'] });
+        if (!features.length) return;
+        const props = features[0].properties;
+        if (!props) return;
+        const event = events.find((ev) => ev.id === props.id);
+        if (event) setSelectedEvent(event);
+      });
+
       // Pointer cursor on interactive layers
       m.on('mouseenter', 'clusters', () => { m.getCanvas().style.cursor = 'pointer'; });
       m.on('mouseleave', 'clusters', () => { m.getCanvas().style.cursor = ''; });
       m.on('mouseenter', 'unclustered-point', () => { m.getCanvas().style.cursor = 'pointer'; });
       m.on('mouseleave', 'unclustered-point', () => { m.getCanvas().style.cursor = ''; });
+      m.on('mouseenter', 'unclustered-circle', () => { m.getCanvas().style.cursor = 'pointer'; });
+      m.on('mouseleave', 'unclustered-circle', () => { m.getCanvas().style.cursor = ''; });
     }
 
     // Fit bounds to show all markers
@@ -424,7 +450,7 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
 
     const handleClick = (e: mapboxgl.MapMouseEvent) => {
       const features = m.queryRenderedFeatures(e.point, {
-        layers: ['clusters', 'unclustered-point'],
+        layers: ['clusters', 'unclustered-point', 'unclustered-circle'],
       });
       if (features.length === 0) {
         setSelectedEvent(null);

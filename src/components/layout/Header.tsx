@@ -40,7 +40,7 @@ export function Header({
   showBack = false,
   showNotifications = false,
   showSettings = false,
-  showLogo = false,
+  showLogo: _showLogo = false,
   showCreateEvent = false,
   leftContent,
   rightContent,
@@ -86,17 +86,17 @@ export function Header({
           {leftContent}
         </div>
 
-        {/* Center - Logo or Title (logo hidden on desktop - in sidebar) */}
-        <div className="absolute left-1/2 -translate-x-1/2">
-          {showLogo ? (
-            <span className="lg:hidden">
-              <LinccLogo />
-            </span>
-          ) : title ? (
-            <h1 className="text-lg font-semibold text-text truncate">
+        {/* Center — logo always visible, tappable to go home */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+          <LinccLogo size={title ? 'sm' : 'md'} />
+          {title && (
+            <span className="text-sm font-semibold text-text-muted hidden sm:inline">|</span>
+          )}
+          {title && (
+            <h1 className="text-base font-semibold text-text truncate max-w-[140px] sm:max-w-none hidden sm:block">
               {title}
             </h1>
-          ) : null}
+          )}
         </div>
 
         {/* Right side */}

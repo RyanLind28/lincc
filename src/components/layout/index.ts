@@ -4,3 +4,4 @@ export { SideNav } from './SideNav';
 export { MainLayout } from './MainLayout';
 export { ProtectedRoute, PublicRoute } from './ProtectedRoute';
 export { ErrorBoundary } from './ErrorBoundary';
+export { PageTransition } from './PageTransition';

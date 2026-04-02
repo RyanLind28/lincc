@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { hapticLight } from '../lib/haptics';
 import {
   saveEvent,
   unsaveEvent,
@@ -43,6 +44,7 @@ export function useBookmarks() {
       if (!user?.id) return;
 
       const wasSaved = savedIds.has(eventId);
+      hapticLight();
 
       // Optimistic update
       setSavedIds((prev) => {

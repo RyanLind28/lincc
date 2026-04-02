@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { GradientButton, Input } from '../../components/ui';
-import { Mail, CheckCircle } from 'lucide-react';
+import { Mail, CheckCircle, Store } from 'lucide-react';
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
 export default function SignupPage() {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showVerificationSent, setShowVerificationSent] = useState(false);
+  const [isBusiness, setIsBusiness] = useState(searchParams.get('business') === 'true');
   const { signUp, signInWithMagicLink } = useAuth();
   const { showToast } = useToast();
 
@@ -24,14 +26,19 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      showToast('Password must be at least 6 characters', 'error');
+    if (password.length < 8) {
+      showToast('Password must be at least 8 characters', 'error');
+      return;
+    }
+
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      showToast('Password must include an uppercase letter and a number', 'error');
       return;
     }
 
     setIsLoading(true);
 
-    const { error } = await signUp(email, password);
+    const { error } = await signUp(email, password, isBusiness ? { isBusiness: true } : undefined);
 
     if (error) {
       showToast(error.message, 'error');
@@ -63,8 +70,9 @@ export default function SignupPage() {
 
   if (showVerificationSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12">
-        <div className="w-full max-w-sm">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12 relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
+        <div className="w-full max-w-sm relative">
           <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm text-center">
             <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="h-8 w-8 text-white" />
@@ -83,8 +91,10 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
+      <div className="w-full max-w-sm relative">
         <div className="flex justify-center mb-6">
           <img src={LOGO_URL} alt="Lincc" className="h-8" />
         </div>
@@ -122,6 +132,23 @@ export default function SignupPage() {
               placeholder="Confirm your password"
               required
             />
+
+            {/* Business toggle */}
+            <button
+              type="button"
+              onClick={() => setIsBusiness(!isBusiness)}
+              className={`w-full p-3 rounded-xl border text-sm font-medium flex items-center gap-3 transition-colors ${
+                isBusiness
+                  ? 'border-coral bg-coral/5 text-coral'
+                  : 'border-border bg-surface text-text-muted hover:border-coral'
+              }`}
+            >
+              <Store className="h-5 w-5" />
+              <span className="flex-1 text-left">{isBusiness ? 'Signing up as a business' : 'I have a business'}</span>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isBusiness ? 'border-coral bg-coral' : 'border-border'}`}>
+                {isBusiness && <div className="w-2 h-2 rounded-full bg-white" />}
+              </div>
+            </button>
 
             <GradientButton type="submit" fullWidth isLoading={isLoading}>
               Create Account

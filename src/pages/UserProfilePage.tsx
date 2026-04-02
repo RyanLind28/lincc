@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, Button, VoucherTile } from '../components/ui';
+import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, VoucherTile } from '../components/ui';
 import { ReportDialog } from '../components/social/ReportDialog';
-import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, UserPlus, UserMinus, ShieldAlert, Ban, Store, MapPin } from 'lucide-react';
+import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, ShieldAlert, Ban, Store, MapPin, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { calculateAge } from '../lib/utils';
 import { followUser, unfollowUser, isFollowing, getFollowerCount, getFollowingCount } from '../services/followService';
 import { blockUser, unblockUser, isUserBlocked } from '../services/blockService';
+import { getOrCreateConversation } from '../services/chat/dmService';
 import { getActiveVouchersByBusiness } from '../services/voucherService';
 import { BusinessHoursDisplay } from '../components/business/BusinessHoursDisplay';
 import type { Profile, EventWithDetails, VoucherWithDetails } from '../types';
@@ -149,6 +150,16 @@ export default function UserProfilePage() {
     });
   };
 
+  const handleMessage = async () => {
+    if (!user?.id || !id) return;
+    const result = await getOrCreateConversation(user.id, id);
+    if (result.success && result.data) {
+      navigate(`/dm/${result.data.id}`);
+    } else {
+      showToast('Failed to start conversation', 'error');
+    }
+  };
+
   const handleFollow = async () => {
     if (!user || !id) return;
     setSocialLoading(true);
@@ -246,10 +257,31 @@ export default function UserProfilePage() {
     <div className="min-h-screen bg-background pb-8">
       <Header
         showBack
-        title=""
         rightContent={
           !isOwnProfile ? (
             <div className="flex items-center gap-1">
+              {!isOwnProfile && !blocked && (
+                <>
+                  <button
+                    onClick={handleMessage}
+                    className="p-2 rounded-xl text-text-muted hover:text-coral hover:bg-coral/10 transition-colors"
+                    aria-label="Message"
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={handleFollow}
+                    disabled={socialLoading}
+                    className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                      following
+                        ? 'bg-surface border border-border text-text-muted hover:text-error hover:border-error'
+                        : 'gradient-primary text-white'
+                    }`}
+                  >
+                    {following ? 'Following' : 'Follow'}
+                  </button>
+                </>
+              )}
               <button
                 onClick={handleShare}
                 className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
@@ -348,11 +380,11 @@ export default function UserProfilePage() {
                 </div>
               )}
 
-              {/* Tags/Interests */}
+              {/* Tags/Interests — horizontal scroll */}
               {profile.tags && profile.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
+                <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-hide -mr-6 pr-6">
                   {profile.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" size="sm">
+                    <Badge key={tag} variant="outline" size="sm" className="whitespace-nowrap flex-shrink-0">
                       {tag}
                     </Badge>
                   ))}
@@ -382,22 +414,13 @@ export default function UserProfilePage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-3 flex gap-3">
-            {isOwnProfile ? (
+          {isOwnProfile && (
+            <div className="mt-3 flex gap-3">
               <Link to="/profile/edit">
                 <GradientButton>Edit Profile</GradientButton>
               </Link>
-            ) : (
-              <Button
-                onClick={handleFollow}
-                variant={following ? 'outline' : 'primary'}
-                disabled={socialLoading || blocked}
-                leftIcon={following ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-              >
-                {following ? 'Following' : 'Follow'}
-              </Button>
-            )}
-          </div>
+            </div>
+          )}
 
           {blocked && !isOwnProfile && (
             <p className="text-xs text-text-muted mt-3">You have blocked this user</p>

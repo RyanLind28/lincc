@@ -8,6 +8,7 @@ import { CategoryIcon } from './CategoryIcon';
 export interface EventCardEvent {
   id: string;
   title: string;
+  cover_image_url?: string | null;
   category: {
     name: string;
     icon: string;
@@ -189,9 +190,18 @@ export function EventCardMini({ event, className }: { event: EventCardEvent; cla
         className
       )}
     >
-      <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
-        <CategoryIcon icon={event.category.icon} size="md" className="text-white" />
-      </div>
+      {event.cover_image_url ? (
+        <img
+          src={event.cover_image_url}
+          alt={event.title}
+          loading="lazy"
+          className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+        />
+      ) : (
+        <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
+          <CategoryIcon icon={event.category.icon} size="md" className="text-white" />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-text text-sm truncate">{event.title}</h4>
         <p className="text-xs text-text-muted">{formatRelativeTime(event.start_time)}</p>

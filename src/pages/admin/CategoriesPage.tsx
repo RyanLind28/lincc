@@ -1,38 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout';
-import { Button, Input, Modal } from '../../components/ui';
-import { Plus, Edit2, GripVertical } from 'lucide-react';
+import { Button, Input, Modal, GradientButton, ChatListSkeleton } from '../../components/ui';
+import { Plus, Edit2, Trash2, Tag } from 'lucide-react';
+import { fetchCategories, saveCategory, deleteCategory } from '../../services/adminService';
+import { useToast } from '../../contexts/ToastContext';
 
-const DEFAULT_CATEGORIES = [
-  { id: '1', name: 'Coffee', icon: '☕', is_active: true },
-  { id: '2', name: 'Food & Drinks', icon: '🍽️', is_active: true },
-  { id: '3', name: 'Sports', icon: '⚽', is_active: true },
-  { id: '4', name: 'Fitness', icon: '💪', is_active: true },
-  { id: '5', name: 'Walking', icon: '🚶', is_active: true },
-  { id: '6', name: 'Hiking', icon: '🥾', is_active: true },
-  { id: '7', name: 'Running', icon: '🏃', is_active: true },
-  { id: '8', name: 'Cycling', icon: '🚴', is_active: true },
-  { id: '9', name: 'Gaming', icon: '🎮', is_active: true },
-  { id: '10', name: 'Movies', icon: '🎬', is_active: true },
-  { id: '11', name: 'Music', icon: '🎵', is_active: true },
-  { id: '12', name: 'Art & Culture', icon: '🎨', is_active: true },
-  { id: '13', name: 'Study & Work', icon: '📚', is_active: true },
-  { id: '14', name: 'Language Exchange', icon: '🗣️', is_active: true },
-  { id: '15', name: 'Board Games', icon: '🎲', is_active: true },
-  { id: '16', name: 'Yoga & Wellness', icon: '🧘', is_active: true },
-  { id: '17', name: 'Pets', icon: '🐕', is_active: true },
-  { id: '18', name: 'Photography', icon: '📷', is_active: true },
-  { id: '19', name: 'Shopping', icon: '🛍️', is_active: true },
-  { id: '20', name: 'Beach', icon: '🏖️', is_active: true },
-  { id: '21', name: 'Other', icon: '📌', is_active: true },
-];
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  value: string;
+  is_active: boolean;
+  sort_order: number;
+}
 
 export default function AdminCategoriesPage() {
-  const [categories] = useState(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<typeof DEFAULT_CATEGORIES[0] | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const { showToast } = useToast();
+
+  const loadCategories = async () => {
+    setIsLoading(true);
+    const { data } = await fetchCategories();
+    setCategories(data as Category[]);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
   const handleAdd = () => {
     setEditingCategory(null);
@@ -41,16 +42,47 @@ export default function AdminCategoriesPage() {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (category: typeof DEFAULT_CATEGORIES[0]) => {
+  const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setNewName(category.name);
     setNewIcon(category.icon);
     setIsModalOpen(true);
   };
 
-  const handleSave = () => {
-    // TODO: Save to Supabase
-    setIsModalOpen(false);
+  const handleSave = async () => {
+    if (!newName.trim() || !newIcon.trim()) {
+      showToast('Name and icon are required', 'error');
+      return;
+    }
+    setIsSaving(true);
+    const value = newName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    const sortOrder = editingCategory?.sort_order ?? categories.length;
+    const result = await saveCategory(
+      editingCategory?.id ?? null,
+      newName.trim(),
+      newIcon.trim(),
+      value,
+      sortOrder
+    );
+
+    if (result.success) {
+      showToast(editingCategory ? 'Category updated' : 'Category added', 'success');
+      setIsModalOpen(false);
+      loadCategories();
+    } else {
+      showToast(result.error || 'Failed to save', 'error');
+    }
+    setIsSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    const result = await deleteCategory(id);
+    if (result.success) {
+      showToast('Category deleted', 'success');
+      loadCategories();
+    } else {
+      showToast(result.error || 'Failed to delete', 'error');
+    }
   };
 
   return (
@@ -59,50 +91,68 @@ export default function AdminCategoriesPage() {
         title="Categories"
         showBack
         rightContent={
-          <Button size="sm" onClick={handleAdd} leftIcon={<Plus className="h-4 w-4" />}>
+          <GradientButton size="sm" onClick={handleAdd}>
+            <Plus className="h-4 w-4 mr-1" />
             Add
-          </Button>
+          </GradientButton>
         }
       />
 
       <div className="p-4">
         <p className="text-sm text-text-muted mb-4">
-          Manage the categories available for events. Drag to reorder.
+          Manage the categories available for events. {categories.length} categories total.
         </p>
 
-        <div className="bg-surface rounded-xl border border-border divide-y divide-border">
-          {categories.map((category) => (
-            <div
-              key={category.id}
-              className="flex items-center gap-3 p-3 hover:bg-gray-50"
-            >
-              <GripVertical className="h-4 w-4 text-text-muted cursor-grab" />
-              <span className="text-xl">{category.icon}</span>
-              <span className="flex-1 font-medium text-text">{category.name}</span>
-              <button
-                onClick={() => handleEdit(category)}
-                className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-gray-100"
-              >
-                <Edit2 className="h-4 w-4" />
-              </button>
+        {isLoading ? (
+          <ChatListSkeleton count={8} />
+        ) : categories.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-8 mt-8">
+            <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
+              <Tag className="h-8 w-8 text-white" />
             </div>
-          ))}
-        </div>
+            <h2 className="text-lg font-semibold text-text mb-1">No categories</h2>
+            <p className="text-text-muted text-center text-sm mb-4">Add your first category to get started.</p>
+            <GradientButton onClick={handleAdd}>Add Category</GradientButton>
+          </div>
+        ) : (
+          <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                className="flex items-center gap-3 p-3.5 hover:bg-gray-50 transition-colors"
+              >
+                <span className="text-xl w-8 text-center">{category.icon}</span>
+                <span className="flex-1 font-medium text-text">{category.name}</span>
+                <button
+                  onClick={() => handleEdit(category)}
+                  className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(category.id)}
+                  className="p-2 rounded-lg text-text-muted hover:text-error hover:bg-error/10 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Add/Edit Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingCategory ? 'Edit Category' : 'Add Category'}
+        size="sm"
       >
         <div className="space-y-4">
           <Input
-            label="Icon (emoji)"
+            label="Icon (emoji or Lucide name)"
             value={newIcon}
             onChange={(e) => setNewIcon(e.target.value)}
-            placeholder="e.g., ☕"
-            maxLength={2}
+            placeholder="e.g., Coffee or ☕"
           />
           <Input
             label="Name"
@@ -111,12 +161,12 @@ export default function AdminCategoriesPage() {
             placeholder="e.g., Coffee"
           />
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1">
+            <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="flex-1">
               Cancel
             </Button>
-            <Button onClick={handleSave} className="flex-1">
+            <GradientButton onClick={handleSave} fullWidth isLoading={isSaving}>
               Save
-            </Button>
+            </GradientButton>
           </div>
         </div>
       </Modal>

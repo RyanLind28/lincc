@@ -49,7 +49,7 @@ const MOCK_PROFILE: Profile = {
 };
 // ===========================================
 
-const LOG = '[Auth]';
+const log = (...args: unknown[]) => { if (DEV_MODE) console.log('[Auth]', ...args); };
 
 function checkProfileComplete(profile: Profile | null): boolean {
   if (!profile) return false;
@@ -69,7 +69,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isProfileComplete: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, options?: { isBusiness?: boolean }) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch profile — standalone, with single retry on failure
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     if (DEV_MODE) return MOCK_PROFILE;
-    console.log(LOG, 'Fetching profile for', userId);
+    log('Fetching profile for', userId);
 
     const attempt = async (): Promise<Profile | null> => {
       try {
@@ -101,13 +101,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
 
         if (error) {
-          console.error(LOG, 'Profile fetch error:', error.message, error.code);
+          log('Profile fetch error:', error.message, error.code);
           return null;
         }
-        console.log(LOG, 'Profile loaded:', data?.first_name, '| terms:', !!data?.terms_accepted_at);
+        log('Profile loaded:', data?.first_name, '| terms:', !!data?.terms_accepted_at);
         return data as Profile;
       } catch (err) {
-        console.error(LOG, 'Profile fetch exception:', err);
+        log('Profile fetch exception:', err);
         return null;
       }
     };
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (result) return result;
 
     // Single retry after 1s — handles transient DB hiccups
-    console.log(LOG, 'Profile fetch failed, retrying in 1s...');
+    log('Profile fetch failed, retrying in 1s...');
     await new Promise(r => setTimeout(r, 1000));
     return attempt();
   }, []);
@@ -132,19 +132,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Effect 1: Listen for auth state changes (session/user only, no async work)
   useEffect(() => {
     if (DEV_MODE) {
-      console.log(LOG, 'DEV MODE active');
+      log('DEV MODE active');
       setIsLoading(false);
       return;
     }
 
-    console.log(LOG, 'Setting up auth listener...');
+    log('Setting up auth listener...');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(LOG, 'onAuthStateChange:', event, session?.user?.email || 'no user');
+      log('onAuthStateChange:', event, session?.user?.email || 'no user');
 
       // TOKEN_REFRESHED — just update session, don't touch profile or loading
       if (event === 'TOKEN_REFRESHED') {
-        console.log(LOG, 'Token refreshed');
+        log('Token refreshed');
         setSession(session);
         setUser(session?.user ?? null);
         return;
@@ -164,7 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Check email verification — if not confirmed, sign out immediately
         // (Magic link logins auto-verify, so this only catches unverified email/password signups)
         if (session?.user && !session.user.email_confirmed_at) {
-          console.log(LOG, 'Email not verified, signing out');
+          log('Email not verified, signing out');
           setTimeout(() => {
             supabase.auth.signOut().then(() => {
               window.dispatchEvent(new CustomEvent('lincc:toast', {
@@ -180,21 +180,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Bootstrap: explicitly check for existing session (handles magic link hash tokens
-    // that may have been exchanged before the listener was ready)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log(LOG, 'getSession bootstrap:', session?.user?.email || 'no session');
-      if (session?.user) {
-        setSession(session);
-        setUser(session.user);
-        setIsLoading(true); // Effect 2 will fetch profile
+    // Bootstrap: handle magic link hash tokens that React Router may strip,
+    // then check for existing session
+    const hash = window.location.hash;
+    if (hash && (hash.includes('access_token') || hash.includes('type=magiclink') || hash.includes('type=recovery'))) {
+      log('Detected auth hash fragment, exchanging...');
+      // Parse hash params and let Supabase exchange the token
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (accessToken && refreshToken) {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ data: { session } }) => {
+          log('Hash token exchanged:', session?.user?.email || 'failed');
+          // Clean the hash from the URL
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          if (session?.user) {
+            setSession(session);
+            setUser(session.user);
+            setIsLoading(true);
+          } else {
+            setIsLoading(false);
+          }
+        });
       } else {
         setIsLoading(false);
       }
-    });
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        log('getSession bootstrap:', session?.user?.email || 'no session');
+        if (session?.user) {
+          setSession(session);
+          setUser(session.user);
+          setIsLoading(true); // Effect 2 will fetch profile
+        } else {
+          setIsLoading(false);
+        }
+      });
+    }
 
     return () => {
-      console.log(LOG, 'Cleanup: unsubscribing auth listener');
+      log('Cleanup: unsubscribing auth listener');
       subscription.unsubscribe();
     };
   }, []);
@@ -205,22 +230,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!user) {
       // No user — we're done loading
-      console.log(LOG, 'No user, done loading');
+      log('No user, done loading');
       setIsLoading(false);
       return;
     }
 
     let cancelled = false;
-    console.log(LOG, 'User changed, fetching profile for', user.email);
+    log('User changed, fetching profile for', user.email);
 
     fetchProfile(user.id).then((profileData) => {
       if (cancelled) {
-        console.log(LOG, 'Profile fetch cancelled (stale)');
+        log('Profile fetch cancelled (stale)');
         return;
       }
       setProfile(profileData);
       setIsLoading(false);
-      console.log(LOG, 'Auth ready:', {
+      log('Auth ready:', {
         email: user.email,
         name: profileData?.first_name,
         terms: !!profileData?.terms_accepted_at,
@@ -232,54 +257,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user, fetchProfile]);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, options?: { isBusiness?: boolean }) => {
     if (DEV_MODE) return { error: null };
-    console.log(LOG, 'signUp:', email);
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) console.error(LOG, 'signUp error:', error.message);
+    log('signUp:', email);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: options?.isBusiness ? { data: { is_business: true } } : undefined,
+    });
+    if (error) log('signUp error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };
 
   const signIn = async (email: string, password: string) => {
     if (DEV_MODE) return { error: null };
-    console.log(LOG, 'signIn:', email);
+    log('signIn:', email);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) console.error(LOG, 'signIn error:', error.message);
+    if (error) log('signIn error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };
 
   const signInWithMagicLink = async (email: string) => {
     if (DEV_MODE) return { error: null };
-    console.log(LOG, 'magicLink:', email);
+    log('magicLink:', email);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/` },
     });
-    if (error) console.error(LOG, 'magicLink error:', error.message);
+    if (error) log('magicLink error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };
 
   const resetPassword = async (email: string) => {
     if (DEV_MODE) return { error: null };
-    console.log(LOG, 'resetPassword:', email);
+    log('resetPassword:', email);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
-    if (error) console.error(LOG, 'resetPassword error:', error.message);
+    if (error) log('resetPassword error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };
 
   const updatePassword = async (password: string) => {
     if (DEV_MODE) return { error: null };
-    console.log(LOG, 'updatePassword');
+    log('updatePassword');
     const { error } = await supabase.auth.updateUser({ password });
-    if (error) console.error(LOG, 'updatePassword error:', error.message);
+    if (error) log('updatePassword error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };
 
   const signOut = async () => {
     if (DEV_MODE) return;
-    console.log(LOG, 'Signing out');
+    log('Signing out');
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
@@ -302,7 +331,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshProfile,
   };
 
-  console.log(LOG, 'State:', { isLoading, auth: !!user, profile: !!profile, name: profile?.first_name || null });
+  log('State:', { isLoading, auth: !!user, profile: !!profile, name: profile?.first_name || null });
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

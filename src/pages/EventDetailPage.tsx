@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, BottomSheet } from '../components/ui';
+import { Avatar, Badge, GradientButton, CategoryIcon, BottomSheet, EventDetailSkeleton } from '../components/ui';
 import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert, Navigation } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,8 +10,11 @@ import { ReportDialog } from '../components/social/ReportDialog';
 import { ShareEventSheet } from '../components/features/ShareEventSheet';
 import { blockUser, isUserBlocked } from '../services/blockService';
 import { useEventParticipants } from '../hooks/useEventParticipants';
+import { hapticSuccess } from '../lib/haptics';
+import { EventReviews } from '../components/features/EventReviews';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { updateEvent, deleteEvent } from '../services/events';
+import { getOrCreateConversation } from '../services/chat/dmService';
 import { supabase } from '../lib/supabase';
 import { cn, calculateAge, calculateDistance } from '../lib/utils';
 import { useUserLocation } from '../hooks/useUserLocation';
@@ -98,6 +101,7 @@ export default function EventDetailPage() {
   const handleJoin = async () => {
     const result = await join();
     if (result.success) {
+      hapticSuccess();
       if (event?.join_mode === 'auto') {
         showToast('You have joined the event!', 'success');
       } else {
@@ -202,6 +206,16 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleMessageHost = async () => {
+    if (!user?.id || !event?.host_id || user.id === event.host_id) return;
+    const result = await getOrCreateConversation(user.id, event.host_id);
+    if (result.success && result.data) {
+      navigate(`/dm/${result.data.id}`);
+    } else {
+      showToast('Failed to start conversation', 'error');
+    }
+  };
+
   // Render join button based on status
   const renderJoinButton = () => {
     if (isHost) {
@@ -226,14 +240,14 @@ export default function EventDetailPage() {
           <button
             onClick={handleLeave}
             disabled={isJoining}
-            className="px-4 py-3 rounded-xl border border-border text-text-muted hover:text-error hover:border-error transition-colors"
+            className="px-4 py-3 rounded-xl border border-border text-text-muted hover:text-error hover:border-error transition-colors text-sm"
           >
             {isJoining ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Leave'}
           </button>
           <Link to={`/event/${id}/chat`} className="flex-1">
             <GradientButton fullWidth size="lg">
               <MessageCircle className="h-5 w-5 mr-2" />
-              Open Chat
+              Message Group
             </GradientButton>
           </Link>
         </>
@@ -278,6 +292,7 @@ export default function EventDetailPage() {
     return (
       <>
         <button
+          onClick={handleMessageHost}
           className="p-3 rounded-xl border border-border text-text-muted hover:text-coral hover:border-coral transition-colors"
           aria-label="Message host"
         >
@@ -297,11 +312,7 @@ export default function EventDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <EventDetailSkeleton />;
   }
 
   if (error || !event) {
@@ -309,8 +320,11 @@ export default function EventDetailPage() {
       <div className="min-h-screen bg-background">
         <Header showBack />
         <div className="flex flex-col items-center justify-center p-8 mt-20">
+          <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="h-8 w-8 text-white" />
+          </div>
           <h2 className="text-xl font-semibold text-text mb-2">Event not found</h2>
-          <p className="text-text-muted text-center mb-4">
+          <p className="text-text-muted text-center mb-4 max-w-xs">
             This event may have been removed or doesn't exist.
           </p>
           <GradientButton onClick={() => navigate('/')}>Browse Events</GradientButton>
@@ -320,7 +334,7 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <Header
         showBack
@@ -595,8 +609,17 @@ export default function EventDetailPage() {
         </div>
       </div>
 
+      {/* Reviews */}
+      <div className="px-4">
+        <EventReviews
+          eventId={event.id}
+          isExpired={event.status === 'expired'}
+          isParticipant={userStatus === 'approved'}
+        />
+      </div>
+
       {/* Fixed bottom actions */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom z-30 lg:left-64">
         <div className="flex gap-3 max-w-lg mx-auto">
           {renderJoinButton()}
         </div>

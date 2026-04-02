@@ -5,12 +5,13 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
 import { Slider, Toggle, Modal, Input, Button } from '../components/ui';
-import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Building2, Edit2, Monitor } from 'lucide-react';
+import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Building2, Edit2, Monitor, Mail, Lock, HelpCircle, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { useLocationName } from '../hooks/useLocationName';
 import { BusinessOnboardingSheet } from '../components/business/BusinessOnboardingSheet';
 import { deactivateBusinessProfile } from '../services/businessService';
+import { useDarkMode } from '../hooks/useDarkMode';
 import type { NotificationPreferences } from '../types';
 
 export default function SettingsPage() {
@@ -22,6 +23,7 @@ export default function SettingsPage() {
   const { permission, isSubscribed, isLoading: isPushLoading, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe } = usePushNotifications();
   const { locationName, isLoading: locationLoading } = useLocationName(location);
 
+  const { isDark, toggle: toggleDarkMode } = useDarkMode();
   const [showBusinessOnboarding, setShowBusinessOnboarding] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -244,6 +246,25 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Appearance */}
+        <section>
+          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
+            Appearance
+          </h2>
+          <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                {isDark ? <Moon className="h-5 w-5 text-purple" /> : <Sun className="h-5 w-5 text-purple" />}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Dark Mode</h3>
+                <p className="text-sm text-text-muted">{isDark ? 'Dark theme active' : 'Light theme active'}</p>
+              </div>
+              <Toggle checked={isDark} onChange={toggleDarkMode} />
+            </div>
+          </div>
+        </section>
+
         {/* Business */}
         <section>
           <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
@@ -323,18 +344,30 @@ export default function SettingsPage() {
           </h2>
           <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
             {/* Master toggle — all notifications on/off */}
+            {/* Blocked notification warning */}
+            {permission === 'denied' && (
+              <div className="p-4 bg-error/5 border-b border-error/10">
+                <p className="text-sm text-error font-medium">Notifications blocked</p>
+                <p className="text-xs text-text-muted mt-0.5">
+                  To enable notifications, go to your browser settings and allow notifications for this site.
+                </p>
+              </div>
+            )}
+
             <div className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Bell className="h-5 w-5 text-coral" />
               </div>
               <div className="flex-1">
                 <h3 className="font-medium text-text">All Notifications</h3>
-                <p className="text-sm text-text-muted">Enable or disable all notifications</p>
+                <p className="text-sm text-text-muted">
+                  {permission === 'denied' ? 'Blocked in browser settings' : 'Enable or disable all notifications'}
+                </p>
               </div>
               <Toggle
                 checked={allOn}
                 onChange={handleToggleAll}
-                disabled={isPushLoading}
+                disabled={permission === 'denied' || isPushLoading}
               />
             </div>
 
@@ -494,12 +527,36 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Account Settings */}
+        {/* Account Management */}
         <section>
           <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
             Account
           </h2>
           <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Mail className="h-5 w-5 text-blue" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Email</h3>
+                <p className="text-sm text-text-muted">{user?.email || 'Not set'}</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('/reset-password')}
+              className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Lock className="h-5 w-5 text-purple" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Change Password</h3>
+                <p className="text-sm text-text-muted">Update your password</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-text-muted" />
+            </button>
+
             <button
               onClick={handleExportData}
               className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
@@ -526,6 +583,87 @@ export default function SettingsPage() {
                 <p className="text-sm text-text-muted">Permanently delete your account</p>
               </div>
               <ChevronRight className="h-5 w-5 text-text-muted" />
+            </button>
+          </div>
+        </section>
+
+        {/* About & Support */}
+        <section>
+          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
+            About
+          </h2>
+          <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+            <button
+              onClick={() => navigate('/landing/about')}
+              className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Info className="h-5 w-5 text-coral" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">About Lincc</h3>
+              </div>
+              <ChevronRight className="h-5 w-5 text-text-muted" />
+            </button>
+
+            <button
+              onClick={() => navigate('/feedback')}
+              className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <MessageSquarePlus className="h-5 w-5 text-green-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Send Feedback</h3>
+                <p className="text-sm text-text-muted">Bug reports, feature requests, support</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-text-muted" />
+            </button>
+
+            <button
+              onClick={() => navigate('/landing/contact')}
+              className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <HelpCircle className="h-5 w-5 text-purple" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Help & Support</h3>
+              </div>
+              <ChevronRight className="h-5 w-5 text-text-muted" />
+            </button>
+
+            <button
+              onClick={() => navigate('/landing/privacy')}
+              className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <ExternalLink className="h-5 w-5 text-text-muted" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Privacy Policy</h3>
+              </div>
+              <ChevronRight className="h-5 w-5 text-text-muted" />
+            </button>
+
+            <button
+              onClick={() => {
+                if ('caches' in window) {
+                  caches.keys().then(names => names.forEach(name => caches.delete(name)));
+                  showToast('Cache cleared', 'success');
+                } else {
+                  showToast('Cache not available', 'info');
+                }
+              }}
+              className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <RefreshCw className="h-5 w-5 text-text-muted" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Clear Cache</h3>
+                <p className="text-sm text-text-muted">Free up storage space</p>
+              </div>
             </button>
           </div>
         </section>
