@@ -18,21 +18,21 @@ Last updated: 2026-02-27
 
 ## MVP Phase 1: Auth & Profile Hardening
 
-- [ ] Profile completion enforcement — block app use until profile is complete (name, DOB, gender, at least 1 tag)
+- [x] Profile completion enforcement — ProtectedRoute redirects incomplete profiles to /onboarding
 - [x] Password reset flow — forgot password page + Supabase reset email
-- [ ] Custom auth emails — branded Supabase email templates (welcome, reset, magic link)
-- [ ] Email verification — require email confirmation for new signups
-- [ ] Session management — token refresh handling, logout on all devices
-- [ ] Account deletion — GDPR compliance, delete profile + data
-- [ ] UI design consistency pass — Login, Signup, Onboarding, and Terms pages don't match the app design system. Align gradients, cards, spacing, typography
+- [x] Custom auth emails — branded templates for confirm-signup, magic-link, reset-password, change-email
+- [x] Email verification — AuthContext checks email_confirmed_at, signs out unverified users
+- [x] Session management — autoRefreshToken + persistSession enabled on Supabase client
+- [x] Account deletion — GDPR compliance, delete_user_account RPC with "DELETE" confirmation modal
+- [x] UI design consistency pass — Login, Signup, Onboarding pages use gradient/card design system
 
 ---
 
 ## MVP Phase 2: UX Polish & Core Quality
 
 - [ ] Skeleton loaders — shimmer placeholders for all data-fetching views (home, profile, event detail, chats)
-- [ ] Empty states — friendly messages + CTAs when no events, no chats, no results
-- [ ] Error states — user-friendly error messages with retry buttons
+- [x] Empty states — friendly messages + CTAs in profile, chats, user profile pages
+- [x] Error states — user-friendly error messages with retry buttons in chats, toasts throughout
 - [ ] Pull-to-refresh — event list on home page
 - [ ] Animations — smooth page transitions and micro-interactions
 - [ ] Haptic feedback — key interactions on mobile (join, like, send message)
@@ -186,7 +186,7 @@ Last updated: 2026-02-27
 - [ ] Weather integration — weather info for outdoor events
 - [ ] App store listings — PWA store submissions
 - [ ] Event data sourcing — external event APIs, scrapers, partnerships
-- [ ] Postcode / location search — search by postcode or place name (not just GPS)
+- [x] Postcode / location search — search by postcode or place name (not just GPS) _(moved to Backlog)_
 - [ ] Feature request form — in-app form logged to DB
 - [ ] Contact us form — in-app support form
 
@@ -208,8 +208,21 @@ _(Nothing currently blocked)_
 
 ## Open Bugs
 
-- [ ] Magic link login broken — Supabase redirects back to the app with token in URL hash but `onAuthStateChange` doesn't pick up the session. User stays on login page unsigned-in. Likely the hash fragment is lost during React Router navigation or the Supabase client isn't detecting the token on page load.
+- [x] Magic link login broken — **Fixed**: Added explicit `getSession()` bootstrap after auth listener setup to catch hash token exchange that completes before listener is ready. Also handle `INITIAL_SESSION` event alongside `SIGNED_IN`. Added `TOKEN_REFRESHED` handling to avoid resetting profile/loading state. Added profile fetch retry (1s delay) for transient DB failures.
+- [x] Unable to add venue — **Fixed**: Rewrote placesService.ts to use Google Maps JavaScript SDK instead of REST API (which was blocked by CORS)
+- [x] Unable to join events — **Fixed**: Added missing DELETE RLS policy on event_participants (migration 023). JOIN INSERT was working, but leave/cancel was silently failing.
+- [x] List/map toggle icon disappears when switching — **Fixed**: Bumped BottomNav z-index from z-40 to z-50 to prevent MapView stacking context from obscuring it
+- [ ] Notifications not configured — push notification code is all built, but **edge function secrets need setting in Supabase dashboard**: VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:), PUSH_FUNCTION_SECRET. See migration 014 for the hardcoded secret value.
 
+---
+
+## Backlog (New Feature Requests)
+
+- [ ] Save event as draft — allow users to save an in-progress event and publish later
+- [ ] Message host option — let hosts opt in/out of direct messages from users when creating an event
+- [ ] Join without group chat — participants can join an event but opt out of the group chat, with a DM-to-host option instead
+- [ ] PWA install screen in onboarding — dedicated step in onboarding flow prompting users to install the app to their home screen / desktop
+- [ ] Search by postcode — add postcode/location search to the filter (not just GPS)
 
 ---
 
