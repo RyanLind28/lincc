@@ -16,7 +16,7 @@ function LinccLogo({ className, size = 'md' }: { className?: string; size?: 'sm'
       <img
         src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp"
         alt="Lincc"
-        className={heights[size]}
+        className={cn(heights[size], 'w-auto')}
       />
     </Link>
   );

@@ -1,6 +1,6 @@
 # LINCC TODO
 
-Last updated: 2026-03-29
+Last updated: 2026-04-03
 
 ---
 
@@ -175,7 +175,7 @@ _(Nothing currently blocked)_
 - Supabase: `spatial_ref_sys` RLS — PostGIS system table, known platform limitation
 - Supabase: PostGIS in public schema — safe to ignore, moving risks breaking geo queries
 - Supabase: Enable leaked password protection — Dashboard > Auth > Attack Protection (manual step)
-- Google Places API key not set — venue autocomplete in event creation won't work until key is added to `.env.local` and Vercel
+- ~~Google Places API key not set~~ — **Fixed 2026-04-03**: Key added to `.env.local`, still needs adding to Vercel env vars
 
 ---
 
@@ -196,6 +196,7 @@ _(Nothing currently blocked)_
 - [ ] Join without group chat — participants can join an event but opt out of the group chat, with a DM-to-host option instead
 - [ ] PWA install screen in onboarding — dedicated step in onboarding flow prompting users to install the app to their home screen / desktop
 - [ ] Search by postcode — add postcode/location search to the filter (not just GPS)
+- [ ] Header logo resolution — replace current @4x webp with higher-res source file and scale down for crisp rendering
 
 ---
 
