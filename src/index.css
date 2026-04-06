@@ -60,8 +60,8 @@
   --color-background: #0F0F1A;
   --color-surface: #1A1A2E;
   --color-text: #F0F0F5;
-  --color-text-muted: #9CA3AF;
-  --color-text-light: #6B7280;
+  --color-text-muted: #B0B5BF;
+  --color-text-light: #8A8F9A;
   --color-border: #2D2D44;
   --color-border-dark: #3D3D5C;
 }
@@ -169,7 +169,7 @@
 
   .gradient-border {
     position: relative;
-    background: white;
+    background: var(--color-surface);
   }
 
   .gradient-border::before {

@@ -54,12 +54,14 @@ export default function OnboardingPage() {
   const { isInstallable, isInstalled, promptInstall } = usePWA();
   const { permission: pushPermission, subscribe: pushSubscribe } = usePushNotifications();
 
-  // If profile is already complete, redirect to home
+  // If profile is already complete on mount (before user starts), redirect to home.
+  // Don't redirect once user is actively going through onboarding (step > 1)
+  // or after saving profile (step 5) — let them see the final setup screen.
   useEffect(() => {
-    if (isProfileComplete) {
+    if (isProfileComplete && step === 1 && !avatarUrl) {
       navigate('/', { replace: true });
     }
-  }, [isProfileComplete, navigate]);
+  }, [isProfileComplete, navigate, step, avatarUrl]);
 
   const totalSteps = 5;
 
@@ -224,7 +226,7 @@ export default function OnboardingPage() {
             <div
               key={i}
               className={`h-1 flex-1 rounded-full ${
-                i < step ? 'gradient-primary' : 'bg-gray-200'
+                i < step ? 'gradient-primary' : 'bg-border'
               }`}
             />
           ))}

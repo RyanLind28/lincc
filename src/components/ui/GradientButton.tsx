@@ -36,7 +36,7 @@ export const GradientButton = forwardRef<HTMLButtonElement, GradientButtonProps>
       secondary:
         'gradient-secondary text-white shadow-md hover:shadow-lg focus-visible:ring-purple',
       outline:
-        'bg-white gradient-border text-text hover:bg-gray-50 focus-visible:ring-coral',
+        'bg-surface gradient-border text-text hover:opacity-90 focus-visible:ring-coral',
     };
 
     const sizes = {

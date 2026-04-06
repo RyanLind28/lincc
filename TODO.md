@@ -1,6 +1,6 @@
 # LINCC TODO
 
-Last updated: 2026-04-03
+Last updated: 2026-04-06
 
 ---
 
@@ -8,9 +8,10 @@ Last updated: 2026-04-03
 
 - **App**: Pre-launch, demo-ready on Vercel (`lincc-six.vercel.app`)
 - **Database**: Live Supabase with 25 Dubai/Bahrain demo events (2027 dates), 26 categories
-- **Auth**: Working (email/password, magic link, business signup flag)
+- **Auth**: Working (email/password, magic link, business signup flag). OAuth buttons (Google/Apple/Facebook) in UI but not yet connected.
 - **DEV_MODE**: OFF in all files
-- **Migrations**: All up to `031` applied to live Supabase
+- **Migrations**: All up to `035` applied to live Supabase
+- **Push Notifications**: Edge function deployed + secrets configured. VAPID key update pending in Vercel.
 - **Landing**: Live with waitlist form
 - **PWA**: Configured with install prompt, offline banner, update notification, service worker
 - **Tests**: 42 unit tests (Vitest), Playwright E2E configured
@@ -142,6 +143,7 @@ Last updated: 2026-04-03
 - [x] EventCardMini — shows cover_image_url when available, falls back to gradient icon
 - [x] Joined event UX — "Message Group" button, clear leave/chat layout
 - [x] Mobile "Further Away" layout — location on second line, simplified count badge
+- [x] Header rightContent not rendering — `Header` component accepted `rightContent` prop but never rendered it; settings gear + people icon on Profile page were invisible. Fixed by destructuring and rendering the prop.
 
 ---
 
@@ -175,7 +177,7 @@ _(Nothing currently blocked)_
 - Supabase: `spatial_ref_sys` RLS — PostGIS system table, known platform limitation
 - Supabase: PostGIS in public schema — safe to ignore, moving risks breaking geo queries
 - Supabase: Enable leaked password protection — Dashboard > Auth > Attack Protection (manual step)
-- ~~Google Places API key not set~~ — **Fixed 2026-04-03**: Key added to `.env.local`, still needs adding to Vercel env vars
+- ~~Google Places API key not set~~ — **Fixed**: Key added to `.env.local` and Vercel env vars
 
 ---
 
@@ -185,7 +187,13 @@ _(Nothing currently blocked)_
 - [x] Unable to add venue — **Fixed**: Rewrote placesService.ts to use Google Maps JavaScript SDK instead of REST API (which was blocked by CORS)
 - [x] Unable to join events — **Fixed**: Added missing DELETE RLS policy on event_participants (migration 023). JOIN INSERT was working, but leave/cancel was silently failing.
 - [x] List/map toggle icon disappears when switching — **Fixed**: Bumped BottomNav z-index from z-40 to z-50 to prevent MapView stacking context from obscuring it
-- [ ] Notifications not configured — push notification code is all built, but **edge function secrets need setting in Supabase dashboard**: VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:), PUSH_FUNCTION_SECRET. See migration 014 for the hardcoded secret value.
+- [x] Notifications not configured — **Fixed**: Generated new VAPID key pair, set all 4 edge function secrets via Management API, disabled JWT verification on edge function. **Remaining**: Update `VITE_VAPID_PUBLIC_KEY` in Vercel env vars to `BAu2e1J1983rUKz8Dk2qWB5GO0UJerC3qCZiEmj3HuPFwW-xO7-j8CsljNiIWZxsbFe-rct-rkmMrkfHfzrJPTA`
+- [x] Enable notifications banner cut off on laptop — **Fixed**: Added `lg:max-w-xl lg:mx-auto` to constrain width on desktop
+- [x] Email/password login returns "invalid credentials" — **Fixed**: Added `required` to password field, improved error messages to suggest Magic Link as fallback
+- [x] PWA desktop install prompt not appearing — **Fixed**: Changed from permanent dismissal to 7-day time-based dismissal so prompt re-appears
+- [x] Adding profile picture resets onboarding — **Fixed**: Guarded `isProfileComplete` redirect to only fire on initial mount (step 1, no avatar), not during active onboarding
+- [x] Adding event cover image resets to categories — **Fixed**: Persisted create-event form state in sessionStorage so it survives file-picker remounts (mobile browsers drop the tab from memory when the OS picker opens)
+- [x] Dark mode skip button not visible — **Fixed**: Increased dark mode `text-muted`/`text-light` contrast, fixed `gradient-border` and GradientButton outline variant to use `bg-surface` instead of hardcoded white
 
 ---
 
@@ -197,6 +205,8 @@ _(Nothing currently blocked)_
 - [ ] PWA install screen in onboarding — dedicated step in onboarding flow prompting users to install the app to their home screen / desktop
 - [ ] Search by postcode — add postcode/location search to the filter (not just GPS)
 - [ ] Header logo resolution — replace current @4x webp with higher-res source file and scale down for crisp rendering
+- [ ] Dark mode colour audit — review all text/button colours (skip, secondary actions, etc.) for proper contrast in dark mode
+- [ ] OAuth login — Google, Apple, Facebook buttons added to UI (disabled with "not set up" label), needs provider credentials configured in Supabase Auth
 
 ---
 

@@ -3,18 +3,25 @@ import { usePWA } from '../../hooks/usePWA';
 import { Download, X } from 'lucide-react';
 
 const DISMISSED_KEY = 'lincc-install-dismissed';
+const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function isDismissed(): boolean {
+  const raw = localStorage.getItem(DISMISSED_KEY);
+  if (!raw) return false;
+  const dismissedAt = Number(raw);
+  if (isNaN(dismissedAt)) return false;
+  return Date.now() - dismissedAt < DISMISS_DURATION_MS;
+}
 
 export function InstallBanner() {
   const { isInstallable, isInstalled, promptInstall } = usePWA();
-  const [dismissed, setDismissed] = useState(() =>
-    localStorage.getItem(DISMISSED_KEY) === 'true'
-  );
+  const [dismissed, setDismissed] = useState(isDismissed);
 
   if (!isInstallable || isInstalled || dismissed) return null;
 
   const handleDismiss = () => {
     setDismissed(true);
-    localStorage.setItem(DISMISSED_KEY, 'true');
+    localStorage.setItem(DISMISSED_KEY, String(Date.now()));
   };
 
   const handleInstall = async () => {

@@ -19,6 +19,23 @@ type Step = 'category' | 'subcategory' | 'details' | 'when' | 'guests';
 
 const STEPS: Step[] = ['category', 'subcategory', 'details', 'when', 'guests'];
 
+const DRAFT_KEY = 'lincc-create-event-draft';
+
+function saveDraft(data: Record<string, unknown>) {
+  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch { /* quota */ }
+}
+
+function loadDraft(): Record<string, unknown> | null {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function clearDraft() {
+  sessionStorage.removeItem(DRAFT_KEY);
+}
+
 export default function CreateEventPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -41,33 +58,76 @@ export default function CreateEventPage() {
     });
   }, [searchParams]);
 
-  const [step, setStep] = useState<Step>('category');
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<SubCategory | null>(null);
-  const [customSubcategory, setCustomSubcategory] = useState('');
-  const [customCategoryText, setCustomCategoryText] = useState('');
+  // Restore draft from sessionStorage (survives file-picker remount)
+  const draft = useRef(loadDraft());
+
+  const [step, setStep] = useState<Step>((draft.current?.step as Step) || 'category');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(() => {
+    const val = draft.current?.categoryValue as string | undefined;
+    return val ? CATEGORIES.find(c => c.value === val) ?? null : null;
+  });
+  const [selectedSubcategory, setSelectedSubcategory] = useState<SubCategory | null>(() => {
+    const catVal = draft.current?.categoryValue as string | undefined;
+    const subVal = draft.current?.subcategoryValue as string | undefined;
+    if (!catVal || !subVal) return null;
+    const cat = CATEGORIES.find(c => c.value === catVal);
+    return cat?.subcategories.find(s => s.value === subVal) ?? null;
+  });
+  const [customSubcategory, setCustomSubcategory] = useState((draft.current?.customSubcategory as string) || '');
+  const [customCategoryText, setCustomCategoryText] = useState((draft.current?.customCategoryText as string) || '');
   const [subcategorySearch, setSubcategorySearch] = useState('');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [venueName, setVenueName] = useState('');
-  const [venueAddress, setVenueAddress] = useState('');
-  const [venueLat, setVenueLat] = useState<number>(0);
-  const [venueLng, setVenueLng] = useState<number>(0);
-  const [venuePlaceId, setVenuePlaceId] = useState<string | null>(null);
+  const [title, setTitle] = useState((draft.current?.title as string) || '');
+  const [description, setDescription] = useState((draft.current?.description as string) || '');
+  const [venueName, setVenueName] = useState((draft.current?.venueName as string) || '');
+  const [venueAddress, setVenueAddress] = useState((draft.current?.venueAddress as string) || '');
+  const [venueLat, setVenueLat] = useState<number>((draft.current?.venueLat as number) || 0);
+  const [venueLng, setVenueLng] = useState<number>((draft.current?.venueLng as number) || 0);
+  const [venuePlaceId, setVenuePlaceId] = useState<string | null>((draft.current?.venuePlaceId as string) || null);
   const [venuePhotos, setVenuePhotos] = useState<{ name: string }[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState('12:00');
-  const [capacity, setCapacity] = useState(4);
-  const [joinMode, setJoinMode] = useState<JoinMode>('request');
-  const [audience, setAudience] = useState<Audience>('everyone');
-  const [allowDms, setAllowDms] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
+    const d = draft.current?.selectedDate as string | undefined;
+    return d ? new Date(d) : null;
+  });
+  const [selectedTime, setSelectedTime] = useState((draft.current?.selectedTime as string) || '12:00');
+  const [capacity, setCapacity] = useState((draft.current?.capacity as number) || 4);
+  const [joinMode, setJoinMode] = useState<JoinMode>((draft.current?.joinMode as JoinMode) || 'request');
+  const [audience, setAudience] = useState<Audience>((draft.current?.audience as Audience) || 'everyone');
+  const [allowDms, setAllowDms] = useState(draft.current?.allowDms !== undefined ? draft.current.allowDms as boolean : true);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Cover image state
-  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  // Cover image state (file can't survive remount, but URL can)
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>((draft.current?.coverImageUrl as string) || null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Persist draft on changes so state survives file-picker remount
+  useEffect(() => {
+    if (step === 'category' && !selectedCategory) return; // Don't save empty state
+    saveDraft({
+      step,
+      categoryValue: selectedCategory?.value,
+      subcategoryValue: selectedSubcategory?.value,
+      customSubcategory,
+      customCategoryText,
+      title,
+      description,
+      venueName,
+      venueAddress,
+      venueLat,
+      venueLng,
+      venuePlaceId,
+      selectedDate: selectedDate?.toISOString(),
+      selectedTime,
+      capacity,
+      joinMode,
+      audience,
+      allowDms,
+      coverImageUrl: coverImageFile ? null : coverImageUrl, // Don't persist blob URLs
+    });
+  }, [step, selectedCategory, selectedSubcategory, customSubcategory, customCategoryText,
+      title, description, venueName, venueAddress, venueLat, venueLng, venuePlaceId,
+      selectedDate, selectedTime, capacity, joinMode, audience, allowDms, coverImageUrl, coverImageFile]);
 
   // Date constraints - up to 1 month in the future
   const now = new Date();
@@ -143,6 +203,7 @@ export default function CreateEventPage() {
     if (prevIndex >= 0) {
       setStep(STEPS[prevIndex]);
     } else {
+      clearDraft();
       navigate(-1);
     }
   };
@@ -240,6 +301,7 @@ export default function CreateEventPage() {
       );
 
       if (result.success && result.data) {
+        clearDraft();
         showToast('Event created successfully!', 'success');
         navigate(`/event/${result.data.id}`);
       } else {

@@ -28,7 +28,7 @@ export function NotificationPermissionPrompt() {
   };
 
   return (
-    <div className="mx-4 mt-3 mb-1 animate-slide-up">
+    <div className="mx-4 mt-3 mb-1 lg:max-w-xl lg:mx-auto animate-slide-up">
       <div className="bg-surface border border-border rounded-2xl shadow-sm p-4">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">

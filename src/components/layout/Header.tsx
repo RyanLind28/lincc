@@ -47,6 +47,7 @@ export function Header({
   title,
   showBack,
   leftContent,
+  rightContent,
   className,
 }: HeaderProps) {
   const navigate = useNavigate();
@@ -102,8 +103,9 @@ export function Header({
           )}
         </div>
 
-        {/* Right side — always show notifications */}
+        {/* Right side */}
         <div className="flex items-center gap-1 min-w-[60px] justify-end">
+          {rightContent}
           <Link
             to="/notifications"
             className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors relative"
