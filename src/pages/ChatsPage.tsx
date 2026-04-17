@@ -20,15 +20,15 @@ export default function ChatsPage() {
   const { conversations, isLoading: dmsLoading, error: dmsError, refresh: refreshDMs } = useUserDMs();
   const nowMs = useNow();
 
+  const isLoading = activeTab === 'events' ? eventsLoading : dmsLoading;
+  const error = activeTab === 'events' ? eventsError : dmsError;
+  const refresh = activeTab === 'events' ? refreshEvents : refreshDMs;
+
   const handleRefresh = useCallback(async () => {
     refresh();
     await new Promise((r) => setTimeout(r, 600));
   }, [refresh]);
   const { pullDistance, isRefreshing, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
-
-  const isLoading = activeTab === 'events' ? eventsLoading : dmsLoading;
-  const error = activeTab === 'events' ? eventsError : dmsError;
-  const refresh = activeTab === 'events' ? refreshEvents : refreshDMs;
 
   const formatLastMessage = (content: string, senderId: string) => {
     const isMe = senderId === user?.id;
