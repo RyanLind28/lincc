@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Avatar, GradientButton, CategoryIcon, BottomSheet, EventDetailSkeleton } from '../components/ui';
-import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert, Navigation } from 'lucide-react';
+import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert, Navigation, Copy } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -66,7 +66,8 @@ export default function EventDetailPage() {
         .select(`
           *,
           host:profiles!host_id(*),
-          category:categories!category_id(*)
+          category:categories!category_id(*),
+          business:businesses!business_id(*)
         `)
         .eq('id', id)
         .single();
@@ -206,6 +207,38 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleDuplicate = () => {
+    if (!event) return;
+    const categoryValue = CATEGORIES.find((c) => c.label === event.category?.name)?.value;
+    const start = new Date(event.start_time);
+    const hh = String(start.getHours()).padStart(2, '0');
+    const mm = String(start.getMinutes()).padStart(2, '0');
+    const draft = {
+      step: 'details',
+      categoryValue,
+      customCategoryText: event.custom_category ?? '',
+      title: event.title,
+      description: event.description ?? '',
+      venueName: event.venue_name,
+      venueAddress: event.venue_address,
+      venueLat: event.venue_lat,
+      venueLng: event.venue_lng,
+      venuePlaceId: event.venue_place_id,
+      selectedDate: start.toISOString(),
+      selectedTime: `${hh}:${mm}`,
+      capacity: event.capacity,
+      joinMode: event.join_mode,
+      audience: event.audience,
+      allowDms: event.allow_dms,
+      coverImageUrl: event.cover_image_url,
+    };
+    try {
+      sessionStorage.setItem('lincc-create-event-draft', JSON.stringify(draft));
+    } catch { /* quota */ }
+    showToast('Event details copied — adjust and publish', 'success');
+    navigate('/event/new');
+  };
+
   const handleMessageHost = async () => {
     if (!user?.id || !event?.host_id || user.id === event.host_id) return;
     const result = await getOrCreateConversation(user.id, event.host_id);
@@ -221,18 +254,27 @@ export default function EventDetailPage() {
     if (isHost) {
       return (
         <>
-          <Link to={`/event/${id}/chat`} className="flex-1">
-            <GradientButton fullWidth size="lg">
-              <MessageCircle className="h-5 w-5 mr-2" />
-              Group Chat
+          <Link to={`/event/${id}/chat`} className="flex-1 min-w-0">
+            <GradientButton
+              fullWidth
+              size="lg"
+              leftIcon={<MessageCircle className="h-5 w-5" />}
+              className="whitespace-nowrap"
+            >
+              Chat
             </GradientButton>
           </Link>
-          <Link to={`/event/${id}/manage`} className="flex-1">
-            <GradientButton fullWidth size="lg" variant="secondary">
-              <Users className="h-5 w-5 mr-2" />
+          <Link to={`/event/${id}/manage`} className="flex-1 min-w-0">
+            <GradientButton
+              fullWidth
+              size="lg"
+              variant="secondary"
+              leftIcon={<Users className="h-5 w-5" />}
+              className="whitespace-nowrap"
+            >
               Manage
               {pendingCount > 0 && (
-                <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-sm">
+                <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">
                   {pendingCount}
                 </span>
               )}
@@ -371,6 +413,13 @@ export default function EventDetailPage() {
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
+                    onClick={handleDuplicate}
+                    className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+                    aria-label="Duplicate event"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                  <button
                     onClick={() => setIsCancelOpen(true)}
                     className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
                     aria-label="Cancel event"
@@ -469,24 +518,44 @@ export default function EventDetailPage() {
               </span>
             </div>
 
-            {/* Host — inside card */}
-            <Link
-              to={`/user/${event.host.id}`}
-              className="flex items-center gap-3 mt-4 pt-4 border-t border-border group"
-            >
-              <Avatar
-                src={event.host.avatar_url}
-                name={event.host.first_name}
-                size="sm"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-text-muted">Hosted by</p>
-                <p className="font-medium text-text group-hover:text-coral transition-colors truncate">
-                  {event.host.first_name}{hostAge ? `, ${hostAge}` : ''}
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
-            </Link>
+            {/* Host — inside card. When the event is posted by a business, show the business identity. */}
+            {event.business ? (
+              <Link
+                to={`/business/${event.business.id}`}
+                className="flex items-center gap-3 mt-4 pt-4 border-t border-border group"
+              >
+                <Avatar
+                  src={event.business.logo_url}
+                  name={event.business.name}
+                  size="sm"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-text-muted">Hosted by</p>
+                  <p className="font-medium text-text group-hover:text-coral transition-colors truncate">
+                    {event.business.name}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
+              </Link>
+            ) : (
+              <Link
+                to={`/user/${event.host.id}`}
+                className="flex items-center gap-3 mt-4 pt-4 border-t border-border group"
+              >
+                <Avatar
+                  src={event.host.avatar_url}
+                  name={event.host.first_name}
+                  size="sm"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-text-muted">Hosted by</p>
+                  <p className="font-medium text-text group-hover:text-coral transition-colors truncate">
+                    {event.host.first_name}{hostAge ? `, ${hostAge}` : ''}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
+              </Link>
+            )}
           </div>
         </div>
 
@@ -512,11 +581,19 @@ export default function EventDetailPage() {
               <p className="text-sm text-text-muted truncate">{event.venue_address}</p>
             </div>
             <a
-              href={
-                event.venue_place_id
-                  ? `https://www.google.com/maps/place/?q=place_id:${event.venue_place_id}`
-                  : `https://maps.google.com/?q=${encodeURIComponent(event.venue_address)}`
-              }
+              href={(() => {
+                // Universal Google Maps directions URL — works on web, iOS, and Android
+                // (iOS/Android open the Google Maps app if installed, otherwise the web).
+                const base = 'https://www.google.com/maps/dir/?api=1';
+                const dest = event.venue_lat && event.venue_lng
+                  ? `${event.venue_lat},${event.venue_lng}`
+                  : event.venue_address || event.venue_name;
+                const params = [`destination=${encodeURIComponent(dest)}`];
+                if (event.venue_place_id) {
+                  params.push(`destination_place_id=${event.venue_place_id}`);
+                }
+                return `${base}&${params.join('&')}`;
+              })()}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-sm font-semibold text-coral hover:text-coral/80 transition-colors flex-shrink-0 ml-4"

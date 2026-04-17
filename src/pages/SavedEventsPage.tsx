@@ -12,8 +12,16 @@ export default function SavedEventsPage() {
     loadSavedEvents();
   }, [loadSavedEvents]);
 
+  // Hide saved events that are expired or no longer active — bookmarks to past/cancelled events
+  // aren't actionable. (Users can still access them via history if we add a toggle later.)
+  const nowMs = Date.now();
+  const visibleSavedEvents = savedEvents.filter((event) =>
+    (event.status === 'active' || event.status === 'full') &&
+    new Date(event.expires_at ?? event.start_time).getTime() >= nowMs
+  );
+
   // Transform saved events to grid format
-  const gridEvents = savedEvents.map((event) => ({
+  const gridEvents = visibleSavedEvents.map((event) => ({
     id: event.id,
     title: event.title,
     category: {

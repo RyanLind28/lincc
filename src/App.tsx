@@ -46,6 +46,7 @@ const SavedEventsPage = lazy(() => import('./pages/SavedEventsPage'));
 const ExplorePage = lazy(() => import('./pages/ExplorePage'));
 
 // Lazy-loaded voucher pages
+const VouchersPage = lazy(() => import('./pages/VouchersPage'));
 const VoucherDetailPage = lazy(() => import('./pages/VoucherDetailPage'));
 const CreateVoucherPage = lazy(() => import('./pages/CreateVoucherPage'));
 
@@ -169,6 +170,7 @@ function App() {
             <Route path="/notifications" element={<ErrorBoundary><NotificationsPage /></ErrorBoundary>} />
             <Route path="/saved" element={<ErrorBoundary><SavedEventsPage /></ErrorBoundary>} />
             <Route path="/explore" element={<ErrorBoundary><ExplorePage /></ErrorBoundary>} />
+            <Route path="/vouchers" element={<ErrorBoundary><VouchersPage /></ErrorBoundary>} />
             <Route path="/voucher/:id" element={<ErrorBoundary><VoucherDetailPage /></ErrorBoundary>} />
             <Route path="/event/:id/manage" element={<ErrorBoundary><ManageParticipantsPage /></ErrorBoundary>} />
             <Route path="/people" element={<ErrorBoundary><SearchPeoplePage /></ErrorBoundary>} />

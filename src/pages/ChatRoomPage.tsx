@@ -6,6 +6,8 @@ import { Send, Lock, ChevronRight, MapPin, Clock } from 'lucide-react';
 import { hapticLight } from '../lib/haptics';
 import { useAuth } from '../contexts/AuthContext';
 import { useEventChat } from '../hooks/useEventChat';
+import { useNow } from '../hooks/useNow';
+import { ChatStatusPill } from '../components/features/ChatStatusPill';
 import { supabase } from '../lib/supabase';
 import type { EventWithDetails } from '../types';
 
@@ -20,6 +22,7 @@ export default function ChatRoomPage() {
 
   const { messages, isLoading, isSending, hasAccess, error, sendMessage } =
     useEventChat(eventId);
+  const nowMs = useNow();
 
   // Fetch event details
   useEffect(() => {
@@ -122,36 +125,48 @@ export default function ChatRoomPage() {
 
       {/* Event details banner */}
       {event && (
-        <Link
-          to={`/event/${eventId}`}
-          className="flex items-center gap-3 px-4 py-3 bg-surface border-b border-border hover:bg-gray-50 transition-colors"
-        >
-          <div className="h-10 w-10 gradient-primary rounded-xl flex items-center justify-center shrink-0">
-            <CategoryIcon icon={event.category?.icon} size="sm" className="text-white" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold text-text text-sm truncate">{event.title}</p>
-            <div className="flex items-center gap-3 text-xs text-text-muted mt-0.5">
-              {event.venue_name && (
-                <span className="flex items-center gap-1 truncate">
-                  <MapPin className="h-3 w-3 shrink-0" />
-                  {event.venue_name}
-                </span>
-              )}
-              <span className="flex items-center gap-1 shrink-0">
-                <Clock className="h-3 w-3" />
-                {new Date(event.start_time).toLocaleString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-              </span>
+        <>
+          <Link
+            to={`/event/${eventId}`}
+            className="flex items-center gap-3 px-4 py-3 bg-surface border-b border-border hover:bg-gray-50 transition-colors"
+          >
+            <div className="h-10 w-10 gradient-primary rounded-xl flex items-center justify-center shrink-0">
+              <CategoryIcon icon={event.category?.icon} size="sm" className="text-white" />
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-text text-sm truncate">{event.title}</p>
+              <div className="flex items-center gap-3 text-xs text-text-muted mt-0.5">
+                {event.venue_name && (
+                  <span className="flex items-center gap-1 truncate">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    {event.venue_name}
+                  </span>
+                )}
+                <span className="flex items-center gap-1 shrink-0">
+                  <Clock className="h-3 w-3" />
+                  {new Date(event.start_time).toLocaleString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-text-muted shrink-0" />
+          </Link>
+
+          {/* Lifecycle banner — upcoming / live / archive countdown */}
+          <div className="flex items-center justify-center px-4 py-2 bg-background border-b border-border">
+            <ChatStatusPill
+              startTime={event.start_time}
+              expiresAt={event.expires_at}
+              nowMs={nowMs}
+              variant="banner"
+            />
           </div>
-          <ChevronRight className="h-4 w-4 text-text-muted shrink-0" />
-        </Link>
+        </>
       )}
 
       {/* Messages area */}

@@ -102,8 +102,14 @@ export function subscribeToMessages(
 
 /**
  * Get events where user can chat (approved participant or host)
+ *
+ * PRD: "Chat archived 24h after event end." An event ends at expires_at
+ * (= start_time + 2h), so we keep chats visible until 24h past expires_at
+ * and filter out anything older.
  */
 export async function getUserChats(userId: string): Promise<EventWithDetails[]> {
+  const chatCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
   // Get events where user is an approved participant
   const { data: participantEvents, error: participantError } = await supabase
     .from('event_participants')
@@ -132,7 +138,8 @@ export async function getUserChats(userId: string): Promise<EventWithDetails[]> 
       participant_count:event_participants(count)
     `)
     .eq('host_id', userId)
-    .in('status', ['active', 'full']);
+    .in('status', ['active', 'full'])
+    .gte('expires_at', chatCutoff);
 
   if (hostError) {
     console.error('Error fetching host events:', hostError);
@@ -141,16 +148,18 @@ export async function getUserChats(userId: string): Promise<EventWithDetails[]> 
   // Combine and dedupe events
   const eventMap = new Map<string, EventWithDetails>();
 
-  // Add participant events
+  // Add participant events. Filter out chats for events whose "chat window"
+  // has closed (> 24h past expires_at) and events that were cancelled/deleted.
   if (participantEvents) {
     for (const p of participantEvents) {
       const event = p.event as unknown as EventWithDetails & { participant_count: { count: number }[] };
-      if (event && event.id) {
-        eventMap.set(event.id, {
-          ...event,
-          participant_count: event.participant_count?.[0]?.count || 0,
-        });
-      }
+      if (!event || !event.id) continue;
+      if (event.status !== 'active' && event.status !== 'full') continue;
+      if (event.expires_at && event.expires_at < chatCutoff) continue;
+      eventMap.set(event.id, {
+        ...event,
+        participant_count: event.participant_count?.[0]?.count || 0,
+      });
     }
   }
 

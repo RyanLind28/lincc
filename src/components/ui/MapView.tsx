@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import { useNavigate } from 'react-router-dom';
 import { Locate, Clock, Users, MapPin } from 'lucide-react';
 import { CategoryIcon } from './CategoryIcon';
+import { useToast } from '../../contexts/ToastContext';
 import type { Coordinates } from '../../types';
 
 // Set access token
@@ -112,6 +113,7 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
   const [selectedEvent, setSelectedEvent] = useState<MapEvent | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   // Default center (Dubai) if no user location
   const defaultCenter: [number, number] = [55.2708, 25.2048];
@@ -128,24 +130,40 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
         duration: 1000,
       });
       setTimeout(() => setIsLocating(false), 1000);
-    } else {
-      setIsLocating(true);
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          map.current?.flyTo({
-            center: [position.coords.longitude, position.coords.latitude],
-            zoom: 15,
-            duration: 1000,
-          });
-          setTimeout(() => setIsLocating(false), 1000);
-        },
-        () => {
-          setIsLocating(false);
-        },
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
+      return;
     }
-  }, [userLocation, isLoaded]);
+
+    if (!navigator.geolocation) {
+      showToast('Location not supported on this device', 'error');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        map.current?.flyTo({
+          center: [position.coords.longitude, position.coords.latitude],
+          zoom: 15,
+          duration: 1000,
+        });
+        setTimeout(() => setIsLocating(false), 1000);
+      },
+      (err) => {
+        setIsLocating(false);
+        // Surface a clear reason so users know why the button didn't "work"
+        const msg =
+          err.code === err.PERMISSION_DENIED
+            ? 'Location access denied. Enable it in your browser settings.'
+            : err.code === err.POSITION_UNAVAILABLE
+            ? 'Location unavailable — try again in a moment.'
+            : err.code === err.TIMEOUT
+            ? "Couldn't get your location — check GPS / connection."
+            : 'Unable to get your location.';
+        showToast(msg, 'error');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }, [userLocation, isLoaded, showToast]);
 
   // Initialize map
   useEffect(() => {

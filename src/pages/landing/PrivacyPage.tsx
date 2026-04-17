@@ -75,8 +75,8 @@ export default function PrivacyPage() {
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Us</h2>
               <p>
                 Questions about this privacy policy? Email us at{' '}
-                <a href="mailto:privacy@lincc.app" className="text-purple hover:underline">
-                  privacy@lincc.app
+                <a href="mailto:hello@lincc.live" className="text-purple hover:underline">
+                  hello@lincc.live
                 </a>
               </p>
             </div>

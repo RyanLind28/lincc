@@ -78,3 +78,36 @@ export async function getFollowing(userId: string): Promise<FollowProfile[]> {
   if (error || !data) return [];
   return data.map((row: any) => row.followed).filter(Boolean);
 }
+
+/** Set of user IDs the given user currently follows — cheap lookup for UI. */
+export async function getFollowingIds(userId: string): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('follows')
+    .select('followed_id')
+    .eq('follower_id', userId);
+  if (error || !data) return new Set();
+  return new Set(data.map((r: { followed_id: string }) => r.followed_id));
+}
+
+export interface SuggestedUser {
+  id: string;
+  first_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  tags: string[] | null;
+  mutual_count: number;
+}
+
+/**
+ * Friends-of-friends suggestions — people followed by users you follow,
+ * excluding yourself and people you already follow. Sorted by mutual count.
+ * Relies on `suggest_users()` SECURITY DEFINER function (migration 039).
+ */
+export async function getSuggestedUsers(userId: string, limit = 10): Promise<SuggestedUser[]> {
+  const { data, error } = await supabase.rpc('suggest_users', {
+    p_user_id: userId,
+    p_limit: limit,
+  });
+  if (error || !data) return [];
+  return data as SuggestedUser[];
+}

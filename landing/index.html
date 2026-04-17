@@ -500,6 +500,16 @@
             } else {
               successMsg.textContent = "We'll notify you as soon as Lincc is ready.";
             }
+            // Fire-and-forget confirmation email. Silently skipped if the edge
+            // function isn't deployed or RESEND_API_KEY isn't configured.
+            fetch(SUPABASE_URL + '/functions/v1/send-waitlist-email', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ email: body.email, name: body.name })
+            }).catch(function (err) { console.warn('Waitlist email:', err); });
           } else {
             var data = await res.json();
             if (res.status === 409 || (data.code && data.code === '23505')) {

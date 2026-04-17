@@ -23,6 +23,10 @@ export interface ScoredEvent {
     first_name: string;
     avatar_url: string | null;
   };
+  business?: {
+    name: string;
+    logo_url?: string | null;
+  } | null;
   venue_name: string;
   venue_short: string;
   venue_lat: number;
@@ -87,6 +91,7 @@ export function toGridEventData(event: ScoredEvent): GridEventData {
       first_name: event.host.first_name,
       avatar_url: event.host.avatar_url,
     },
+    business: event.business ?? null,
     venue_name: event.venue_name,
     venue_short: event.venue_short,
     distance_km: event.distance_km,

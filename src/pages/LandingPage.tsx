@@ -461,6 +461,23 @@ function WaitlistForm() {
       setStatus('success');
       setEmail('');
       setName('');
+
+      // Fire-and-forget confirmation email. If the edge function isn't
+      // deployed yet or email provider isn't configured, the insert still
+      // succeeds — we just don't send an email.
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (supabaseUrl) {
+        void fetch(`${supabaseUrl}/functions/v1/send-waitlist-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ email, name }),
+        }).catch((err) => {
+          console.warn('Waitlist email send failed:', err);
+        });
+      }
     } catch {
       setErrorMessage('Something went wrong. Please try again.');
       setStatus('error');

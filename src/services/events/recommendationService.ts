@@ -38,16 +38,26 @@ export interface RecommendationOptions {
  * Fetch active events from Supabase
  */
 export async function fetchActiveEvents(audience?: string): Promise<EventWithDetails[]> {
+  // Hide events scheduled too far in the future to keep the feed fresh and
+  // prevent legacy/demo events (e.g. 2027 seed rows) from polluting discovery.
+  // PRD strictly says 24h, but a wider window is useful pre-launch when event
+  // volume is low — 14 days keeps the feed populated without showing stale demos.
+  // Tighten once traffic is higher.
+  const now = new Date();
+  const maxStart = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
   let query = supabase
     .from('events')
     .select(`
       *,
       host:profiles!host_id(*),
       category:categories!category_id(*),
+      business:businesses!business_id(*),
       participant_count:event_participants(count)
     `)
     .eq('status', 'active')
-    .gte('expires_at', new Date().toISOString())
+    .gte('expires_at', now.toISOString())
+    .lte('start_time', maxStart.toISOString())
     .order('start_time', { ascending: true });
 
   // Filter by audience
@@ -228,6 +238,9 @@ function scoreEvents(
         first_name: event.host?.first_name || 'Host',
         avatar_url: event.host?.avatar_url || null,
       },
+      business: event.business
+        ? { name: event.business.name, logo_url: event.business.logo_url }
+        : null,
       audience: event.audience,
       status: event.status,
       score: total,

@@ -3,7 +3,8 @@ import { ArrowLeft, Bell, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 
-// Lincc Logo component using the official brand logo
+// Lincc Logo — just the image. The Link wrapper lives in the Header so the whole
+// center column is a clickable home-link (bigger tap target than the image alone).
 function LinccLogo({ className, size = 'md' }: { className?: string; size?: 'sm' | 'md' | 'lg' }) {
   const heights = {
     sm: 'h-7',
@@ -12,13 +13,11 @@ function LinccLogo({ className, size = 'md' }: { className?: string; size?: 'sm'
   };
 
   return (
-    <Link to="/" className={cn('flex items-center', className)}>
-      <img
-        src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp"
-        alt="Lincc"
-        className={cn(heights[size], 'w-auto')}
-      />
-    </Link>
+    <img
+      src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp"
+      alt="Lincc"
+      className={cn(heights[size], 'w-auto max-w-full object-contain', className)}
+    />
   );
 }
 
@@ -66,9 +65,9 @@ export function Header({
         className
       )}
     >
-      <div className="flex items-center justify-between h-14 px-4">
+      <div className="flex items-center h-14 px-4 gap-2">
         {/* Left side */}
-        <div className="flex items-center gap-2 min-w-[60px]">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {leftContent ? (
             leftContent
           ) : shouldShowBack ? (
@@ -90,8 +89,14 @@ export function Header({
           )}
         </div>
 
-        {/* Center — logo always visible */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+        {/* Center — the whole column is the home-link tap target. flex-1 so it gives way
+            when the right side is dense; overflow-hidden + max-w-full on the image keep
+            things from spilling into the left/right columns. */}
+        <Link
+          to="/"
+          aria-label="Go to home"
+          className="flex-1 h-full flex items-center justify-center gap-2 min-w-0 overflow-hidden hover:opacity-80 transition-opacity"
+        >
           <LinccLogo size={title ? 'sm' : 'md'} />
           {title && (
             <>
@@ -101,10 +106,10 @@ export function Header({
               </h1>
             </>
           )}
-        </div>
+        </Link>
 
         {/* Right side */}
-        <div className="flex items-center gap-1 min-w-[60px] justify-end">
+        <div className="flex items-center gap-1 flex-shrink-0 justify-end">
           {rightContent}
           <Link
             to="/notifications"

@@ -231,7 +231,9 @@ export default function CreateEventPage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = (asDraft = false) => submit(asDraft);
+
+  const submit = async (asDraft: boolean) => {
     if (!user?.id) {
       showToast('Please log in to create an event', 'error');
       return;
@@ -296,14 +298,20 @@ export default function CreateEventPage() {
           cover_image_url: finalCoverImageUrl || undefined,
           allow_dms: allowDms,
           business_id: business?.id,
+          status: asDraft ? 'draft' : 'active',
         },
         user.id
       );
 
       if (result.success && result.data) {
         clearDraft();
-        showToast('Event created successfully!', 'success');
-        navigate(`/event/${result.data.id}`);
+        if (asDraft) {
+          showToast('Draft saved. Publish it anytime from My Events.', 'success');
+          navigate('/my-events');
+        } else {
+          showToast('Event created successfully!', 'success');
+          navigate(`/event/${result.data.id}`);
+        }
       } else {
         showToast(result.error || 'Failed to create event', 'error');
       }
@@ -899,14 +907,25 @@ export default function CreateEventPage() {
               </div>
             </div>
 
-            <GradientButton
-              fullWidth
-              size="lg"
-              onClick={handleSubmit}
-              isLoading={isLoading || isUploading}
-            >
-              {isUploading ? 'Uploading image...' : 'Create Event'}
-            </GradientButton>
+            <div className="space-y-2">
+              <GradientButton
+                fullWidth
+                size="lg"
+                onClick={() => handleSubmit(false)}
+                isLoading={isLoading || isUploading}
+              >
+                {isUploading ? 'Uploading image...' : 'Create Event'}
+              </GradientButton>
+              <GradientButton
+                fullWidth
+                size="lg"
+                variant="outline"
+                onClick={() => handleSubmit(true)}
+                disabled={isLoading || isUploading}
+              >
+                Save as Draft
+              </GradientButton>
+            </div>
           </div>
         )}
       </div>

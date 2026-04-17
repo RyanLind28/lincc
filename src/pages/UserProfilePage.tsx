@@ -259,80 +259,7 @@ export default function UserProfilePage() {
 
   return (
     <div className="min-h-screen bg-background pb-8 max-w-2xl mx-auto">
-      <Header
-        showBack
-        rightContent={
-          !isOwnProfile ? (
-            <div className="flex items-center gap-1">
-              {!isOwnProfile && !blocked && (
-                <>
-                  <button
-                    onClick={handleMessage}
-                    className="p-2 rounded-xl text-text-muted hover:text-coral hover:bg-coral/10 transition-colors"
-                    aria-label="Message"
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={handleFollow}
-                    disabled={socialLoading}
-                    className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                      following
-                        ? 'bg-surface border border-border text-text-muted hover:text-error hover:border-error'
-                        : 'gradient-primary text-white'
-                    }`}
-                  >
-                    {following ? 'Following' : 'Follow'}
-                  </button>
-                </>
-              )}
-              <button
-                onClick={handleShare}
-                className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
-                aria-label="Share profile"
-              >
-                <Share2 className="h-5 w-5" />
-              </button>
-              <div className="relative">
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
-                  aria-label="More options"
-                >
-                  <MoreVertical className="h-5 w-5" />
-                </button>
-                {showMenu && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowMenu(false)}
-                    />
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-xl border border-border shadow-lg z-50 overflow-hidden">
-                      <button
-                        onClick={handleBlock}
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                      >
-                        <Ban className="h-4 w-4" />
-                        {blocked ? 'Unblock user' : 'Block user'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowMenu(false);
-                          setShowReport(true);
-                        }}
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                      >
-                        <ShieldAlert className="h-4 w-4" />
-                        Report user
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : undefined
-        }
-      />
+      <Header showBack />
 
       {/* Profile Header */}
       <div className="px-4 pt-4">
@@ -396,11 +323,77 @@ export default function UserProfilePage() {
           </div>
 
           {/* Action Buttons */}
-          {isOwnProfile && (
+          {isOwnProfile ? (
             <div className="mt-3 flex gap-3">
               <Link to="/profile/edit">
                 <GradientButton>Edit Profile</GradientButton>
               </Link>
+            </div>
+          ) : (
+            <div className="mt-3 flex items-center gap-2">
+              {!blocked && (
+                <>
+                  <button
+                    onClick={handleFollow}
+                    disabled={socialLoading}
+                    className={`flex-1 h-11 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 ${
+                      following
+                        ? 'bg-surface border border-border text-text-muted hover:text-error hover:border-error'
+                        : 'gradient-primary text-white shadow-sm'
+                    }`}
+                  >
+                    {following ? 'Following' : 'Follow'}
+                  </button>
+                  <button
+                    onClick={handleMessage}
+                    className="h-11 px-4 rounded-xl border border-border text-text hover:border-coral hover:text-coral transition-colors flex items-center gap-2 text-sm font-medium"
+                    aria-label="Message"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Message
+                  </button>
+                </>
+              )}
+              <button
+                onClick={handleShare}
+                className="h-11 w-11 rounded-xl border border-border text-text-muted hover:text-text hover:border-text-muted transition-colors flex items-center justify-center flex-shrink-0"
+                aria-label="Share profile"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="h-11 w-11 rounded-xl border border-border text-text-muted hover:text-text hover:border-text-muted transition-colors flex items-center justify-center"
+                  aria-label="More options"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+                {showMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-xl border border-border shadow-lg z-50 overflow-hidden">
+                      <button
+                        onClick={handleBlock}
+                        className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                      >
+                        <Ban className="h-4 w-4" />
+                        {blocked ? 'Unblock user' : 'Block user'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setShowReport(true);
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                      >
+                        <ShieldAlert className="h-4 w-4" />
+                        Report user
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
 

@@ -414,7 +414,8 @@ export default function CreateVoucherPage() {
           <div className="space-y-5">
             {/* Cover image */}
             <div>
-              <label className="block text-sm font-medium text-text mb-2">Cover image (optional)</label>
+              <label className="block text-sm font-medium text-text mb-1">Cover photo</label>
+              <p className="text-xs text-text-muted mb-2">Upload a photo of the product or venue. Optional, but recommended.</p>
               <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100">
                 {coverImageUrl ? (
                   <img

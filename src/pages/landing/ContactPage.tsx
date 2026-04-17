@@ -23,8 +23,8 @@ export default function ContactPage() {
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Email Us</h2>
               <p className="text-gray-600 mb-4">For general inquiries and support</p>
-              <a href="mailto:hello@lincc.app" className="text-purple font-semibold hover:underline">
-                hello@lincc.app
+              <a href="mailto:hello@lincc.live" className="text-purple font-semibold hover:underline">
+                hello@lincc.live
               </a>
             </div>
 

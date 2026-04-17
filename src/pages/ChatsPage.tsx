@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { GradientButton, CategoryIcon, Avatar, ChatListSkeleton } from '../components/ui';
-import { MessageCircle, ChevronRight, Users } from 'lucide-react';
+import { MessageCircle, ChevronRight, Users, Loader2 } from 'lucide-react';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useUserChats } from '../hooks/useEventChat';
 import { useUserDMs } from '../hooks/useDMChat';
 import { useAuth } from '../contexts/AuthContext';
+import { useNow } from '../hooks/useNow';
 import { formatRelativeTime } from '../lib/utils';
+import { ChatStatusPill } from '../components/features/ChatStatusPill';
 
 type ChatTab = 'events' | 'friends';
 
@@ -15,6 +18,13 @@ export default function ChatsPage() {
   const [activeTab, setActiveTab] = useState<ChatTab>('events');
   const { chats, isLoading: eventsLoading, error: eventsError, refresh: refreshEvents } = useUserChats();
   const { conversations, isLoading: dmsLoading, error: dmsError, refresh: refreshDMs } = useUserDMs();
+  const nowMs = useNow();
+
+  const handleRefresh = useCallback(async () => {
+    refresh();
+    await new Promise((r) => setTimeout(r, 600));
+  }, [refresh]);
+  const { pullDistance, isRefreshing, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
 
   const isLoading = activeTab === 'events' ? eventsLoading : dmsLoading;
   const error = activeTab === 'events' ? eventsError : dmsError;
@@ -88,8 +98,21 @@ export default function ChatsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background max-w-3xl mx-auto">
+    <div className="min-h-screen bg-background max-w-3xl mx-auto" {...pullHandlers}>
       <Header showLogo showCreateEvent showNotifications />
+
+      {/* Pull-to-refresh indicator */}
+      {(pullDistance > 0 || isRefreshing) && (
+        <div
+          className="flex items-center justify-center transition-all duration-200 overflow-hidden"
+          style={{ height: pullDistance > 0 ? pullDistance : isRefreshing ? 40 : 0 }}
+        >
+          <Loader2
+            className={`h-5 w-5 text-coral ${isRefreshing ? 'animate-spin' : ''}`}
+            style={{ opacity: Math.min(pullDistance / 60, 1), transform: `rotate(${pullDistance * 3}deg)` }}
+          />
+        </div>
+      )}
 
       <div className="p-4">
         <h1 className="text-2xl font-bold text-text mb-4">Chats</h1>
@@ -122,16 +145,25 @@ export default function ChatsPage() {
                       to={`/event/${event.id}/chat`}
                       className="flex items-center gap-3 p-4 bg-surface rounded-xl border border-border hover:border-coral/50 transition-colors group"
                     >
-                      <div className="relative">
-                        <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center">
-                          <CategoryIcon
-                            icon={event.category?.icon || 'Calendar'}
-                            size="md"
-                            className="text-white"
+                      <div className="relative flex-shrink-0">
+                        {event.cover_image_url ? (
+                          <img
+                            src={event.cover_image_url}
+                            alt={event.title}
+                            loading="lazy"
+                            className="w-14 h-14 rounded-xl object-cover"
                           />
-                        </div>
+                        ) : (
+                          <div className="w-14 h-14 gradient-primary rounded-xl flex items-center justify-center">
+                            <CategoryIcon
+                              icon={event.category?.icon || 'Calendar'}
+                              size="md"
+                              className="text-white"
+                            />
+                          </div>
+                        )}
                         {isHost && (
-                          <span className="absolute -bottom-1 -right-1 bg-coral text-white text-[8px] font-medium px-1 py-0.5 rounded-full">
+                          <span className="absolute -bottom-1 -right-1 bg-coral text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full shadow-sm">
                             Host
                           </span>
                         )}
@@ -154,6 +186,13 @@ export default function ChatsPage() {
                             <span className="italic">No messages yet</span>
                           )}
                         </p>
+                        <div className="mt-1.5">
+                          <ChatStatusPill
+                            startTime={event.start_time}
+                            expiresAt={event.expires_at}
+                            nowMs={nowMs}
+                          />
+                        </div>
                       </div>
                       <ChevronRight className="h-5 w-5 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
                     </Link>
@@ -191,7 +230,8 @@ export default function ChatsPage() {
                     <Avatar
                       src={convo.other_user.avatar_url}
                       name={convo.other_user.first_name}
-                      size="md"
+                      size="lg"
+                      className="flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">

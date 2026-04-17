@@ -3,19 +3,22 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, EventCardMini, VoucherTile, type EventCardEvent } from '../components/ui';
-import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Store, Users } from 'lucide-react';
+import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Store, Users, Sparkles } from 'lucide-react';
 import { calculateAge } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { getFollowerCount, getFollowingCount } from '../services/followService';
 import { getVouchersByBusiness } from '../services/voucherService';
+import { useWaitlistStatus } from '../hooks/useWaitlistStatus';
 import { useBookmarks } from '../hooks/useBookmarks';
 import type { VoucherWithDetails } from '../types';
 
 type EventTab = 'hosting' | 'joined' | 'saved' | 'vouchers';
+type TimeFilter = 'upcoming' | 'past';
 
 export default function ProfilePage() {
   const { profile, user } = useAuth();
   const [activeTab, setActiveTab] = useState<EventTab>('hosting');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
   const [hosting, setHosting] = useState<EventCardEvent[]>([]);
   const [joined, setJoined] = useState<EventCardEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,6 +27,7 @@ export default function ProfilePage() {
   const [businessVouchers, setBusinessVouchers] = useState<VoucherWithDetails[]>([]);
   const [isVouchersLoading, setIsVouchersLoading] = useState(false);
   const { savedEvents, loadSavedEvents, isLoading: isSavedLoading } = useBookmarks();
+  const waitlist = useWaitlistStatus();
 
   // Load saved events when tab switches to 'saved'
   useEffect(() => {
@@ -50,7 +54,8 @@ export default function ProfilePage() {
     async function fetchUserEvents() {
       setIsLoading(true);
 
-      // Fetch events hosted by user
+      // Fetch all events hosted by user (both upcoming and past — split client-side
+      // so the Upcoming/Past pill can toggle without refetching).
       const { data: hostedData } = await supabase
         .from('events')
         .select(`
@@ -59,9 +64,8 @@ export default function ProfilePage() {
           host:profiles!host_id(first_name, avatar_url)
         `)
         .eq('host_id', userId)
-        .in('status', ['active', 'full'])
-        .gte('start_time', new Date().toISOString())
-        .order('start_time', { ascending: true });
+        .in('status', ['active', 'full', 'expired'])
+        .order('start_time', { ascending: false });
 
       // Fetch events user has joined (approved participant)
       const { data: joinedData } = await supabase
@@ -130,9 +134,22 @@ export default function ProfilePage() {
     host: e.host as { first_name: string; avatar_url?: string | null },
   }));
 
+  // Split hosted + joined into upcoming/past using start_time relative to now.
+  // Saved/vouchers tabs don't have a time filter — they show all.
+  const nowMs = Date.now();
+  const isUpcoming = (e: EventCardEvent) => new Date(e.start_time).getTime() >= nowMs;
+  const showTimeFilter = activeTab === 'hosting' || activeTab === 'joined';
+
+  const filteredHosting = timeFilter === 'upcoming'
+    ? hosting.filter(isUpcoming)
+    : hosting.filter((e) => !isUpcoming(e));
+  const filteredJoined = timeFilter === 'upcoming'
+    ? joined.filter(isUpcoming)
+    : joined.filter((e) => !isUpcoming(e));
+
   const activeEvents =
-    activeTab === 'hosting' ? hosting :
-    activeTab === 'joined' ? joined :
+    activeTab === 'hosting' ? filteredHosting :
+    activeTab === 'joined' ? filteredJoined :
     savedEventCards;
 
   return (
@@ -186,6 +203,14 @@ export default function ProfilePage() {
               {/* Bio */}
               {profile.bio && (
                 <p className="text-text-muted text-sm mt-1">{profile.bio}</p>
+              )}
+
+              {/* Waitlist early-access badge — only shown if the user joined the waitlist pre-launch */}
+              {waitlist.onWaitlist && (
+                <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-gradient-to-r from-coral/10 to-purple/10 text-purple text-xs font-medium">
+                  <Sparkles className="h-3 w-3" />
+                  Early access member
+                </div>
               )}
 
               {/* Interest tags — horizontal scroll */}
@@ -303,6 +328,32 @@ export default function ProfilePage() {
           </button>
         </div>
 
+        {/* Upcoming / Past pill toggle — only on Hosting and Joined tabs */}
+        {showTimeFilter && (
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setTimeFilter('upcoming')}
+              className={`flex-1 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                timeFilter === 'upcoming'
+                  ? 'bg-coral/10 text-coral border border-coral/30'
+                  : 'bg-surface border border-border text-text-muted hover:text-text'
+              }`}
+            >
+              Upcoming
+            </button>
+            <button
+              onClick={() => setTimeFilter('past')}
+              className={`flex-1 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                timeFilter === 'past'
+                  ? 'bg-coral/10 text-coral border border-coral/30'
+                  : 'bg-surface border border-border text-text-muted hover:text-text'
+              }`}
+            >
+              Past
+            </button>
+          </div>
+        )}
+
         {/* Event/Voucher list */}
         <div className="space-y-3">
           {activeTab === 'vouchers' ? (
@@ -351,17 +402,25 @@ export default function ProfilePage() {
             ))
           ) : activeTab === 'hosting' ? (
             <EmptyState
-              title="No events yet"
-              description="Create your first event and meet new people!"
-              actionLabel="Create Event"
-              actionHref="/event/new"
+              title={timeFilter === 'past' ? 'No past events' : 'No events yet'}
+              description={
+                timeFilter === 'past'
+                  ? "Events you host will appear here once they're over."
+                  : 'Create your first event and meet new people!'
+              }
+              actionLabel={timeFilter === 'past' ? undefined : 'Create Event'}
+              actionHref={timeFilter === 'past' ? undefined : '/event/new'}
             />
           ) : activeTab === 'joined' ? (
             <EmptyState
-              title="No events joined"
-              description="Browse events nearby and join one!"
-              actionLabel="Browse Events"
-              actionHref="/"
+              title={timeFilter === 'past' ? 'No past events' : 'No events joined'}
+              description={
+                timeFilter === 'past'
+                  ? "Events you've been to will show up here."
+                  : 'Browse events nearby and join one!'
+              }
+              actionLabel={timeFilter === 'past' ? undefined : 'Browse Events'}
+              actionHref={timeFilter === 'past' ? undefined : '/'}
             />
           ) : (
             <EmptyState
@@ -386,8 +445,8 @@ function EmptyState({
 }: {
   title: string;
   description: string;
-  actionLabel: string;
-  actionHref: string;
+  actionLabel?: string;
+  actionHref?: string;
 }) {
   return (
     <div className="text-center py-8">
@@ -396,9 +455,11 @@ function EmptyState({
       </div>
       <h3 className="font-semibold text-text mb-1">{title}</h3>
       <p className="text-sm text-text-muted mb-4">{description}</p>
-      <Link to={actionHref}>
-        <GradientButton size="sm">{actionLabel}</GradientButton>
-      </Link>
+      {actionLabel && actionHref && (
+        <Link to={actionHref}>
+          <GradientButton size="sm">{actionLabel}</GradientButton>
+        </Link>
+      )}
     </div>
   );
 }

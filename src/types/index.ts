@@ -28,6 +28,7 @@ export interface Profile {
   business_description: string | null;
   business_address: string | null;
   business_opening_hours: BusinessOpeningHours | null;
+  welcomed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -135,7 +136,7 @@ export interface Category {
 // Event Types
 export type JoinMode = 'request' | 'auto';
 export type Audience = 'everyone' | 'women' | 'men';
-export type EventStatus = 'active' | 'full' | 'expired' | 'cancelled' | 'deleted';
+export type EventStatus = 'draft' | 'active' | 'full' | 'expired' | 'cancelled' | 'deleted';
 
 export interface Event {
   id: string;
@@ -165,6 +166,7 @@ export interface EventWithDetails extends Event {
   host: Profile;
   category: Category;
   participant_count: number;
+  business?: Business | null;
 }
 
 // Participant Types

@@ -63,16 +63,22 @@ export async function fetchProductionEvents(
   return cached(cacheKey, async () => {
     const statuses = options.status || ['active'];
 
+    // 14-day upcoming-window cap — see recommendationService for rationale.
+    const now = new Date();
+    const maxStart = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
     let query = supabase
       .from('events')
       .select(`
         *,
         host:profiles!host_id(*),
         category:categories!category_id(*),
+        business:businesses!business_id(*),
         participant_count:event_participants(count)
       `)
       .in('status', statuses)
-      .gte('expires_at', new Date().toISOString())
+      .gte('expires_at', now.toISOString())
+      .lte('start_time', maxStart.toISOString())
       .order('start_time', { ascending: true });
 
     // Filter by audience
@@ -134,6 +140,7 @@ export interface CreateEventData {
   cover_image_url?: string;
   allow_dms?: boolean;
   business_id?: string;
+  status?: 'draft' | 'active';
 }
 
 /**
@@ -199,7 +206,7 @@ export async function createEvent(
         cover_image_url: eventData.cover_image_url || null,
         allow_dms: eventData.allow_dms ?? true,
         business_id: eventData.business_id || null,
-        status: 'active',
+        status: eventData.status ?? 'active',
         expires_at: expiresAt.toISOString(),
       })
       .select()
@@ -272,6 +279,21 @@ export async function updateEvent(
       error: err instanceof Error ? err.message : 'Failed to update event',
     };
   }
+}
+
+/**
+ * Publish a draft event — sets status from 'draft' to 'active'
+ */
+export async function publishDraft(eventId: string): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('events')
+    .update({ status: 'active' })
+    .eq('id', eventId)
+    .eq('status', 'draft');
+
+  if (error) return { success: false, error: error.message };
+  invalidatePrefix('events:');
+  return { success: true };
 }
 
 /**

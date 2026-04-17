@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { GradientButton, Spinner, CategoryIcon, Avatar, Badge } from '../components/ui';
-import { Calendar, Plus, Clock, MapPin, Users } from 'lucide-react';
+import { GradientButton, Spinner, CategoryIcon, Badge } from '../components/ui';
+import { Calendar, Plus, Clock, MapPin, Users, Send, Trash2, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { publishDraft, deleteEvent } from '../services/events';
 import type { EventWithDetails } from '../types';
 
-type Tab = 'hosting' | 'joined';
+type Tab = 'hosting' | 'joined' | 'drafts';
 
 interface MyEvent extends EventWithDetails {
   participant_status?: string;
@@ -35,131 +37,251 @@ function EventRow({ event, showStatus }: { event: MyEvent; showStatus?: boolean 
   const participantCount = typeof event.participant_count === 'number'
     ? event.participant_count
     : (event.participant_count as any)?.[0]?.count || 0;
+  const totalSpots = event.capacity + 1; // +1 for host
+  const filledSpots = Math.min(participantCount + 1, totalSpots);
+  const coverUrl = (event as MyEvent & { cover_image_url?: string | null }).cover_image_url;
 
   return (
     <Link
       to={`/event/${event.id}`}
-      className="flex gap-3 p-4 bg-surface rounded-2xl border border-border hover:shadow-md transition-all group"
+      className="group flex items-center gap-3 p-3 bg-surface rounded-2xl border border-border hover:border-coral/50 hover:shadow-sm transition-all"
     >
-      {/* Category icon */}
-      <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
-        <CategoryIcon icon={event.category?.icon || 'Calendar'} size="lg" className="text-white" />
+      {/* Cover image — matches chat row / profile card treatment */}
+      <div className="relative flex-shrink-0">
+        {coverUrl ? (
+          <img
+            src={coverUrl}
+            alt={event.title}
+            loading="lazy"
+            className="w-16 h-16 rounded-xl object-cover"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center">
+            <CategoryIcon icon={event.category?.icon || 'Calendar'} size="lg" className="text-white" />
+          </div>
+        )}
       </div>
 
       {/* Details */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-text text-sm truncate group-hover:text-coral transition-colors">
+          <h3 className="font-semibold text-text truncate group-hover:text-coral transition-colors">
             {event.title}
           </h3>
           {showStatus && event.participant_status === 'pending' && (
-            <Badge variant="secondary">Pending</Badge>
+            <Badge variant="secondary" className="flex-shrink-0">Pending</Badge>
           )}
           {event.status === 'cancelled' && (
-            <Badge variant="outline">Cancelled</Badge>
+            <Badge variant="outline" className="flex-shrink-0">Cancelled</Badge>
           )}
         </div>
 
-        <div className="flex items-center gap-3 mt-1 text-xs text-text-muted">
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3 text-coral" />
-            <span className="text-coral font-medium">{formatEventTime(event.start_time)}</span>
+        <div className="flex items-center gap-2 text-xs text-text-muted mt-1 min-w-0">
+          <span className="flex items-center gap-1 flex-shrink-0 text-coral font-medium">
+            <Clock className="h-3 w-3" />
+            {formatEventTime(event.start_time)}
           </span>
-          <span className="flex items-center gap-1 truncate">
-            <MapPin className="h-3 w-3 flex-shrink-0" />
-            <span className="truncate">{event.venue_name}</span>
-          </span>
+          {event.venue_name && (
+            <>
+              <span className="text-text-light">·</span>
+              <span className="flex items-center gap-1 min-w-0">
+                <MapPin className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{event.venue_name}</span>
+              </span>
+            </>
+          )}
         </div>
 
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-1.5">
-            <Avatar
-              src={event.host?.avatar_url}
-              name={event.host?.first_name || 'Host'}
-              size="xs"
-            />
-            <span className="text-xs text-text-muted">{event.host?.first_name}</span>
-          </div>
-          <span className="flex items-center gap-1 text-xs text-text-muted">
-            <Users className="h-3 w-3" />
-            {participantCount + 1}/{event.capacity + 1}
-          </span>
+        <div className="flex items-center gap-1 text-xs text-text-muted mt-0.5">
+          <Users className="h-3 w-3" />
+          <span>{filledSpots}/{totalSpots} going</span>
         </div>
       </div>
+
+      <ChevronRight className="h-4 w-4 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
     </Link>
+  );
+}
+
+function DraftRow({
+  event,
+  isPending,
+  onPublish,
+  onDelete,
+}: {
+  event: MyEvent;
+  isPending: boolean;
+  onPublish: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="p-4 bg-surface rounded-2xl border border-border">
+      <div className="flex gap-3">
+        <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+          <CategoryIcon icon={event.category?.icon || 'Calendar'} size="lg" className="text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold text-text text-sm truncate">{event.title}</h3>
+            <Badge variant="outline">Draft</Badge>
+          </div>
+          <div className="flex items-center gap-3 mt-1 text-xs text-text-muted">
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              <span>{new Date(event.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+            </span>
+            <span className="flex items-center gap-1 truncate">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{event.venue_name}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-3">
+        <GradientButton
+          size="sm"
+          fullWidth
+          onClick={onPublish}
+          isLoading={isPending}
+          leftIcon={<Send className="h-4 w-4" />}
+        >
+          Publish
+        </GradientButton>
+        <button
+          onClick={onDelete}
+          disabled={isPending}
+          className="px-3 rounded-xl border border-border text-text-muted hover:text-error hover:border-error transition-colors disabled:opacity-50"
+          aria-label="Delete draft"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 }
 
 export default function MyEventsPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('hosting');
   const [hostingEvents, setHostingEvents] = useState<MyEvent[]>([]);
   const [joinedEvents, setJoinedEvents] = useState<MyEvent[]>([]);
+  const [draftEvents, setDraftEvents] = useState<MyEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchEvents = async () => {
     if (!user) return;
+    setIsLoading(true);
 
-    const fetchEvents = async () => {
-      setIsLoading(true);
+    // Fetch upcoming events hosted by user (exclude drafts + expired)
+    const { data: hosted } = await supabase
+      .from('events')
+      .select(`
+        *,
+        host:profiles!host_id(*),
+        category:categories!category_id(*),
+        participant_count:event_participants(count)
+      `)
+      .eq('host_id', user.id)
+      .in('status', ['active', 'full'])
+      .gte('expires_at', new Date().toISOString())
+      .order('start_time', { ascending: true });
 
-      // Fetch events hosted by user
-      const { data: hosted } = await supabase
-        .from('events')
-        .select(`
+    // Fetch the user's own drafts
+    const { data: drafts } = await supabase
+      .from('events')
+      .select(`
+        *,
+        host:profiles!host_id(*),
+        category:categories!category_id(*)
+      `)
+      .eq('host_id', user.id)
+      .eq('status', 'draft')
+      .order('created_at', { ascending: false });
+
+    // Fetch events user has joined
+    const { data: participations } = await supabase
+      .from('event_participants')
+      .select(`
+        status,
+        event:events!event_id(
           *,
           host:profiles!host_id(*),
           category:categories!category_id(*),
           participant_count:event_participants(count)
-        `)
-        .eq('host_id', user.id)
-        .order('start_time', { ascending: false });
+        )
+      `)
+      .eq('user_id', user.id)
+      .in('status', ['approved', 'pending']);
 
-      // Fetch events user has joined
-      const { data: participations } = await supabase
-        .from('event_participants')
-        .select(`
-          status,
-          event:events!event_id(
-            *,
-            host:profiles!host_id(*),
-            category:categories!category_id(*),
-            participant_count:event_participants(count)
-          )
-        `)
-        .eq('user_id', user.id)
-        .in('status', ['approved', 'pending']);
+    setHostingEvents(
+      (hosted || []).map((e) => ({
+        ...e,
+        participant_count: e.participant_count?.[0]?.count || 0,
+      })) as MyEvent[]
+    );
 
-      setHostingEvents(
-        (hosted || []).map((e) => ({
-          ...e,
-          participant_count: e.participant_count?.[0]?.count || 0,
-        })) as MyEvent[]
-      );
+    setDraftEvents((drafts || []) as MyEvent[]);
 
-      setJoinedEvents(
-        (participations || [])
-          .filter((p) => p.event)
-          .map((p) => {
-            const evt = p.event as any;
-            return {
-              ...evt,
-              participant_count: evt.participant_count?.[0]?.count || 0,
-              participant_status: p.status,
-            };
-          })
-          .sort((a: MyEvent, b: MyEvent) =>
-            new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
-          ) as MyEvent[]
-      );
+    const nowMs = Date.now();
+    setJoinedEvents(
+      (participations || [])
+        .filter((p) => p.event)
+        .map((p) => {
+          const evt = p.event as any;
+          return {
+            ...evt,
+            participant_count: evt.participant_count?.[0]?.count || 0,
+            participant_status: p.status,
+          };
+        })
+        .filter((e: MyEvent) =>
+          ['active', 'full'].includes(e.status) &&
+          new Date(e.expires_at ?? e.start_time).getTime() >= nowMs
+        )
+        .sort((a: MyEvent, b: MyEvent) =>
+          new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+        ) as MyEvent[]
+    );
 
-      setIsLoading(false);
-    };
+    setIsLoading(false);
+  };
 
+  useEffect(() => {
     fetchEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const events = activeTab === 'hosting' ? hostingEvents : joinedEvents;
+  const handlePublishDraft = async (eventId: string) => {
+    setPendingActionId(eventId);
+    const result = await publishDraft(eventId);
+    setPendingActionId(null);
+    if (result.success) {
+      showToast('Event published!', 'success');
+      fetchEvents();
+    } else {
+      showToast(result.error || 'Failed to publish draft', 'error');
+    }
+  };
+
+  const handleDeleteDraft = async (eventId: string) => {
+    if (!confirm('Delete this draft? This cannot be undone.')) return;
+    setPendingActionId(eventId);
+    const result = await deleteEvent(eventId);
+    setPendingActionId(null);
+    if (result.success) {
+      showToast('Draft deleted', 'info');
+      fetchEvents();
+    } else {
+      showToast(result.error || 'Failed to delete draft', 'error');
+    }
+  };
+
+  const events =
+    activeTab === 'hosting' ? hostingEvents :
+    activeTab === 'joined' ? joinedEvents :
+    draftEvents;
   const isEmpty = !isLoading && events.length === 0;
 
   return (
@@ -206,6 +328,25 @@ export default function MyEventsPage() {
             <div className="absolute bottom-0 left-0 right-0 h-0.5 gradient-primary" />
           )}
         </button>
+        <button
+          onClick={() => setActiveTab('drafts')}
+          className={cn(
+            'flex-1 py-3 text-sm font-medium transition-colors relative',
+            activeTab === 'drafts'
+              ? 'text-coral'
+              : 'text-text-muted hover:text-text'
+          )}
+        >
+          Drafts
+          {draftEvents.length > 0 && (
+            <span className="ml-1.5 text-xs bg-coral/10 text-coral px-1.5 py-0.5 rounded-full">
+              {draftEvents.length}
+            </span>
+          )}
+          {activeTab === 'drafts' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 gradient-primary" />
+          )}
+        </button>
       </div>
 
       {/* Content */}
@@ -220,28 +361,40 @@ export default function MyEventsPage() {
               <Calendar className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-xl font-semibold text-text mb-2">
-              {activeTab === 'hosting' ? 'No events hosted' : 'No events joined'}
+              {activeTab === 'hosting' ? 'No events hosted' : activeTab === 'joined' ? 'No events joined' : 'No drafts'}
             </h2>
             <p className="text-text-muted text-center max-w-xs mb-6">
               {activeTab === 'hosting'
                 ? 'Create an event to start connecting with others.'
-                : "Browse events to find something you'd like to join."}
+                : activeTab === 'joined'
+                ? "Browse events to find something you'd like to join."
+                : 'Save an event as a draft to finish later.'}
             </p>
-            <Link to={activeTab === 'hosting' ? '/event/new' : '/'}>
-              <GradientButton leftIcon={activeTab === 'hosting' ? <Plus className="h-4 w-4" /> : undefined}>
-                {activeTab === 'hosting' ? 'Create Event' : 'Browse Events'}
+            <Link to={activeTab === 'joined' ? '/' : '/event/new'}>
+              <GradientButton leftIcon={activeTab !== 'joined' ? <Plus className="h-4 w-4" /> : undefined}>
+                {activeTab === 'joined' ? 'Browse Events' : 'Create Event'}
               </GradientButton>
             </Link>
           </div>
         ) : (
           <div className="space-y-3">
-            {events.map((event) => (
-              <EventRow
-                key={event.id}
-                event={event}
-                showStatus={activeTab === 'joined'}
-              />
-            ))}
+            {activeTab === 'drafts'
+              ? draftEvents.map((event) => (
+                  <DraftRow
+                    key={event.id}
+                    event={event}
+                    isPending={pendingActionId === event.id}
+                    onPublish={() => handlePublishDraft(event.id)}
+                    onDelete={() => handleDeleteDraft(event.id)}
+                  />
+                ))
+              : events.map((event) => (
+                  <EventRow
+                    key={event.id}
+                    event={event}
+                    showStatus={activeTab === 'joined'}
+                  />
+                ))}
           </div>
         )}
       </div>

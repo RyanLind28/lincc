@@ -44,6 +44,7 @@ const MOCK_PROFILE: Profile = {
   business_description: null,
   business_address: null,
   business_opening_hours: null,
+  welcomed_at: new Date().toISOString(),
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -53,12 +54,14 @@ const log = (...args: unknown[]) => { if (DEV_MODE) console.log('[Auth]', ...arg
 
 function checkProfileComplete(profile: Profile | null): boolean {
   if (!profile) return false;
+  // Avatar is optional — users see a default initial-based avatar via the Avatar
+  // component's name fallback if they skip it. The onboarding avatar step stays
+  // visible (with a Skip button) so users who want to upload still can.
   return (
     !!profile.first_name?.trim() &&
     !!profile.dob?.trim() &&
     (profile.gender === 'female' || profile.gender === 'male') &&
-    Array.isArray(profile.tags) && profile.tags.length >= 1 &&
-    !!profile.avatar_url?.trim()
+    Array.isArray(profile.tags) && profile.tags.length >= 1
   );
 }
 
@@ -69,9 +72,11 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isProfileComplete: boolean;
-  signUp: (email: string, password: string, options?: { isBusiness?: boolean }) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, options?: { isBusiness?: boolean; termsAccepted?: boolean; ageConfirmed?: boolean }) => Promise<{ error: Error | null; alreadyExists?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
+  signInWithProvider: (provider: 'google' | 'apple' | 'facebook') => Promise<{ error: Error | null }>;
+  resendConfirmation: (email: string) => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -161,20 +166,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // User clicked the password reset link in their email — redirect to reset page
         navigate('/reset-password');
       } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        // Check email verification — if not confirmed, sign out immediately
-        // (Magic link logins auto-verify, so this only catches unverified email/password signups)
-        if (session?.user && !session.user.email_confirmed_at) {
-          log('Email not verified, signing out');
-          setTimeout(() => {
-            supabase.auth.signOut().then(() => {
-              window.dispatchEvent(new CustomEvent('lincc:toast', {
-                detail: { message: 'Please verify your email first', type: 'error' },
-              }));
-            });
-          }, 0);
-          return;
-        }
-        // User just signed in — ensure loading stays true until Effect 2 fetches profile.
+        // Note: we don't check email_confirmed_at here. Supabase enforces confirmation
+        // at signInWithPassword (returns "Email not confirmed" error when the setting is on),
+        // and the session.user object from a manual setSession() doesn't include that field
+        // (it's not in the JWT) — checking it would spuriously sign out users who just
+        // clicked the confirm-email link.
         setProfile(null);
         setIsLoading(true);
       }
@@ -250,6 +246,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: profileData?.first_name,
         terms: !!profileData?.terms_accepted_at,
       });
+
+      // Fire-and-forget welcome email for first-time confirmed users. The Edge
+      // Function is idempotent (checks welcomed_at + requires email_confirmed_at),
+      // so calling it repeatedly is safe — stops silently after the first send.
+      // Explicitly fetch the session so we send the user's access token, not the
+      // anon key fallback that .invoke() uses when session() returns null.
+      if (profileData && !profileData.welcomed_at && user.email_confirmed_at) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!session) return;
+          supabase.functions.invoke('send-welcome-email', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).catch((err) => log('Welcome email invoke failed:', err));
+        });
+      }
     });
 
     return () => {
@@ -257,16 +267,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user, fetchProfile]);
 
-  const signUp = async (email: string, password: string, options?: { isBusiness?: boolean }) => {
+  const signUp = async (email: string, password: string, options?: { isBusiness?: boolean; termsAccepted?: boolean; ageConfirmed?: boolean }) => {
     if (DEV_MODE) return { error: null };
     log('signUp:', email);
-    const { error } = await supabase.auth.signUp({
+    const metadata: Record<string, unknown> = {};
+    if (options?.isBusiness) metadata.is_business = true;
+    if (options?.termsAccepted) metadata.terms_accepted_at = new Date().toISOString();
+    if (options?.ageConfirmed) metadata.age_confirmed = true;
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: options?.isBusiness ? { data: { is_business: true } } : undefined,
+      options: Object.keys(metadata).length ? { data: metadata } : undefined,
     });
-    if (error) log('signUp error:', error.message);
-    return { error: error ? new Error(error.message) : null };
+    if (error) {
+      log('signUp error:', error.message);
+      return { error: new Error(error.message) };
+    }
+    // Supabase returns success with empty identities[] when the email is already registered
+    // (anti-enumeration). Detect this and surface a clear error.
+    if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+      log('signUp: email already registered');
+      return {
+        error: new Error('This email is already registered. Please sign in instead.'),
+        alreadyExists: true,
+      };
+    }
+    return { error: null };
   };
 
   const signIn = async (email: string, password: string) => {
@@ -285,6 +311,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: { emailRedirectTo: `${window.location.origin}/` },
     });
     if (error) log('magicLink error:', error.message);
+    return { error: error ? new Error(error.message) : null };
+  };
+
+  const signInWithProvider = async (provider: 'google' | 'apple' | 'facebook') => {
+    if (DEV_MODE) return { error: null };
+    log('signInWithProvider:', provider);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+    if (error) log('signInWithProvider error:', error.message);
+    return { error: error ? new Error(error.message) : null };
+  };
+
+  const resendConfirmation = async (email: string) => {
+    if (DEV_MODE) return { error: null };
+    log('resendConfirmation:', email);
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (error) log('resendConfirmation error:', error.message);
     return { error: error ? new Error(error.message) : null };
   };
 
@@ -325,6 +370,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signIn,
     signInWithMagicLink,
+    signInWithProvider,
+    resendConfirmation,
     resetPassword,
     updatePassword,
     signOut,

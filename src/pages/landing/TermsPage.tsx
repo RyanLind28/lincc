@@ -80,8 +80,8 @@ export default function TermsPage() {
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact</h2>
               <p>
                 Questions about these terms? Email us at{' '}
-                <a href="mailto:legal@lincc.app" className="text-purple hover:underline">
-                  legal@lincc.app
+                <a href="mailto:hello@lincc.live" className="text-purple hover:underline">
+                  hello@lincc.live
                 </a>
               </p>
             </div>

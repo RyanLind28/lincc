@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Clock, MapPin, Bookmark } from 'lucide-react';
+import { Clock, MapPin, Bookmark, Users, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Avatar } from './Avatar';
 import { GradientButton } from './GradientButton';
@@ -18,6 +18,10 @@ export interface EventCardEvent {
     age?: number;
     avatar_url?: string | null;
   };
+  business?: {
+    name: string;
+    logo_url?: string | null;
+  } | null;
   venue_name: string;
   distance_km?: number;
   start_time: string;
@@ -124,16 +128,20 @@ export function EventCard({
           </div>
         </div>
 
-        {/* Host info */}
+        {/* Host info — business name takes precedence when the event is posted by a business */}
         <div className="flex items-center gap-2 mb-3">
           <Avatar
-            src={event.host.avatar_url}
-            name={event.host.first_name}
+            src={event.business?.logo_url ?? event.host.avatar_url}
+            name={event.business?.name ?? event.host.first_name}
             size="sm"
           />
           <span className="text-sm text-text">
-            {event.host.first_name}
-            {event.host.age && `, ${event.host.age}`}
+            {event.business ? event.business.name : (
+              <>
+                {event.host.first_name}
+                {event.host.age && `, ${event.host.age}`}
+              </>
+            )}
           </span>
         </div>
 
@@ -180,32 +188,70 @@ export function EventCard({
   );
 }
 
-// Mini version for profile page
+// Compact list-row card used in profile tabs (Hosting / Joined / Saved / Past).
+// Styled to match the ChatsPage row for visual consistency.
 export function EventCardMini({ event, className }: { event: EventCardEvent; className?: string }) {
+  const isPast = new Date(event.start_time).getTime() < Date.now();
+  const totalSpots = event.capacity + 1; // +1 for host
+  const filledSpots = Math.min(event.participant_count + 1, totalSpots);
+
   return (
     <Link
       to={`/event/${event.id}`}
       className={cn(
-        'flex items-center gap-3 p-3 bg-surface rounded-xl border border-border hover:border-coral transition-colors',
+        'group flex items-center gap-3 p-3 bg-surface rounded-2xl border border-border hover:border-coral/50 hover:shadow-sm transition-all',
+        isPast && 'opacity-75',
         className
       )}
     >
-      {event.cover_image_url ? (
-        <img
-          src={event.cover_image_url}
-          alt={event.title}
-          loading="lazy"
-          className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-        />
-      ) : (
-        <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
-          <CategoryIcon icon={event.category.icon} size="md" className="text-white" />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-text text-sm truncate">{event.title}</h4>
-        <p className="text-xs text-text-muted">{formatRelativeTime(event.start_time)}</p>
+      {/* Cover image — large, prominent (matches chat row cover treatment) */}
+      <div className="relative flex-shrink-0">
+        {event.cover_image_url ? (
+          <img
+            src={event.cover_image_url}
+            alt={event.title}
+            loading="lazy"
+            className="w-16 h-16 rounded-xl object-cover"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center">
+            <CategoryIcon icon={event.category.icon} size="lg" className="text-white" />
+          </div>
+        )}
+        {isPast && (
+          <span className="absolute -top-1 -right-1 text-[9px] font-semibold text-white bg-black/70 px-1.5 py-0.5 rounded-full shadow-sm">
+            Past
+          </span>
+        )}
       </div>
+
+      {/* Title + meta row */}
+      <div className="flex-1 min-w-0">
+        <h4 className="font-semibold text-text truncate group-hover:text-coral transition-colors">
+          {event.title}
+        </h4>
+        <div className="flex items-center gap-2 text-xs text-text-muted mt-1 min-w-0">
+          <span className="flex items-center gap-1 flex-shrink-0 text-coral font-medium">
+            <Clock className="h-3 w-3" />
+            {formatRelativeTime(event.start_time)}
+          </span>
+          {event.venue_name && (
+            <>
+              <span className="text-text-light">·</span>
+              <span className="flex items-center gap-1 min-w-0">
+                <MapPin className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{event.venue_name}</span>
+              </span>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-1 text-xs text-text-muted mt-0.5">
+          <Users className="h-3 w-3" />
+          <span>{filledSpots}/{totalSpots} going</span>
+        </div>
+      </div>
+
+      <ChevronRight className="h-4 w-4 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
     </Link>
   );
 }

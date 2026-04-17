@@ -18,6 +18,10 @@ export interface GridEventData {
     first_name: string;
     avatar_url?: string | null;
   };
+  business?: {
+    name: string;
+    logo_url?: string | null;
+  } | null;
   venue_name: string;
   venue_short?: string; // e.g., "Shoreditch" or "Central London"
   distance_km?: number;
@@ -183,11 +187,11 @@ function EventCardTile({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Avatar
-              src={event.host.avatar_url}
-              name={event.host.first_name}
+              src={event.business?.logo_url ?? event.host.avatar_url}
+              name={event.business?.name ?? event.host.first_name}
               size="xs"
             />
-            <span className="text-xs text-text-muted">{event.host.first_name}</span>
+            <span className="text-xs text-text-muted truncate">{event.business?.name ?? event.host.first_name}</span>
           </div>
           <CapacityDots filled={event.participant_count + 1} total={event.capacity + 1} />
         </div>

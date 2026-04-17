@@ -102,10 +102,8 @@ export default function OnboardingPage() {
   const validateStep = () => {
     switch (step) {
       case 1:
-        if (!avatarUrl) {
-          showToast('Please upload a photo', 'error');
-          return false;
-        }
+        // Avatar is optional — the Avatar component renders initials from the user's
+        // first name when no photo is set.
         return true;
       case 2: {
         if (!firstName.trim()) {
@@ -239,13 +237,13 @@ export default function OnboardingPage() {
             <div className="text-center">
               <h1 className="text-2xl font-bold gradient-text mb-2">Add a photo</h1>
               <p className="text-text-muted mb-8">
-                Help others recognize you by adding a clear photo of yourself.
+                Help others recognize you — or skip this step to use your initials.
               </p>
 
               <div className="flex flex-col items-center gap-4">
                 <label className="cursor-pointer">
                   <div className="relative">
-                    <Avatar src={avatarUrl} size="xl" />
+                    <Avatar src={avatarUrl} name={firstName || 'You'} size="xl" />
                     <div className="absolute bottom-0 right-0 w-8 h-8 gradient-primary rounded-full flex items-center justify-center shadow-md">
                       <Camera className="h-4 w-4 text-white" />
                     </div>
@@ -258,7 +256,7 @@ export default function OnboardingPage() {
                   />
                 </label>
                 <p className="text-sm text-text-muted">
-                  Tap to upload (max 10MB)
+                  Tap to upload (max 10MB). Optional — you can always add one later.
                 </p>
               </div>
             </div>

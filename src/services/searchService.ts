@@ -43,11 +43,14 @@ export async function searchEvents(query: string, limit = 20): Promise<SearchRes
 async function fallbackSearch(query: string, limit: number): Promise<SearchResult[]> {
   const searchTerm = `%${query.trim().replace(/[,.()\[\]]/g, '')}%`;
 
+  const now = new Date();
+  const maxStart = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   const { data, error } = await supabase
     .from('events')
     .select('id, title, venue_name, category:categories!category_id(name)')
     .eq('status', 'active')
-    .gte('expires_at', new Date().toISOString())
+    .gte('expires_at', now.toISOString())
+    .lte('start_time', maxStart.toISOString())
     .or(`title.ilike.${searchTerm},venue_name.ilike.${searchTerm},description.ilike.${searchTerm}`)
     .limit(limit);
 
@@ -73,11 +76,14 @@ export async function getSearchSuggestions(query: string): Promise<string[]> {
 
   const searchTerm = `%${query.trim().replace(/[,.()\[\]]/g, '')}%`;
 
+  const nowIso = new Date().toISOString();
+  const maxStartIso = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from('events')
     .select('title, venue_name')
     .eq('status', 'active')
-    .gte('expires_at', new Date().toISOString())
+    .gte('expires_at', nowIso)
+    .lte('start_time', maxStartIso)
     .or(`title.ilike.${searchTerm},venue_name.ilike.${searchTerm}`)
     .limit(6);
 
