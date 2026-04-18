@@ -237,7 +237,7 @@ export default function OnboardingPage() {
             <div className="text-center">
               <h1 className="text-2xl font-bold gradient-text mb-2">Add a photo</h1>
               <p className="text-text-muted mb-8">
-                Help others recognize you — or skip this step to use your initials.
+                Help others recognise you, or skip to use your initials.
               </p>
 
               <div className="flex flex-col items-center gap-4">
@@ -256,7 +256,7 @@ export default function OnboardingPage() {
                   />
                 </label>
                 <p className="text-sm text-text-muted">
-                  Tap to upload (max 10MB). Optional — you can always add one later.
+                  Tap to upload (max 10MB). Optional, you can add one later.
                 </p>
               </div>
             </div>

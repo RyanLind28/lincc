@@ -2,6 +2,9 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Bell, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
+import { OfflineBanner } from '../pwa/OfflineBanner';
+import { UpdateNotification } from '../pwa/UpdateNotification';
+import { AnnouncementBanner } from '../ui/AnnouncementBanner';
 
 // Lincc Logo — just the image. The Link wrapper lives in the Header so the whole
 // center column is a clickable home-link (bigger tap target than the image alone).
@@ -58,10 +61,9 @@ export function Header({
   const shouldShowBack = showBack ?? !isRootTab;
 
   return (
-    <>
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-40 safe-top bg-surface/95 backdrop-blur-sm border-b border-border lg:border-b-0',
+        'sticky top-0 z-40 safe-top bg-surface/95 backdrop-blur-sm border-b border-border lg:border-b-0',
         className
       )}
     >
@@ -125,10 +127,12 @@ export function Header({
           </Link>
         </div>
       </div>
+
+      {/* Banner shelf — renders below the header bar, inside the sticky container */}
+      <OfflineBanner />
+      <UpdateNotification />
+      <AnnouncementBanner />
     </header>
-    {/* Spacer to push content below fixed header */}
-    <div className="h-14" />
-    </>
   );
 }
 

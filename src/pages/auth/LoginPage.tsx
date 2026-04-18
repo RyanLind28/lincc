@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { GradientButton, Input } from '../../components/ui';
-import { Mail } from 'lucide-react';
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
@@ -12,8 +11,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState(searchParams.get('email') ?? '');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showMagicLinkSent, setShowMagicLinkSent] = useState(false);
-  const { signIn, signInWithMagicLink, signInWithProvider } = useAuth();
+  const { signIn, signInWithProvider } = useAuth();
   const { showToast } = useToast();
 
   const handleGoogleLogin = async () => {
@@ -26,6 +24,15 @@ export default function LoginPage() {
     // On success, Supabase redirects to Google — no need to clear loading
   };
 
+  const handleFacebookLogin = async () => {
+    setIsLoading(true);
+    const { error } = await signInWithProvider('facebook');
+    if (error) {
+      showToast(error.message, 'error');
+      setIsLoading(false);
+    }
+  };
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -35,9 +42,9 @@ export default function LoginPage() {
     if (error) {
       const msg = error.message.toLowerCase();
       if (msg.includes('invalid') || msg.includes('credentials')) {
-        showToast('Incorrect email or password. Try using Magic Link instead.', 'error');
+        showToast('Incorrect email or password.', 'error');
       } else if (msg.includes('not confirmed') || msg.includes('not verified')) {
-        showToast('Please verify your email first. Check your inbox or use Magic Link.', 'error');
+        showToast('Please verify your email first. Check your inbox.', 'error');
       } else {
         showToast(error.message, 'error');
       }
@@ -46,50 +53,8 @@ export default function LoginPage() {
     setIsLoading(false);
   };
 
-  const handleMagicLink = async () => {
-    if (!email) {
-      showToast('Please enter your email address', 'error');
-      return;
-    }
-
-    setIsLoading(true);
-
-    const { error } = await signInWithMagicLink(email);
-
-    if (error) {
-      showToast(error.message, 'error');
-    } else {
-      setShowMagicLinkSent(true);
-    }
-
-    setIsLoading(false);
-  };
-
-  if (showMagicLinkSent) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12 relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
-        <div className="w-full max-w-sm relative">
-          <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm text-center">
-            <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
-              <Mail className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-text mb-2">Check your email</h1>
-            <p className="text-text-muted mb-6">
-              We sent a magic link to <strong>{email}</strong>. Click the link to sign in.
-            </p>
-            <GradientButton variant="outline" onClick={() => setShowMagicLinkSent(false)}>
-              Use a different email
-            </GradientButton>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12 relative overflow-hidden">
-      {/* Background decoration */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
       <div className="w-full max-w-sm relative">
         <div className="flex justify-center mb-6">
@@ -97,9 +62,20 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold gradient-text mb-2">Sign In</h1>
-            <p className="text-text-muted">Connect with people nearby</p>
+          {/* Sign In / Sign Up tabs */}
+          <div className="flex bg-background rounded-xl p-1 mb-6">
+            <button
+              type="button"
+              className="flex-1 text-center py-2 rounded-lg font-semibold text-sm gradient-primary text-white shadow-sm"
+            >
+              Sign In
+            </button>
+            <Link
+              to="/signup"
+              className="flex-1 text-center py-2 rounded-lg font-semibold text-sm text-text-muted hover:text-text transition-colors"
+            >
+              Sign Up
+            </Link>
           </div>
 
           <form onSubmit={handleEmailLogin} className="space-y-4">
@@ -141,18 +117,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <GradientButton
-            variant="outline"
-            fullWidth
-            onClick={handleMagicLink}
-            isLoading={isLoading}
-            leftIcon={<Mail className="h-4 w-4" />}
-          >
-            Send Magic Link
-          </GradientButton>
-
-          {/* OAuth providers */}
-          <div className="space-y-2 mt-4">
+          <div className="space-y-2">
             <button
               type="button"
               onClick={handleGoogleLogin}
@@ -164,31 +129,15 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              disabled
-              className="w-full flex items-center justify-center gap-3 h-11 px-6 rounded-xl border border-border bg-surface text-text font-semibold text-sm opacity-60 cursor-not-allowed"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-              Continue with Apple
-              <span className="text-xs text-text-muted font-normal">(not set up)</span>
-            </button>
-            <button
-              type="button"
-              disabled
-              className="w-full flex items-center justify-center gap-3 h-11 px-6 rounded-xl border border-border bg-surface text-text font-semibold text-sm opacity-60 cursor-not-allowed"
+              onClick={handleFacebookLogin}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-3 h-11 px-6 rounded-xl border border-border bg-surface text-text font-semibold text-sm hover:border-coral transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" fill="#1877F2"/></svg>
               Continue with Facebook
-              <span className="text-xs text-text-muted font-normal">(not set up)</span>
             </button>
           </div>
         </div>
-
-        <p className="text-center text-sm text-text-muted mt-6">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-coral font-medium hover:text-coral/80">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ Big push day. ~25 items closed end-to-end. Details inline below — this is the 
 - **Two-checkbox signup consent** (T&C + 18+) — migration 036 copies consent into profile via `handle_new_user` trigger so the /terms page is skipped
 - **Profile picture optional in onboarding** — `checkProfileComplete` no longer requires avatar; default initial-based Avatar handles `src={null}`
 - **OAuth Google button wired** (waiting on Supabase Dashboard credentials to activate)
+- **Google OAuth activated** (2026-04-18) — Google Cloud project `lincc-prod`, OAuth client "Lincc Web", consent screen published with `lincc.live` as authorised domain. Redirect URI: `https://srrubyupwiiqnehshszd.supabase.co/auth/v1/callback`. JS origins: localhost:5173, lincc.live, lincc-six.vercel.app. Pasted Client ID + Secret into Supabase and enabled the provider. See Known Limitations for the consent-screen branding note.
 
 ### Events & Discovery
 - **Duplicate event** action on EventDetailPage — writes event data to `sessionStorage` and navigates to `/event/new` pre-filled
@@ -250,6 +251,7 @@ _(Nothing currently blocked)_
 - Supabase: PostGIS in public schema — safe to ignore, moving risks breaking geo queries
 - Supabase: Enable leaked password protection — Dashboard > Auth > Attack Protection (manual step)
 - ~~Google Places API key not set~~ — **Fixed**: Key added to `.env.local` and Vercel env vars
+- Google OAuth consent screen shows `srrubyupwiiqnehshszd.supabase.co` instead of `lincc.live` — Google derives this from the redirect URI domain, not the consent-screen app name. Fix requires a Supabase custom auth domain (e.g. `auth.lincc.live`), which is a Pro plan add-on ($10/mo). Revisit once on Pro: Dashboard → Custom Domains → add `auth.lincc.live`, add CNAME at DNS, then update the authorised redirect URI in Google Cloud Console → Credentials → Lincc Web. Cosmetic only — sign-in works fine in the meantime.
 
 ---
 

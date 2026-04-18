@@ -58,7 +58,7 @@ interface PublicRouteProps {
 }
 
 export function PublicRoute({ children }: PublicRouteProps) {
-  const { isAuthenticated, isProfileComplete, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -66,8 +66,8 @@ export function PublicRoute({ children }: PublicRouteProps) {
     return <FullPageSpinner />;
   }
 
-  // If authenticated and profile complete, redirect to home
-  if (isAuthenticated && isProfileComplete) {
+  // If authenticated, redirect away — ProtectedRoute handles terms/onboarding/admin gates
+  if (isAuthenticated) {
     const from = location.state?.from?.pathname || '/';
     console.log(LOG_PREFIX, 'PublicRoute', location.pathname, '→ redirect to', from, '(already authenticated)');
     return <Navigate to={from} replace />;

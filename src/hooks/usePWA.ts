@@ -88,10 +88,19 @@ export function usePWA() {
 
   const applyUpdate = useCallback(() => {
     if (!waitingWorker) return;
+
+    // Reload only after the new SW has taken control, otherwise the old SW
+    // serves the reload and references stale asset hashes — producing a white screen.
+    const reload = () => window.location.reload();
+    navigator.serviceWorker.addEventListener('controllerchange', reload, { once: true });
+
+    // Fallback: if controllerchange never fires (rare), force reload after 3s
+    // so users aren't stuck with the prompt hidden and no reload.
+    setTimeout(reload, 3000);
+
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     setHasUpdate(false);
     setWaitingWorker(null);
-    window.location.reload();
   }, [waitingWorker]);
 
   return {

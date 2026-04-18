@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { Header } from '../../components/layout';
-import { Input, Avatar, Badge, Modal, Button, ChatListSkeleton } from '../../components/ui';
-import { Search, Users, Shield, Ban, AlertTriangle, Download, CheckSquare, Square, Flag } from 'lucide-react';
-import { fetchAdminUsers, updateUserStatus, updateUserRole, bulkUpdateUserStatus, exportUsersCSV, flagUser, logAdminAction } from '../../services/adminService';
-import { useAuth } from '../../contexts/AuthContext';
+import { Input, Avatar, Badge, Button, ChatListSkeleton } from '../../components/ui';
+import { Search, Users, Download, CheckSquare, Square, Flag, ChevronRight, Store } from 'lucide-react';
+import { fetchAdminUsers, bulkUpdateUserStatus, exportUsersCSV } from '../../services/adminService';
 import { useToast } from '../../contexts/ToastContext';
-import { formatRelativeTime } from '../../lib/utils';
+import { cn } from '../../lib/utils';
 
 interface AdminUser {
   id: string;
@@ -16,17 +16,23 @@ interface AdminUser {
   role: 'user' | 'admin';
   status: 'active' | 'suspended' | 'banned';
   tags: string[] | null;
+  is_flagged: boolean;
+  is_business: boolean;
   created_at: string;
 }
 
+type StatusFilter = 'all' | 'active' | 'suspended' | 'banned';
+type RoleFilter = 'all' | 'user' | 'admin';
+
 export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { showToast } = useToast();
-  const { user: authUser } = useAuth();
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -37,11 +43,7 @@ export default function AdminUsersPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === users.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(users.map((u) => u.id)));
-    }
+    setSelectedIds(selectedIds.size === users.length ? new Set() : new Set(users.map((u) => u.id)));
   };
 
   const handleBulkAction = async (status: 'active' | 'suspended' | 'banned') => {
@@ -75,54 +77,21 @@ export default function AdminUsersPage() {
 
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
-    const { data } = await fetchAdminUsers(searchQuery);
+    const { data } = await fetchAdminUsers(searchQuery, {
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      role: roleFilter === 'all' ? undefined : roleFilter,
+      flagged: flaggedOnly || undefined,
+    });
     setUsers(data as AdminUser[]);
     setIsLoading(false);
-  }, [searchQuery]);
+  }, [searchQuery, statusFilter, roleFilter, flaggedOnly]);
 
   useEffect(() => {
     const timeout = setTimeout(loadUsers, 300);
     return () => clearTimeout(timeout);
   }, [loadUsers]);
 
-  const handleStatusChange = async (userId: string, status: 'active' | 'suspended' | 'banned') => {
-    const result = await updateUserStatus(userId, status);
-    if (result.success) {
-      if (authUser?.id) logAdminAction(authUser.id, `user_${status}`, 'user', userId);
-      showToast(`User ${status}`, 'success');
-      setSelectedUser(null);
-      loadUsers();
-    } else {
-      showToast(result.error || 'Failed to update', 'error');
-    }
-  };
-
-  const handleRoleChange = async (userId: string, role: 'user' | 'admin') => {
-    const result = await updateUserRole(userId, role);
-    if (result.success) {
-      if (authUser?.id) logAdminAction(authUser.id, `role_${role}`, 'user', userId);
-      showToast(`Role updated to ${role}`, 'success');
-      setSelectedUser(null);
-      loadUsers();
-    } else {
-      showToast(result.error || 'Failed to update', 'error');
-    }
-  };
-
-  const handleFlag = async (userId: string) => {
-    const reason = prompt('Flag reason:');
-    if (!reason) return;
-    const result = await flagUser(userId, reason);
-    if (result.success) {
-      if (authUser?.id) logAdminAction(authUser.id, 'flag_user', 'user', userId, { reason });
-      showToast('User flagged', 'success');
-      setSelectedUser(null);
-    } else {
-      showToast(result.error || 'Failed to flag', 'error');
-    }
-  };
-
-  const statusColor = (status: string) => {
+  const statusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
     switch (status) {
       case 'active': return 'success';
       case 'suspended': return 'warning';
@@ -131,11 +100,23 @@ export default function AdminUsersPage() {
     }
   };
 
+  const Pill = ({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick: () => void }) => (
+    <button
+      onClick={onClick}
+      className={cn(
+        'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+        active ? 'gradient-primary text-white border-transparent' : 'bg-surface text-text-muted border-border hover:text-text'
+      )}
+    >
+      {children}
+    </button>
+  );
+
   return (
     <div className="min-h-screen bg-background pb-8">
       <Header title="User Management" showBack />
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-3">
         <div className="flex gap-2">
           <div className="flex-1">
             <Input
@@ -152,6 +133,26 @@ export default function AdminUsersPage() {
           >
             <Download className="h-5 w-5" />
           </button>
+        </div>
+
+        {/* Filter pills */}
+        <div className="space-y-2">
+          <div className="flex gap-1.5 flex-wrap">
+            <span className="text-[11px] text-text-muted self-center mr-1">Status:</span>
+            <Pill active={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>All</Pill>
+            <Pill active={statusFilter === 'active'} onClick={() => setStatusFilter('active')}>Active</Pill>
+            <Pill active={statusFilter === 'suspended'} onClick={() => setStatusFilter('suspended')}>Suspended</Pill>
+            <Pill active={statusFilter === 'banned'} onClick={() => setStatusFilter('banned')}>Banned</Pill>
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            <span className="text-[11px] text-text-muted self-center mr-1">Role:</span>
+            <Pill active={roleFilter === 'all'} onClick={() => setRoleFilter('all')}>All</Pill>
+            <Pill active={roleFilter === 'user'} onClick={() => setRoleFilter('user')}>Users</Pill>
+            <Pill active={roleFilter === 'admin'} onClick={() => setRoleFilter('admin')}>Admins</Pill>
+            <Pill active={flaggedOnly} onClick={() => setFlaggedOnly(!flaggedOnly)}>
+              <Flag className="h-3 w-3 inline mr-0.5" />Flagged
+            </Pill>
+          </div>
         </div>
 
         {/* Bulk action bar */}
@@ -175,126 +176,39 @@ export default function AdminUsersPage() {
             </div>
             <h2 className="text-lg font-semibold text-text mb-1">No users found</h2>
             <p className="text-text-muted text-center text-sm">
-              {searchQuery ? 'Try a different search term.' : 'No users have signed up yet.'}
+              {searchQuery ? 'Try a different search term.' : 'No users match the current filters.'}
             </p>
           </div>
         ) : (
           <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
-            {/* Select all header */}
             <button onClick={toggleSelectAll} className="w-full px-4 py-2 flex items-center gap-2 text-xs text-text-muted hover:text-text">
               {selectedIds.size === users.length ? <CheckSquare className="h-4 w-4 text-coral" /> : <Square className="h-4 w-4" />}
               {selectedIds.size === users.length ? 'Deselect all' : 'Select all'}
             </button>
             {users.map((user) => (
-              <div
-                key={user.id}
-                className="p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors"
-              >
+              <div key={user.id} className="p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors">
                 <button onClick={() => toggleSelect(user.id)} className="flex-shrink-0">
                   {selectedIds.has(user.id) ? <CheckSquare className="h-5 w-5 text-coral" /> : <Square className="h-5 w-5 text-text-light" />}
                 </button>
-                <button onClick={() => setSelectedUser(user)} className="flex-1 flex items-center gap-3 text-left min-w-0">
-                <Avatar src={user.avatar_url} size="md" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-text truncate">{user.first_name || 'No name'}</p>
-                    {user.role === 'admin' && (
-                      <Badge variant="primary" size="sm">Admin</Badge>
-                    )}
+                <Link to={`/admin/users/${user.id}`} className="flex-1 flex items-center gap-3 min-w-0">
+                  <Avatar src={user.avatar_url} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-text truncate">{user.first_name || 'No name'}</p>
+                      {user.role === 'admin' && <Badge variant="primary" size="sm">Admin</Badge>}
+                      {user.is_business && <Badge variant="default" size="sm"><Store className="h-3 w-3 inline mr-0.5" />Business</Badge>}
+                      {user.is_flagged && <Badge variant="error" size="sm"><Flag className="h-3 w-3 inline mr-0.5" />Flagged</Badge>}
+                    </div>
+                    <p className="text-sm text-text-muted truncate">{user.email}</p>
                   </div>
-                  <p className="text-sm text-text-muted truncate">{user.email}</p>
-                </div>
-                <Badge variant={statusColor(user.status) as 'success' | 'warning' | 'error' | 'default'} size="sm">
-                  {user.status}
-                </Badge>
-                </button>
+                  <Badge variant={statusColor(user.status)} size="sm">{user.status}</Badge>
+                  <ChevronRight className="h-4 w-4 text-text-light flex-shrink-0" />
+                </Link>
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* User detail modal */}
-      <Modal
-        isOpen={!!selectedUser}
-        onClose={() => setSelectedUser(null)}
-        title="User Details"
-        size="sm"
-      >
-        {selectedUser && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Avatar src={selectedUser.avatar_url} size="lg" />
-              <div>
-                <p className="font-semibold text-text">{selectedUser.first_name || 'No name'}</p>
-                <p className="text-sm text-text-muted">{selectedUser.email}</p>
-                <p className="text-xs text-text-light">
-                  Joined {formatRelativeTime(selectedUser.created_at)}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-              <Badge variant={statusColor(selectedUser.status) as 'success' | 'warning' | 'error' | 'default'}>
-                {selectedUser.status}
-              </Badge>
-              <Badge variant={selectedUser.role === 'admin' ? 'primary' : 'default'}>
-                {selectedUser.role}
-              </Badge>
-              {selectedUser.gender && <Badge variant="default">{selectedUser.gender}</Badge>}
-            </div>
-
-            {selectedUser.tags && selectedUser.tags.length > 0 && (
-              <div className="flex gap-1 flex-wrap">
-                {selectedUser.tags.map((tag) => (
-                  <span key={tag} className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-text-muted">{tag}</span>
-                ))}
-              </div>
-            )}
-
-            <div className="border-t border-border pt-4 space-y-2">
-              <p className="text-sm font-medium text-text">Actions</p>
-
-              <div className="flex gap-2">
-                {selectedUser.status !== 'active' && (
-                  <Button variant="ghost" size="sm" onClick={() => handleStatusChange(selectedUser.id, 'active')}>
-                    Activate
-                  </Button>
-                )}
-                {selectedUser.status !== 'suspended' && (
-                  <Button variant="ghost" size="sm" onClick={() => handleStatusChange(selectedUser.id, 'suspended')}>
-                    <AlertTriangle className="h-3.5 w-3.5 mr-1" />
-                    Suspend
-                  </Button>
-                )}
-                {selectedUser.status !== 'banned' && (
-                  <Button variant="danger" size="sm" onClick={() => handleStatusChange(selectedUser.id, 'banned')}>
-                    <Ban className="h-3.5 w-3.5 mr-1" />
-                    Ban
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={() => handleFlag(selectedUser.id)}>
-                  <Flag className="h-3.5 w-3.5 mr-1" />
-                  Flag
-                </Button>
-                {selectedUser.role === 'user' ? (
-                  <Button variant="ghost" size="sm" onClick={() => handleRoleChange(selectedUser.id, 'admin')}>
-                    <Shield className="h-3.5 w-3.5 mr-1" />
-                    Make Admin
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="sm" onClick={() => handleRoleChange(selectedUser.id, 'user')}>
-                    Remove Admin
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

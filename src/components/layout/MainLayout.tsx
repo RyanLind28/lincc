@@ -4,7 +4,6 @@ import { SideNav } from './SideNav';
 import { InstallBanner } from '../pwa/InstallBanner';
 import { NotificationPermissionPrompt } from '../ui/NotificationPermissionPrompt';
 import { WelcomeGuide } from '../ui/WelcomeGuide';
-import { AnnouncementBanner } from '../ui/AnnouncementBanner';
 import { cn } from '../../lib/utils';
 
 interface MainLayoutProps {
@@ -25,11 +24,8 @@ export function MainLayout({ showBottomNav = true, className }: MainLayoutProps)
 
       {/* Main content area */}
       <main id="main-content" className={cn('flex-1', showBottomNav && 'pb-20 lg:pb-0 lg:pl-16')}>
-        <div>
-          <AnnouncementBanner />
-          <NotificationPermissionPrompt />
-          <Outlet />
-        </div>
+        <NotificationPermissionPrompt />
+        <Outlet />
       </main>
 
       {/* Mobile bottom nav - hidden on desktop */}

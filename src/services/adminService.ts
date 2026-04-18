@@ -17,6 +17,141 @@ export async function getAdminStats() {
   };
 }
 
+// Dashboard metrics — all time-bounded to last `days`
+export async function getDashboardMetrics(days: number) {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceStr = since.toISOString();
+
+  const [
+    newUsers, newEvents, joinRequests, approvedJoins,
+    eventMessages, dms, newVouchers, redemptions, newBusinesses, newReports,
+  ] = await Promise.all([
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', sinceStr),
+    supabase.from('events').select('id', { count: 'exact', head: true }).gte('created_at', sinceStr),
+    supabase.from('event_participants').select('id', { count: 'exact', head: true }).gte('created_at', sinceStr),
+    supabase.from('event_participants').select('id', { count: 'exact', head: true }).eq('status', 'approved').gte('created_at', sinceStr),
+    supabase.from('messages').select('id', { count: 'exact', head: true }).gte('created_at', sinceStr),
+    supabase.from('direct_messages').select('id', { count: 'exact', head: true }).gte('created_at', sinceStr),
+    supabase.from('vouchers').select('id', { count: 'exact', head: true }).gte('created_at', sinceStr),
+    supabase.from('voucher_redemptions').select('id', { count: 'exact', head: true }).gte('redeemed_at', sinceStr),
+    supabase.from('businesses').select('id', { count: 'exact', head: true }).gte('created_at', sinceStr),
+    supabase.from('reports').select('id', { count: 'exact', head: true }).gte('created_at', sinceStr),
+  ]);
+
+  return {
+    newUsers: newUsers.count ?? 0,
+    newEvents: newEvents.count ?? 0,
+    joinRequests: joinRequests.count ?? 0,
+    approvedJoins: approvedJoins.count ?? 0,
+    messages: (eventMessages.count ?? 0) + (dms.count ?? 0),
+    newVouchers: newVouchers.count ?? 0,
+    redemptions: redemptions.count ?? 0,
+    newBusinesses: newBusinesses.count ?? 0,
+    newReports: newReports.count ?? 0,
+  };
+}
+
+// Engagement timeseries — daily join requests + messages over last `days`
+export async function getEngagementData(days: number) {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceStr = since.toISOString();
+
+  const [joins, msgs] = await Promise.all([
+    supabase.from('event_participants').select('created_at').gte('created_at', sinceStr),
+    supabase.from('messages').select('created_at').gte('created_at', sinceStr),
+  ]);
+
+  const groupByDate = (rows: { created_at: string }[]) => {
+    const map: Record<string, number> = {};
+    for (const row of rows) {
+      const date = row.created_at.slice(0, 10);
+      map[date] = (map[date] || 0) + 1;
+    }
+    return map;
+  };
+
+  return {
+    joinsByDate: groupByDate((joins.data ?? []) as { created_at: string }[]),
+    messagesByDate: groupByDate((msgs.data ?? []) as { created_at: string }[]),
+  };
+}
+
+// Top hosts — most events created in last `days`
+export async function getTopHosts(days: number, limit = 5) {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  const { data } = await supabase
+    .from('events')
+    .select('host_id, profiles!events_host_id_fkey(first_name, avatar_url)')
+    .gte('created_at', since.toISOString());
+
+  type Row = { host_id: string; profiles: { first_name: string | null; avatar_url: string | null } | null };
+  const counts = new Map<string, { count: number; name: string; avatar: string | null }>();
+  for (const r of (data ?? []) as unknown as Row[]) {
+    const existing = counts.get(r.host_id);
+    if (existing) existing.count++;
+    else counts.set(r.host_id, { count: 1, name: r.profiles?.first_name ?? 'Unknown', avatar: r.profiles?.avatar_url ?? null });
+  }
+  return Array.from(counts.entries())
+    .map(([id, v]) => ({ id, ...v }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+// Top categories — most approved joins in last `days`
+export async function getTopCategories(days: number, limit = 5) {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  const { data } = await supabase
+    .from('event_participants')
+    .select('event:events!event_id(category:categories!category_id(id, name, icon))')
+    .eq('status', 'approved')
+    .gte('created_at', since.toISOString());
+
+  type Row = { event: { category: { id: string; name: string; icon: string | null } | null } | null };
+  const counts = new Map<string, { count: number; name: string; icon: string | null }>();
+  for (const r of (data ?? []) as unknown as Row[]) {
+    const cat = r.event?.category;
+    if (!cat) continue;
+    const existing = counts.get(cat.id);
+    if (existing) existing.count++;
+    else counts.set(cat.id, { count: 1, name: cat.name, icon: cat.icon });
+  }
+  return Array.from(counts.entries())
+    .map(([id, v]) => ({ id, ...v }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+// Top businesses — most voucher redemptions in last `days`
+export async function getTopBusinesses(days: number, limit = 5) {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  const { data } = await supabase
+    .from('voucher_redemptions')
+    .select('voucher:vouchers!voucher_id(business:businesses!business_id(id, name, logo_url))')
+    .gte('redeemed_at', since.toISOString());
+
+  type Row = { voucher: { business: { id: string; name: string; logo_url: string | null } | null } | null };
+  const counts = new Map<string, { count: number; name: string; logo: string | null }>();
+  for (const r of (data ?? []) as unknown as Row[]) {
+    const biz = r.voucher?.business;
+    if (!biz) continue;
+    const existing = counts.get(biz.id);
+    if (existing) existing.count++;
+    else counts.set(biz.id, { count: 1, name: biz.name, logo: biz.logo_url });
+  }
+  return Array.from(counts.entries())
+    .map(([id, v]) => ({ id, ...v }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
 // Analytics — growth data for charts
 export async function getGrowthData(days = 30) {
   const since = new Date();
@@ -250,13 +385,59 @@ export async function unflagUser(userId: string) {
   return { success: !error, error: error?.message };
 }
 
+// User detail (admin)
+export async function getUserDetail(userId: string) {
+  const [{ data: profile }, hosted, joined, msgCount, filedReports, receivedReports, followerCount, followingCount] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', userId).single(),
+    supabase.from('events').select('id, title, status, start_time, participant_count, capacity, created_at', { count: 'exact' })
+      .eq('host_id', userId).order('created_at', { ascending: false }).limit(10),
+    supabase.from('event_participants').select('id, status, created_at, event:events!event_id(id, title, status, start_time)', { count: 'exact' })
+      .eq('user_id', userId).neq('status', 'left').order('created_at', { ascending: false }).limit(10),
+    supabase.from('messages').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('reports').select('id, reason, status, created_at, reported:profiles!reports_reported_user_id_fkey(first_name), event:events!reports_event_id_fkey(title)', { count: 'exact' })
+      .eq('reporter_id', userId).order('created_at', { ascending: false }).limit(10),
+    supabase.from('reports').select('id, reason, status, created_at, reporter:profiles!reports_reporter_id_fkey(first_name), event:events!reports_event_id_fkey(title)', { count: 'exact' })
+      .eq('reported_user_id', userId).order('created_at', { ascending: false }).limit(10),
+    supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', userId),
+    supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', userId),
+  ]);
+
+  return {
+    profile,
+    eventsHosted: { items: hosted.data ?? [], total: hosted.count ?? 0 },
+    eventsJoined: { items: joined.data ?? [], total: joined.count ?? 0 },
+    messagesTotal: msgCount.count ?? 0,
+    reportsFiled: { items: filedReports.data ?? [], total: filedReports.count ?? 0 },
+    reportsReceived: { items: receivedReports.data ?? [], total: receivedReports.count ?? 0 },
+    followerCount: followerCount.count ?? 0,
+    followingCount: followingCount.count ?? 0,
+  };
+}
+
+// Send a password reset email to the user's inbox (on admin's behalf)
+export async function sendAdminPasswordReset(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
+  return { success: !error, error: error?.message };
+}
+
 // Users
-export async function fetchAdminUsers(search = '', offset = 0, limit = 20) {
+export async function fetchAdminUsers(
+  search = '',
+  filters: { status?: string; role?: string; flagged?: boolean } = {},
+  offset = 0,
+  limit = 20,
+) {
   let query = supabase
     .from('profiles')
-    .select('id, email, first_name, avatar_url, gender, role, status, tags, created_at')
+    .select('id, email, first_name, avatar_url, gender, role, status, tags, is_flagged, is_business, created_at')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
+
+  if (filters.status) query = query.eq('status', filters.status);
+  if (filters.role) query = query.eq('role', filters.role);
+  if (filters.flagged) query = query.eq('is_flagged', true);
 
   if (search) {
     query = query.or(`first_name.ilike.%${search.replace(/[,.()\[\]]/g, '')}%,email.ilike.%${search.replace(/[,.()\[\]]/g, '')}%`);
@@ -346,6 +527,70 @@ export async function updateReportStatus(
     })
     .eq('id', reportId);
   return { success: !error, error: error?.message };
+}
+
+// Businesses (admin)
+export async function fetchAdminBusinesses(
+  search = '',
+  filters: { status?: string } = {},
+  offset = 0,
+  limit = 30,
+) {
+  let query = supabase
+    .from('businesses')
+    .select('id, name, slug, logo_url, category, address, status, owner_id, created_at, owner:profiles!businesses_owner_id_fkey(first_name, email, avatar_url)')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (filters.status) query = query.eq('status', filters.status);
+  if (search) {
+    query = query.or(`name.ilike.%${search.replace(/[,.()\[\]]/g, '')}%,category.ilike.%${search.replace(/[,.()\[\]]/g, '')}%`);
+  }
+
+  const { data, error } = await query;
+  return { data: data ?? [], error };
+}
+
+export async function getBusinessDetail(businessId: string) {
+  const [{ data: business }, vouchers, events] = await Promise.all([
+    supabase.from('businesses').select('*, owner:profiles!businesses_owner_id_fkey(id, first_name, email, avatar_url)').eq('id', businessId).single(),
+    supabase.from('vouchers').select('id, title, discount_text, status, expires_at, redemption_count, redemption_limit, created_at', { count: 'exact' })
+      .eq('business_id', businessId).order('created_at', { ascending: false }).limit(10),
+    supabase.from('events').select('id, title, status, start_time, participant_count, capacity, created_at', { count: 'exact' })
+      .eq('business_id', businessId).order('created_at', { ascending: false }).limit(10),
+  ]);
+
+  // Redemptions are joined through vouchers — query voucher IDs first, then redemptions.
+  const voucherIdsRes = await supabase.from('vouchers').select('id').eq('business_id', businessId);
+  const voucherIds = (voucherIdsRes.data ?? []).map((v) => v.id);
+  const redemptions = voucherIds.length
+    ? await supabase
+        .from('voucher_redemptions')
+        .select('id, redeemed_at, voucher:vouchers!voucher_id(id, title), user:profiles!voucher_redemptions_user_id_fkey(first_name, avatar_url)', { count: 'exact' })
+        .in('voucher_id', voucherIds)
+        .order('redeemed_at', { ascending: false })
+        .limit(10)
+    : { data: [], count: 0 };
+
+  return {
+    business,
+    vouchers: { items: vouchers.data ?? [], total: vouchers.count ?? 0 },
+    redemptions: { items: redemptions.data ?? [], total: redemptions.count ?? 0 },
+    events: { items: events.data ?? [], total: events.count ?? 0 },
+  };
+}
+
+export async function updateBusinessStatus(businessId: string, status: 'active' | 'suspended') {
+  const { error } = await supabase.from('businesses').update({ status, updated_at: new Date().toISOString() }).eq('id', businessId);
+  return { success: !error, error: error?.message };
+}
+
+export async function exportBusinessesCSV() {
+  const { data } = await supabase
+    .from('businesses')
+    .select('id, name, slug, category, address, status, owner_id, created_at')
+    .order('created_at', { ascending: false });
+  return data ?? [];
 }
 
 // Categories

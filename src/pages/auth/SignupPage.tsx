@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { GradientButton, Input } from '../../components/ui';
-import { Mail, CheckCircle, Store } from 'lucide-react';
+import { CheckCircle, Store } from 'lucide-react';
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
@@ -18,7 +18,7 @@ export default function SignupPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const { signUp, signInWithMagicLink, signInWithProvider, resendConfirmation } = useAuth();
+  const { signUp, signInWithProvider, resendConfirmation } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -100,23 +100,17 @@ export default function SignupPage() {
     }
   };
 
-  const handleMagicLink = async () => {
-    if (!email) {
-      showToast('Please enter your email address', 'error');
+  const handleFacebookSignup = async () => {
+    if (!termsAccepted || !ageConfirmed) {
+      showToast('Please accept the terms and confirm you are 18+ first', 'error');
       return;
     }
-
     setIsLoading(true);
-
-    const { error } = await signInWithMagicLink(email);
-
+    const { error } = await signInWithProvider('facebook');
     if (error) {
       showToast(error.message, 'error');
-    } else {
-      setShowVerificationSent(true);
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   if (showVerificationSent) {
@@ -154,7 +148,6 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12 relative overflow-hidden">
-      {/* Background decoration */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
       <div className="w-full max-w-sm relative">
         <div className="flex justify-center mb-6">
@@ -162,9 +155,20 @@ export default function SignupPage() {
         </div>
 
         <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold gradient-text mb-2">Join Lincc</h1>
-            <p className="text-text-muted">Create your account</p>
+          {/* Sign In / Sign Up tabs */}
+          <div className="flex bg-background rounded-xl p-1 mb-6">
+            <Link
+              to="/login"
+              className="flex-1 text-center py-2 rounded-lg font-semibold text-sm text-text-muted hover:text-text transition-colors"
+            >
+              Sign In
+            </Link>
+            <button
+              type="button"
+              className="flex-1 text-center py-2 rounded-lg font-semibold text-sm gradient-primary text-white shadow-sm"
+            >
+              Sign Up
+            </button>
           </div>
 
           <form onSubmit={handleSignup} className="space-y-4">
@@ -259,18 +263,7 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <GradientButton
-            variant="outline"
-            fullWidth
-            onClick={handleMagicLink}
-            isLoading={isLoading}
-            leftIcon={<Mail className="h-4 w-4" />}
-          >
-            Continue with Magic Link
-          </GradientButton>
-
-          {/* OAuth providers */}
-          <div className="space-y-2 mt-4">
+          <div className="space-y-2">
             <button
               type="button"
               onClick={handleGoogleSignup}
@@ -282,31 +275,15 @@ export default function SignupPage() {
             </button>
             <button
               type="button"
-              disabled
-              className="w-full flex items-center justify-center gap-3 h-11 px-6 rounded-xl border border-border bg-surface text-text font-semibold text-sm opacity-60 cursor-not-allowed"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-              Continue with Apple
-              <span className="text-xs text-text-muted font-normal">(not set up)</span>
-            </button>
-            <button
-              type="button"
-              disabled
-              className="w-full flex items-center justify-center gap-3 h-11 px-6 rounded-xl border border-border bg-surface text-text font-semibold text-sm opacity-60 cursor-not-allowed"
+              onClick={handleFacebookSignup}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-3 h-11 px-6 rounded-xl border border-border bg-surface text-text font-semibold text-sm hover:border-coral transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" fill="#1877F2"/></svg>
               Continue with Facebook
-              <span className="text-xs text-text-muted font-normal">(not set up)</span>
             </button>
           </div>
         </div>
-
-        <p className="text-center text-sm text-text-muted mt-6">
-          Already have an account?{' '}
-          <Link to="/login" className="text-coral font-medium hover:text-coral/80">
-            Sign in
-          </Link>
-        </p>
       </div>
     </div>
   );

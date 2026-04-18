@@ -1,73 +1,153 @@
-# React + TypeScript + Vite
+# Lincc
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Your local pulse — everything happening around you, in one place. Events, deals, openings, offers — all live, all local. Pre-launch React PWA + landing site.
 
-Currently, two official plugins are available:
+**Live:** [lincc.live](https://lincc.live) · **Staging:** [lincc-six.vercel.app](https://lincc-six.vercel.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+See [`CLAUDE.md`](./CLAUDE.md) for the full product + engineering reference and [`TODO.md`](./TODO.md) for the task board.
 
-## React Compiler
+## Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```mermaid
+graph TD
+    User([User · Host · Joiner])
+    Admin([Admin])
 
-## Expanding the ESLint configuration
+    subgraph Clients["Clients"]
+        direction LR
+        MainApp["Main PWA<br/>(src/)"]
+        Landing["Landing / Waitlist<br/>(landing/)"]
+    end
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+    User --> MainApp
+    User --> Landing
+    Admin --> MainApp
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+    subgraph MainAppLayers["Main PWA — layered"]
+        direction TB
+        Pages["Pages<br/>auth · home · event · chat · profile · admin"]
+        Components["UI Components<br/>EventCard · MapView · Avatar · Header · Banners"]
+        Hooks["Hooks<br/>useAuth · useEventParticipants · useNotifications · usePWA"]
+        Services["Services<br/>eventService · adminService · chatService · placesService"]
+        SW["Service Worker<br/>(Workbox)<br/>runtime cache · offline · push"]
+        Pages --> Components
+        Pages --> Hooks
+        Hooks --> Services
+        MainApp -.- SW
+    end
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+    MainApp --- MainAppLayers
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+    subgraph Supabase["Supabase Backend"]
+        direction TB
+        SB_Auth["Auth<br/>email/password · Google OAuth"]
+        SB_DB[("Postgres<br/>profiles · events · event_participants<br/>messages · direct_messages · notifications<br/>businesses · vouchers · reports · categories<br/>RLS on every table")]
+        SB_RT["Realtime<br/>messages · participants · events · DMs"]
+        SB_Storage["Storage<br/>avatars · event-images"]
+        SB_Func["Edge Functions<br/>send-welcome-email"]
+        SB_Cron["pg_cron<br/>expire_past_events (5m)"]
+        SB_DB --> SB_Cron
+        SB_DB -.triggers.-> SB_Func
+        SB_DB -.triggers.-> SB_DB
+    end
+
+    Services -->|REST / RPC| SB_DB
+    Services -->|channels| SB_RT
+    Services -->|SDK| SB_Auth
+    Services --> SB_Storage
+    Services --> SB_Func
+
+    subgraph External["External APIs"]
+        direction LR
+        Mapbox["Mapbox GL<br/>map tiles · geocoding"]
+        Places["Google Places API<br/>venue autocomplete"]
+        Sentry["Sentry<br/>errors + session replay"]
+    end
+
+    Components -->|tiles / static| Mapbox
+    Services -->|autocomplete| Places
+    MainApp -->|observe| Sentry
+
+    subgraph Hosting["Hosting"]
+        Vercel["Vercel<br/>auto-deploy from main"]
+    end
+
+    MainApp -.-> Vercel
+    Landing -.-> Vercel
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Runtime — joining an event
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant UI as EventDetailPage
+    participant H as useEventParticipants
+    participant DB as Supabase Postgres
+    participant T as participants_count_trigger
+    participant RT as Realtime
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+    U->>UI: Tap "Request to join"
+    UI->>H: join()
+    H->>DB: INSERT event_participants (status=pending)
+    DB->>T: AFTER INSERT trigger
+    T->>DB: recompute events.participant_count<br/>(SECURITY DEFINER, bypasses RLS)
+    DB-->>H: success
+    H->>DB: refetch participants list
+    DB-->>H: updated data
+    H-->>UI: setState → re-render
+    DB->>RT: broadcast row change
+    RT-->>UI: host & other joiners receive update
 ```
+
+## Tech Stack
+
+| Layer      | Tech                                                |
+| ---------- | --------------------------------------------------- |
+| Frontend   | React 19, TypeScript 5.9, Vite 7                    |
+| Styling    | Tailwind CSS 4                                      |
+| Routing    | React Router 7                                      |
+| Backend    | Supabase (Postgres, Auth, Realtime, Storage, Edge)  |
+| Maps       | Mapbox GL JS                                        |
+| PWA        | vite-plugin-pwa + Workbox (injectManifest)          |
+| Errors     | Sentry                                              |
+| Hosting    | Vercel                                              |
+
+## Getting Started
+
+```bash
+# Main app
+npm install
+npm run dev            # localhost:5173
+npm run build          # tsc + vite build
+npm run test:run       # vitest
+
+# Landing site (separate)
+cd landing
+npm install
+npm run dev
+```
+
+Create a `.env.local` with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MAPBOX_TOKEN`, and `VITE_GOOGLE_PLACES_API_KEY`.
+
+## Project Structure
+
+```
+src/
+├── pages/          # Route-level components (admin, auth, landing, main app)
+├── components/     # layout · ui · pwa · admin · features · social
+├── hooks/          # useAuth, useEventParticipants, usePWA, useBookmarks, ...
+├── services/       # events, chat, admin, notifications, bookmark, search, ...
+├── contexts/       # AuthContext, ToastContext, ViewModeContext
+├── lib/            # supabase client, algorithm, haptics, utils
+├── data/           # categories, tag↔category maps, demo events (fallback)
+└── sw.ts           # Workbox service worker (injectManifest)
+
+supabase/
+├── migrations/     # 000–042 — reference only; apply via dashboard or CLI
+└── email-templates/
+
+landing/            # Separate Vite app for waitlist page
+```
+
+See [`CLAUDE.md`](./CLAUDE.md) for the complete reference — tables, routes, RLS, design system, and conventions.

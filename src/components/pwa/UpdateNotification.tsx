@@ -7,10 +7,10 @@ export function UpdateNotification() {
   if (!hasUpdate) return null;
 
   return (
-    <div className="fixed top-4 left-4 right-4 z-[60] lg:left-auto lg:right-6 lg:max-w-sm animate-slide-up safe-top">
-      <div className="bg-surface border border-border rounded-2xl shadow-lg p-4 flex items-center gap-3">
-        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-blue/10 flex items-center justify-center">
-          <RefreshCw className="h-5 w-5 text-blue" />
+    <div className="mx-4 mt-2 animate-slide-up">
+      <div className="bg-surface border border-border rounded-2xl shadow-lg p-3 flex items-center gap-3">
+        <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-blue/10 flex items-center justify-center">
+          <RefreshCw className="h-4 w-4 text-blue" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-text">Update available</p>

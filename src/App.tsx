@@ -7,11 +7,8 @@ import { ViewModeProvider } from './contexts/ViewModeContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute, PublicRoute } from './components/layout/ProtectedRoute';
 import { ErrorBoundary } from './components/layout/ErrorBoundary';
+import { ScrollToTop } from './components/layout/ScrollToTop';
 import { FullPageSpinner } from './components/ui';
-
-// PWA components (always loaded)
-import { OfflineBanner } from './components/pwa/OfflineBanner';
-import { UpdateNotification } from './components/pwa/UpdateNotification';
 
 // Auth pages (small, loaded eagerly for fast first paint)
 import LoginPage from './pages/auth/LoginPage';
@@ -60,9 +57,12 @@ const MyBusinessesPage = lazy(() => import('./pages/MyBusinessesPage'));
 // Lazy-loaded admin pages
 const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage'));
 const AdminUsersPage = lazy(() => import('./pages/admin/UsersPage'));
+const AdminUserDetailPage = lazy(() => import('./pages/admin/UserDetailPage'));
 const AdminEventsPage = lazy(() => import('./pages/admin/EventsPage'));
 const AdminReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/CategoriesPage'));
+const AdminBusinessesPage = lazy(() => import('./pages/admin/BusinessesPage'));
+const AdminBusinessDetailPage = lazy(() => import('./pages/admin/BusinessDetailPage'));
 const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
 const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
 const FeatureFlagsPage = lazy(() => import('./pages/admin/FeatureFlagsPage'));
@@ -84,8 +84,7 @@ function App() {
     <AuthProvider>
       <ToastProvider>
         <ViewModeProvider>
-        <OfflineBanner />
-        <UpdateNotification />
+        <ScrollToTop />
         <Suspense fallback={<FullPageSpinner />}>
         <Routes>
           {/* Demo route (no auth required) */}
@@ -263,6 +262,14 @@ function App() {
             }
           />
           <Route
+            path="/admin/users/:id"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminUserDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/events"
             element={
               <ProtectedRoute requireAdmin>
@@ -283,6 +290,22 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <AdminCategoriesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/businesses"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminBusinessesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/businesses/:id"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminBusinessDetailPage />
               </ProtectedRoute>
             }
           />
