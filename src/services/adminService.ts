@@ -386,6 +386,41 @@ export async function unflagUser(userId: string) {
 }
 
 // User detail (admin)
+// PostgREST types every embedded join as an array (it doesn't know cardinality).
+// For FK relationships that are one-to-one at the source row (host_id, event_id, etc.)
+// we cast the embedded resource to a single object so UI code can do ep.event.title.
+export interface UserDetailEventHosted {
+  id: string;
+  title: string;
+  status: string;
+  start_time: string;
+  participant_count: number;
+  capacity: number;
+  created_at: string;
+}
+export interface UserDetailParticipation {
+  id: string;
+  status: string;
+  created_at: string;
+  event: { id: string; title: string; status: string; start_time: string } | null;
+}
+export interface UserDetailReportFiled {
+  id: string;
+  reason: string;
+  status: string;
+  created_at: string;
+  reported: { first_name: string | null } | null;
+  event: { title: string } | null;
+}
+export interface UserDetailReportReceived {
+  id: string;
+  reason: string;
+  status: string;
+  created_at: string;
+  reporter: { first_name: string | null } | null;
+  event: { title: string } | null;
+}
+
 export async function getUserDetail(userId: string) {
   const [{ data: profile }, hosted, joined, msgCount, filedReports, receivedReports, followerCount, followingCount] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', userId).single(),
@@ -404,11 +439,23 @@ export async function getUserDetail(userId: string) {
 
   return {
     profile,
-    eventsHosted: { items: hosted.data ?? [], total: hosted.count ?? 0 },
-    eventsJoined: { items: joined.data ?? [], total: joined.count ?? 0 },
+    eventsHosted: {
+      items: (hosted.data ?? []) as unknown as UserDetailEventHosted[],
+      total: hosted.count ?? 0,
+    },
+    eventsJoined: {
+      items: (joined.data ?? []) as unknown as UserDetailParticipation[],
+      total: joined.count ?? 0,
+    },
     messagesTotal: msgCount.count ?? 0,
-    reportsFiled: { items: filedReports.data ?? [], total: filedReports.count ?? 0 },
-    reportsReceived: { items: receivedReports.data ?? [], total: receivedReports.count ?? 0 },
+    reportsFiled: {
+      items: (filedReports.data ?? []) as unknown as UserDetailReportFiled[],
+      total: filedReports.count ?? 0,
+    },
+    reportsReceived: {
+      items: (receivedReports.data ?? []) as unknown as UserDetailReportReceived[],
+      total: receivedReports.count ?? 0,
+    },
     followerCount: followerCount.count ?? 0,
     followingCount: followingCount.count ?? 0,
   };
@@ -551,6 +598,45 @@ export async function fetchAdminBusinesses(
   return { data: data ?? [], error };
 }
 
+export interface BusinessDetailBusiness {
+  id: string;
+  name: string;
+  slug: string | null;
+  logo_url: string | null;
+  category: string;
+  description: string | null;
+  address: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  owner: { id: string; first_name: string | null; email: string; avatar_url: string | null } | null;
+}
+export interface BusinessDetailVoucher {
+  id: string;
+  title: string;
+  discount_text: string;
+  status: string;
+  expires_at: string | null;
+  redemption_count: number;
+  redemption_limit: number | null;
+  created_at: string;
+}
+export interface BusinessDetailEvent {
+  id: string;
+  title: string;
+  status: string;
+  start_time: string;
+  participant_count: number;
+  capacity: number;
+  created_at: string;
+}
+export interface BusinessDetailRedemption {
+  id: string;
+  redeemed_at: string;
+  voucher: { id: string; title: string } | null;
+  user: { first_name: string | null; avatar_url: string | null } | null;
+}
+
 export async function getBusinessDetail(businessId: string) {
   const [{ data: business }, vouchers, events] = await Promise.all([
     supabase.from('businesses').select('*, owner:profiles!businesses_owner_id_fkey(id, first_name, email, avatar_url)').eq('id', businessId).single(),
@@ -573,10 +659,19 @@ export async function getBusinessDetail(businessId: string) {
     : { data: [], count: 0 };
 
   return {
-    business,
-    vouchers: { items: vouchers.data ?? [], total: vouchers.count ?? 0 },
-    redemptions: { items: redemptions.data ?? [], total: redemptions.count ?? 0 },
-    events: { items: events.data ?? [], total: events.count ?? 0 },
+    business: business as unknown as BusinessDetailBusiness | null,
+    vouchers: {
+      items: (vouchers.data ?? []) as unknown as BusinessDetailVoucher[],
+      total: vouchers.count ?? 0,
+    },
+    redemptions: {
+      items: (redemptions.data ?? []) as unknown as BusinessDetailRedemption[],
+      total: redemptions.count ?? 0,
+    },
+    events: {
+      items: (events.data ?? []) as unknown as BusinessDetailEvent[],
+      total: events.count ?? 0,
+    },
   };
 }
 
