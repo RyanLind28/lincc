@@ -130,7 +130,7 @@ export default function VoucherDetailPage() {
         rightContent={
           <button
             onClick={() => setShowShareSheet(true)}
-            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
             aria-label="Share voucher"
           >
             <Share2 className="h-5 w-5" />
@@ -236,7 +236,7 @@ export default function VoucherDetailPage() {
             <div className="border border-border rounded-xl overflow-hidden">
               <button
                 onClick={() => setShowTerms(!showTerms)}
-                className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-text hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-text hover:bg-background transition-colors"
               >
                 <span>Terms & Conditions</span>
                 {showTerms ? (
@@ -329,7 +329,7 @@ export default function VoucherDetailPage() {
 
           {/* Success card */}
           <div
-            className="bg-white rounded-2xl p-8 mx-6 text-center shadow-2xl"
+            className="bg-surface rounded-2xl p-8 mx-6 text-center shadow-2xl"
             style={{
               animation: 'success-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
             }}

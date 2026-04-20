@@ -128,7 +128,7 @@ export default function AdminBusinessesPage() {
               <Link
                 key={b.id}
                 to={`/admin/businesses/${b.id}`}
-                className="p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+                className="p-4 flex items-center gap-3 hover:bg-background transition-colors"
               >
                 <Avatar src={b.logo_url} name={b.name} size="md" />
                 <div className="flex-1 min-w-0">

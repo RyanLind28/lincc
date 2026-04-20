@@ -167,7 +167,7 @@ export default function AdminBusinessDetailPage() {
         {/* Vouchers */}
         <Section title={`Vouchers (${detail.vouchers.total})`} empty="No vouchers created" items={detail.vouchers.items}>
           {(v) => (
-            <Link key={v.id} to={`/voucher/${v.id}`} className="block p-3 border-b border-border last:border-b-0 hover:bg-gray-50 transition-colors">
+            <Link key={v.id} to={`/voucher/${v.id}`} className="block p-3 border-b border-border last:border-b-0 hover:bg-background transition-colors">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-text truncate">{v.title}</p>
@@ -201,7 +201,7 @@ export default function AdminBusinessDetailPage() {
         {/* Events */}
         <Section title={`Events (${detail.events.total})`} empty="No events linked" items={detail.events.items}>
           {(e) => (
-            <Link key={e.id} to={`/event/${e.id}`} className="block p-3 border-b border-border last:border-b-0 hover:bg-gray-50 transition-colors">
+            <Link key={e.id} to={`/event/${e.id}`} className="block p-3 border-b border-border last:border-b-0 hover:bg-background transition-colors">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-text truncate">{e.title}</p>

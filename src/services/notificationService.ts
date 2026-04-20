@@ -193,6 +193,10 @@ export function getNotificationPath(notification: Notification): string {
       return eventId ? `/event/${eventId}` : '/';
     case 'voucher_shared':
       return (data?.voucher_id as string) ? `/voucher/${data.voucher_id}` : '/';
+    case 'participant_removed':
+    case 'participant_left':
+    case 'participant_rejoined':
+      return eventId ? `/event/${eventId}` : '/';
     default:
       return '/';
   }

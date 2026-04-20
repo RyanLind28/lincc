@@ -110,17 +110,10 @@ export function subscribeToMessages(
 export async function getUserChats(userId: string): Promise<EventWithDetails[]> {
   const chatCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  // Get events where user is an approved participant
-  const { data: participantEvents, error: participantError } = await supabase
+  // Get event IDs where user is an approved participant
+  const { data: participantRows, error: participantError } = await supabase
     .from('event_participants')
-    .select(`
-      event:events!event_id(
-        *,
-        host:profiles!host_id(*),
-        category:categories!category_id(*),
-        participant_count:event_participants(count)
-      )
-    `)
+    .select('event_id')
     .eq('user_id', userId)
     .eq('status', 'approved');
 
@@ -128,50 +121,30 @@ export async function getUserChats(userId: string): Promise<EventWithDetails[]> 
     console.error('Error fetching participant events:', participantError);
   }
 
-  // Get events where user is the host
-  const { data: hostEvents, error: hostError } = await supabase
+  const participantEventIds = (participantRows || []).map((r) => r.event_id);
+
+  // Get events where user is host OR an approved participant, within chat window
+  const { data: events, error: eventsError } = await supabase
     .from('events')
     .select(`
       *,
       host:profiles!host_id(*),
-      category:categories!category_id(*),
-      participant_count:event_participants(count)
+      category:categories!category_id(*)
     `)
-    .eq('host_id', userId)
     .in('status', ['active', 'full'])
-    .gte('expires_at', chatCutoff);
+    .gte('expires_at', chatCutoff)
+    .or(`host_id.eq.${userId}${participantEventIds.length > 0 ? `,id.in.(${participantEventIds.join(',')})` : ''}`);
 
-  if (hostError) {
-    console.error('Error fetching host events:', hostError);
+  if (eventsError) {
+    console.error('Error fetching chat events:', eventsError);
   }
 
-  // Combine and dedupe events
+  // Dedupe and transform
   const eventMap = new Map<string, EventWithDetails>();
-
-  // Add participant events. Filter out chats for events whose "chat window"
-  // has closed (> 24h past expires_at) and events that were cancelled/deleted.
-  if (participantEvents) {
-    for (const p of participantEvents) {
-      const event = p.event as unknown as EventWithDetails & { participant_count: { count: number }[] };
-      if (!event || !event.id) continue;
-      if (event.status !== 'active' && event.status !== 'full') continue;
-      if (event.expires_at && event.expires_at < chatCutoff) continue;
-      eventMap.set(event.id, {
-        ...event,
-        participant_count: event.participant_count?.[0]?.count || 0,
-      });
-    }
-  }
-
-  // Add host events
-  if (hostEvents) {
-    for (const event of hostEvents) {
-      const transformedEvent = event as unknown as EventWithDetails & { participant_count: { count: number }[] };
+  if (events) {
+    for (const event of events) {
       if (!eventMap.has(event.id)) {
-        eventMap.set(event.id, {
-          ...transformedEvent,
-          participant_count: transformedEvent.participant_count?.[0]?.count || 0,
-        });
+        eventMap.set(event.id, event as unknown as EventWithDetails);
       }
     }
   }

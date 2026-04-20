@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Header } from '../components/layout';
 import { Input, VoucherTile, GradientButton } from '../components/ui';
-import { Search, Tag, Store } from 'lucide-react';
+import { Search, Tag, Store, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getActiveVouchers } from '../services/voucherService';
 import { BUSINESS_CATEGORIES } from '../types';
@@ -40,7 +40,7 @@ export default function VouchersPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24 max-w-3xl mx-auto">
-      <Header />
+      <Header rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       <div className="p-4 space-y-4">
         <div>

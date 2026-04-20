@@ -87,7 +87,7 @@ function ToastItem({
 
   return (
     <div
-      className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg pointer-events-auto flex items-center justify-between animate-in slide-in-from-bottom-2 fade-in duration-200`}
+      className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg pointer-events-auto flex items-center justify-between animate-slide-up-sm`}
       role="alert"
     >
       <span className="text-sm font-medium">{toast.message}</span>

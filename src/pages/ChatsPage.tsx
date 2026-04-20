@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { GradientButton, CategoryIcon, Avatar, ChatListSkeleton } from '../components/ui';
-import { MessageCircle, ChevronRight, Users, Loader2 } from 'lucide-react';
+import { MessageCircle, ChevronRight, Users, Loader2, Settings } from 'lucide-react';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useUserChats } from '../hooks/useEventChat';
 import { useUserDMs } from '../hooks/useDMChat';
@@ -67,7 +67,7 @@ export default function ChatsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header showLogo showCreateEvent showNotifications />
+        <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
         <div className="p-4">
           <h1 className="text-2xl font-bold text-text mb-4">Chats</h1>
           {renderTabButtons()}
@@ -80,7 +80,7 @@ export default function ChatsPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <Header showLogo showCreateEvent showNotifications />
+        <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
         <div className="p-4">
           <h1 className="text-2xl font-bold text-text mb-4">Chats</h1>
           {renderTabButtons()}
@@ -99,7 +99,7 @@ export default function ChatsPage() {
 
   return (
     <div className="min-h-screen bg-background max-w-3xl mx-auto" {...pullHandlers}>
-      <Header showLogo showCreateEvent showNotifications />
+      <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       {/* Pull-to-refresh indicator */}
       {(pullDistance > 0 || isRefreshing) && (

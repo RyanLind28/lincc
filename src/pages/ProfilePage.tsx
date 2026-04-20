@@ -160,14 +160,14 @@ export default function ProfilePage() {
           <div className="flex items-center gap-1">
             <Link
               to="/people"
-              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
               aria-label="Find people"
             >
               <Users className="h-5 w-5" />
             </Link>
             <Link
               to="/settings"
-              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
               aria-label="Settings"
             >
               <Settings className="h-5 w-5" />

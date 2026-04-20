@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { SlidersHorizontal, MapPin, Ticket, Clock, LayoutGrid, Calendar, RotateCcw, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { SlidersHorizontal, MapPin, Ticket, Clock, LayoutGrid, Calendar, RotateCcw, Loader2, Settings, Navigation, X } from 'lucide-react';
 import {
   SearchBar,
   FilterPills,
@@ -16,7 +17,9 @@ import {
 } from '../components/ui';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { useLocationName } from '../hooks/useLocationName';
+import { useGeocode } from '../hooks/useGeocode';
 import { Header } from '../components/layout';
+import { AnnouncementBanner } from '../components/ui/AnnouncementBanner';
 import { useRecommendedEvents } from '../hooks/useRecommendedEvents';
 import { useViewMode } from '../contexts/ViewModeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
@@ -42,6 +45,27 @@ const ALL_CATEGORIES = CATEGORIES
     icon: cat.icon,
   }));
 
+// Detect if a search term looks like a UK postcode or place name (not an event query)
+function isLocationQuery(term: string): boolean {
+  const trimmed = term.trim();
+  // UK postcode patterns: "SW1A 1AA", "E1", "N1 9GU", "EC2A", "W1D 3AF"
+  const ukPostcode = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d?[A-Z]{0,2}$/i;
+  if (ukPostcode.test(trimmed)) return true;
+  // Short place-like queries (1-3 words, no obvious event keywords)
+  const words = trimmed.split(/\s+/);
+  const eventKeywords = ['yoga', 'coffee', 'run', 'walk', 'gym', 'drink', 'party', 'meet', 'game', 'sport', 'music', 'food', 'cook', 'study', 'work'];
+  if (words.length <= 3 && words.length >= 1) {
+    const lower = trimmed.toLowerCase();
+    const hasEventKeyword = eventKeywords.some(k => lower.includes(k));
+    if (!hasEventKeyword && /^[A-Za-z\s'-]+$/.test(trimmed) && trimmed.length >= 3) {
+      // Looks like a place name (e.g., "Shoreditch", "Camden Town", "King's Cross")
+      // Only trigger if it starts with a capital letter (proper noun hint)
+      if (/^[A-Z]/.test(trimmed)) return true;
+    }
+  }
+  return false;
+}
+
 export default function HomePage() {
   const { viewMode } = useViewMode();
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
@@ -50,6 +74,10 @@ export default function HomePage() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [vouchers, setVouchers] = useState<VoucherWithDetails[]>([]);
+
+  // Custom location state (from postcode/place search)
+  const [customLocation, setCustomLocation] = useState<{ latitude: number; longitude: number; name: string } | null>(null);
+  const { geocode, isLoading: isGeocoding } = useGeocode();
 
   // Debounce distance so the slider doesn't hammer Supabase on every tick
   const distanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -72,7 +100,7 @@ export default function HomePage() {
     hasLocation,
     refreshLocation,
     refresh,
-  } = useRecommendedEvents({ maxDistance: debouncedDistance });
+  } = useRecommendedEvents({ maxDistance: debouncedDistance, locationOverride: customLocation });
 
   // Get user location for map + readable name
   const { location: userLocation } = useUserLocation();
@@ -80,6 +108,30 @@ export default function HomePage() {
 
   // Bookmarks
   const { savedIds, toggleSave } = useBookmarks();
+
+  // Effective location for map and voucher distance (custom or GPS)
+  const effectiveLocation = customLocation
+    ? { latitude: customLocation.latitude, longitude: customLocation.longitude }
+    : userLocation;
+
+  // Handle search submit — detect location queries and geocode them
+  const handleSearchSubmit = useCallback(async (term: string) => {
+    if (isLocationQuery(term)) {
+      const result = await geocode(term);
+      if (result) {
+        setCustomLocation({ latitude: result.lat, longitude: result.lng, name: result.name });
+        updateFilter('search', '');
+        return;
+      }
+    }
+    // Not a location query (or geocode failed) — treat as normal event search
+    updateFilter('search', term);
+  }, [geocode, updateFilter]);
+
+  // Clear custom location and revert to GPS
+  const clearCustomLocation = useCallback(() => {
+    setCustomLocation(null);
+  }, []);
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -103,15 +155,15 @@ export default function HomePage() {
   }, []);
 
   // Split vouchers into nearby vs further away
-  const nearbyVouchers = userLocation
+  const nearbyVouchers = effectiveLocation
     ? vouchers.filter((v) => {
-        const d = haversine(userLocation.latitude, userLocation.longitude, v.venue_lat, v.venue_lng);
+        const d = haversine(effectiveLocation.latitude, effectiveLocation.longitude, v.venue_lat, v.venue_lng);
         return d <= debouncedDistance;
       })
     : vouchers;
-  const farVouchers = userLocation
+  const farVouchers = effectiveLocation
     ? vouchers.filter((v) => {
-        const d = haversine(userLocation.latitude, userLocation.longitude, v.venue_lat, v.venue_lng);
+        const d = haversine(effectiveLocation.latitude, effectiveLocation.longitude, v.venue_lat, v.venue_lng);
         return d > debouncedDistance;
       })
     : [];
@@ -119,7 +171,10 @@ export default function HomePage() {
   return (
     <div className="h-screen flex flex-col bg-background max-w-4xl mx-auto">
       {/* Header - Instagram style */}
-      <Header showLogo showCreateEvent showNotifications />
+      <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
+
+      {/* Announcement banner — between header and search */}
+      <AnnouncementBanner />
 
       {/* Search and Filters */}
       <div className="px-4 py-3 space-y-3 bg-background">
@@ -129,7 +184,8 @@ export default function HomePage() {
             value={filters.search}
             onChange={(e) => updateFilter('search', e.target.value)}
             onClear={() => updateFilter('search', '')}
-            onSearchSubmit={(term) => updateFilter('search', term)}
+            onSearchSubmit={handleSearchSubmit}
+            placeholder={customLocation ? 'Search events...' : 'Search events or a postcode...'}
             className="flex-1"
           />
           <button
@@ -152,12 +208,48 @@ export default function HomePage() {
           </button>
         </div>
 
+        {/* Custom location indicator */}
+        {customLocation && (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-coral/10 border border-coral/20 rounded-full text-sm">
+              <Navigation className="h-3.5 w-3.5 text-coral" />
+              <span className="text-coral font-medium truncate max-w-[200px]">{customLocation.name}</span>
+              <button
+                onClick={clearCustomLocation}
+                className="ml-1 p-0.5 rounded-full hover:bg-coral/20 transition-colors"
+                aria-label="Clear custom location"
+              >
+                <X className="h-3.5 w-3.5 text-coral" />
+              </button>
+            </div>
+            <span className="text-xs text-text-muted">Showing events near this location</span>
+          </div>
+        )}
+
+        {/* Geocoding loading indicator */}
+        {isGeocoding && (
+          <div className="flex items-center gap-2 text-sm text-text-muted">
+            <Loader2 className="h-4 w-4 animate-spin text-coral" />
+            <span>Finding location...</span>
+          </div>
+        )}
+
         {/* Category quick filters - horizontal scroll, all categories */}
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
           <FilterPills
             options={ALL_CATEGORIES}
             selected={filters.categories}
-            onChange={(selected) => updateFilter('categories', selected)}
+            onChange={(selected) => {
+              // Single-select toggle: if the user tapped the already-selected category, deselect it;
+              // otherwise select only the newly tapped category.
+              const newItem = selected.find((v) => !filters.categories.includes(v));
+              if (newItem) {
+                updateFilter('categories', [newItem]);
+              } else {
+                // User deselected the current selection
+                updateFilter('categories', []);
+              }
+            }}
             className="flex-nowrap"
           />
         </div>
@@ -321,7 +413,7 @@ export default function HomePage() {
             ) : (
               <MapView
                 events={scoredEvents}
-                userLocation={userLocation}
+                userLocation={effectiveLocation}
                 radiusKm={distance}
                 className="absolute inset-0"
               />
@@ -356,7 +448,7 @@ export default function HomePage() {
                   ${
                     filters.timeRange === option.value && !selectedDate
                       ? 'gradient-primary text-white shadow-sm'
-                      : 'bg-gray-100 text-text-muted hover:bg-gray-200'
+                      : 'bg-background text-text-muted hover:bg-border'
                   }
                 `}
               >
@@ -370,7 +462,7 @@ export default function HomePage() {
                 ${
                   showDatePicker || selectedDate
                     ? 'gradient-primary text-white shadow-sm'
-                    : 'bg-gray-100 text-text-muted hover:bg-gray-200'
+                    : 'bg-background text-text-muted hover:bg-border'
                 }
               `}
             >
@@ -447,12 +539,9 @@ export default function HomePage() {
                   key={category.value}
                   onClick={() => {
                     if (isSelected) {
-                      updateFilter(
-                        'categories',
-                        filters.categories.filter((c) => c !== category.value)
-                      );
+                      updateFilter('categories', []);
                     } else {
-                      updateFilter('categories', [...filters.categories, category.value]);
+                      updateFilter('categories', [category.value]);
                     }
                   }}
                   className={`
@@ -460,7 +549,7 @@ export default function HomePage() {
                     ${
                       isSelected
                         ? 'gradient-primary text-white shadow-sm scale-[0.97]'
-                        : 'bg-gray-50 text-text-muted hover:bg-gray-100 border border-transparent hover:border-gray-200'
+                        : 'bg-background text-text-muted hover:bg-border border border-transparent hover:border-border'
                     }
                   `}
                 >

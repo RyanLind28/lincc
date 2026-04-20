@@ -90,7 +90,7 @@ function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg text-text-muted hover:text-text hover:bg-gray-100 transition-colors ml-auto"
+                className="p-1 rounded-lg text-text-muted hover:text-text hover:bg-background transition-colors ml-auto"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />

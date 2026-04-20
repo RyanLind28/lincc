@@ -490,11 +490,11 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
         <button
           onClick={handleFindMe}
           disabled={isLocating}
-          className="absolute bottom-28 right-2 z-10 w-10 h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50"
+          className="absolute bottom-28 right-2 z-10 w-10 h-10 bg-surface rounded-lg shadow-lg border border-border flex items-center justify-center hover:bg-background active:bg-background transition-colors disabled:opacity-50"
           aria-label="Find my location"
         >
           <Locate
-            className={`h-5 w-5 text-gray-700 ${isLocating ? 'animate-pulse text-coral' : ''}`}
+            className={`h-5 w-5 text-text-muted ${isLocating ? 'animate-pulse text-coral' : ''}`}
           />
         </button>
       )}
@@ -514,7 +514,7 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
       )}
 
       {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+        <div className="absolute inset-0 flex items-center justify-center bg-background">
           <div className="animate-spin w-8 h-8 border-2 border-coral border-t-transparent rounded-full" />
         </div>
       )}
@@ -537,7 +537,7 @@ function EventPreviewCard({
   return (
     <div
       onClick={onTap}
-      className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 cursor-pointer active:scale-[0.98] transition-transform"
+      className="bg-surface rounded-2xl shadow-xl border border-border p-4 cursor-pointer active:scale-[0.98] transition-transform"
     >
       <div className="flex gap-3">
         {/* Category icon */}
@@ -548,19 +548,19 @@ function EventPreviewCard({
         {/* Details */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-gray-900 text-sm truncate">{event.title}</h3>
+            <h3 className="font-semibold text-text text-sm truncate">{event.title}</h3>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();
               }}
-              className="text-gray-400 hover:text-gray-600 text-lg leading-none flex-shrink-0 -mt-0.5"
+              className="text-text-light hover:text-text-muted text-lg leading-none flex-shrink-0 -mt-0.5"
             >
               &times;
             </button>
           </div>
 
-          <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+          <div className="flex items-center gap-1 text-xs text-text-muted mt-0.5">
             <MapPin className="h-3 w-3 flex-shrink-0" />
             <span className="truncate">{event.venue_name}</span>
           </div>
@@ -570,7 +570,7 @@ function EventPreviewCard({
               <Clock className="h-3 w-3" />
               {formatTime(event.start_time)}
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="flex items-center gap-1 text-xs text-text-muted">
               <Users className="h-3 w-3" />
               {spotsLeft > 0 ? `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left` : 'Full'}
             </div>

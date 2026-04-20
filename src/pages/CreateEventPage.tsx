@@ -372,7 +372,7 @@ export default function CreateEventPage() {
           step !== 'category' ? (
             <button
               onClick={handleBack}
-              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -548,7 +548,7 @@ export default function CreateEventPage() {
             {/* Cover image picker */}
             <div>
               <label className="block text-sm font-medium text-text mb-2">Cover image</label>
-              <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100">
+              <div className="relative aspect-video rounded-xl overflow-hidden bg-background">
                 {coverImageUrl ? (
                   <img
                     src={coverImageUrl}

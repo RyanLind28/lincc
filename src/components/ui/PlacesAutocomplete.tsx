@@ -154,7 +154,7 @@ export function PlacesAutocomplete({
               key={prediction.placeId}
               type="button"
               onClick={() => handleSelect(prediction)}
-              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-border/50 last:border-b-0"
+              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-background transition-colors text-left border-b border-border/50 last:border-b-0"
             >
               <MapPin className="h-4 w-4 text-coral mt-0.5 flex-shrink-0" />
               <div className="min-w-0">
@@ -167,7 +167,7 @@ export function PlacesAutocomplete({
               </div>
             </button>
           ))}
-          <div className="px-4 py-2 bg-gray-50/50">
+          <div className="px-4 py-2 bg-background/50">
             <p className="text-[10px] text-text-light text-center">Powered by Google</p>
           </div>
         </div>

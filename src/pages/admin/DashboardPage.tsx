@@ -187,7 +187,7 @@ export default function AdminDashboard() {
             <Link
               key={item.to}
               to={item.to}
-              className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-4 hover:bg-background transition-colors"
             >
               <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center">
                 <item.icon className="h-5 w-5 text-coral" />

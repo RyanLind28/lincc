@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Compass, Map, List, Tag, MessageCircle, Calendar, User } from 'lucide-react';
+import { Compass, Map, Tag, MessageCircle, Calendar, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useViewMode } from '../../contexts/ViewModeContext';
 
@@ -63,11 +63,11 @@ export function BottomNav() {
             className="flex-1 flex items-center justify-center"
             aria-label={viewMode === 'list' ? 'Switch to map view' : 'Switch to list view'}
           >
-            <NavSlot isActive={discoverActive} label={viewMode === 'list' ? 'Map' : 'List'}>
+            <NavSlot isActive={discoverActive} label="Discover">
               {viewMode === 'list' ? (
-                <Map className="h-6 w-6" strokeWidth={2} />
+                <Compass className="h-6 w-6" strokeWidth={2} />
               ) : (
-                <List className="h-6 w-6" strokeWidth={2} />
+                <Map className="h-6 w-6" strokeWidth={2} />
               )}
             </NavSlot>
           </button>

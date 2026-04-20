@@ -89,7 +89,7 @@ export default function DMChatRoomPage() {
 
   if (isLoading || otherUserLoading) {
     return (
-      <div className="h-screen flex flex-col bg-background">
+      <div className="h-dvh flex flex-col overflow-hidden bg-background">
         <Header showBack title="Chat" />
         <div className="flex-1 flex items-center justify-center">
           <Spinner size="lg" />
@@ -99,7 +99,7 @@ export default function DMChatRoomPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-dvh flex flex-col overflow-hidden bg-background">
       {/* Header with user info */}
       <Header
         showBack
@@ -120,7 +120,7 @@ export default function DMChatRoomPage() {
       />
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide p-4">
+      <div className="flex-1 overflow-y-auto scrollbar-hide p-4" style={{ overscrollBehavior: 'contain' }}>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mb-4">
@@ -137,7 +137,7 @@ export default function DMChatRoomPage() {
               <div key={date}>
                 {/* Date separator */}
                 <div className="flex items-center justify-center mb-4">
-                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-text-muted">
+                  <span className="px-3 py-1 bg-background rounded-full text-xs text-text-muted">
                     {date}
                   </span>
                 </div>

@@ -79,10 +79,10 @@ Big push day. ~25 items closed end-to-end. Details inline below — this is the 
 ## Current Status
 
 - **App**: Pre-launch, demo-ready on Vercel (`lincc-six.vercel.app`)
-- **Database**: Live Supabase, 26 categories, realistic event dataset (2027 demo events now hidden by 14-day window filter)
+- **Database**: Live Supabase, 26 categories, realistic event dataset (2027 demo events deleted from owner account this session)
 - **Auth**: Email/password + magic link + OAuth Google (button wired, awaiting provider creds). Two-checkbox signup consent (T&C + 18+) active.
 - **DEV_MODE**: OFF in all files
-- **Migrations**: Local files up to `042_fix_participant_count_trigger.sql`. Verify `041` + `042` have been pasted into the live Supabase SQL editor (they are reference files and don't auto-apply)
+- **Migrations**: Local files up to `042_fix_participant_count_trigger.sql`. Verify `041` + `042` have been pasted into the live Supabase SQL editor (they are reference files and don't auto-apply). No new migrations this session — all changes are frontend-only.
 - **Email**: Custom SMTP via Resend live (`noreply@system.lincc.live`). 14 Lincc-branded HTML templates ready to paste into Dashboard.
 - **Push Notifications**: Edge function deployed + secrets configured. VAPID key update pending in Vercel.
 - **Landing**: Live with waitlist form. Confirmation email Edge Function ready to deploy.
@@ -110,11 +110,11 @@ Big push day. ~25 items closed end-to-end. Details inline below — this is the 
 - [x] Empty states — friendly messages + CTAs in profile, chats, user profile pages
 - [x] Error states — user-friendly error messages with retry buttons in chats, toasts throughout
 - [x] Pull-to-refresh — event list on home page (already implemented via `usePullToRefresh` hook). Extended to `ChatsPage` too so users can refresh their chats list by dragging.
-- [ ] Subtle animations / polish pass — add restrained motion across the app to make it feel premium without overdoing it. Scope: page transitions (fade + slide on route change), list-item stagger on home/explore feed load, card press-scale on tap, button ripple/press feedback, success ticks on join/save, skeleton → content crossfade, bottom sheet spring physics, toast slide-in, heart/bookmark pulse on toggle, chat message slide-up, modal backdrop fade. Use existing `animate-slide-up` / `animate-fade-in` / `press-effect` utilities where possible; add a `prefers-reduced-motion` guard. Avoid heavyweight libs — Tailwind + CSS transitions should cover 90% of it.
+- [x] Subtle animations / polish pass — added keyframes (slide-up-sm, scale-in, pop, sheet-up, backdrop-in), stagger animation on feed cards, press-effect on event cards, bookmark pop, BottomSheet spring curve, Toast slide-up, page fade-in, `prefers-reduced-motion` guard
 - [x] Haptic feedback — `src/lib/haptics.ts` (Vibration API wrapper). Wired into ChatRoomPage (send message) and EventDetailPage (join success). Extend to other interactions as needed.
 - [x] How-to guide — `WelcomeGuide.tsx` first-time user walkthrough modal, rendered from `MainLayout`.
-- [ ] PWA install prompt in onboarding — prompt users to add to home screen during onboarding flow
-- [ ] Settings page enhancements — comprehensive settings hub: account management (email, password change), app preferences (language, theme), linked accounts, about/version info, help & support links, clear cache, notification sounds
+- [x] PWA install prompt in onboarding — added iOS Safari fallback instructions (Share → Add to Home Screen) when `beforeinstallprompt` isn't available
+- [x] Settings page enhancements — email change (inline), linked accounts section (Email + Google), iOS "Add to Home Screen" entry, all existing features retained
 
 ---
 
@@ -217,6 +217,10 @@ Big push day. ~25 items closed end-to-end. Details inline below — this is the 
 - [x] Joined event UX — "Message Group" button, clear leave/chat layout
 - [x] Mobile "Further Away" layout — location on second line, simplified count badge
 - [x] Header rightContent not rendering — `Header` component accepted `rightContent` prop but never rendered it; settings gear + people icon on Profile page were invisible. Fixed by destructuring and rendering the prop.
+- [x] Announcement banner redesign — branded gradient card with dismiss button, moved outside header to HomePage content area (no longer in global Header)
+- [x] Event card tiles uniform height — fixed content area to consistent height with single-line truncated title across all cards
+- [x] MyEventsPage past events section — past events shown below "Past" header at 50% opacity instead of being hidden entirely
+- [x] Onboarding progress bar redesign — single continuous bar filling 20% per step with gradient-primary (replaced segmented dots)
 
 ---
 
@@ -263,12 +267,12 @@ _(Nothing currently blocked)_
 - [x] First-time login fails, requires 2–3 attempts — **Fixed**: Root cause was the aggressive `email_confirmed_at` sign-out check in `AuthContext.onAuthStateChange`. When a user clicked the confirm-email link, we manually exchanged the hash tokens via `setSession()`, but that only decodes the JWT — which doesn't contain `email_confirmed_at`. The listener saw a falsy value and signed them out. Supabase already enforces confirmation at `signInWithPassword` server-side, so the client check was both redundant and actively broken. Removed it.
 - [x] Signup email branded "Supabase" instead of Lincc — **Diagnosed (dashboard-only fix required)**: All four local templates in `supabase/email-templates/` (confirm-signup, magic-link, reset-password, change-email) are Lincc-branded. The "Supabase" branding testers see is the **sender identity** — by default Supabase Auth sends from `noreply@mail.app.supabase.io` with sender name "Supabase Auth". Configuring custom SMTP (same step needed for Bug #3 above) resolves this. Also verify that all four template bodies in Dashboard → Auth → Email Templates match the files in `supabase/email-templates/` (dashboard edits don't sync from the repo).
 - [x] Profile picture forced in onboarding — **Fixed**: Dropped `avatar_url` from `checkProfileComplete` (AuthContext) so it's no longer required to exit onboarding. Avatar step on OnboardingPage updated with "Optional — you can always add one later" copy and no longer blocks the Continue button. Users who skip get the default initial-based Avatar (which already handles `src={null}`).
-- [ ] "Add to home screen" / install prompt not surfaced during signup — new testers never saw the PWA install step. Ensure `InstallBanner` / install step fires in onboarding flow on mobile.
-- [ ] Follow button formatting broken on user profile page — visual/layout issue with the follow button on `/user/:id`. Screenshot from Ahsan 2026-04-15 17:40.
-- [ ] Chat bar formatting broken when messaging someone — layout issue in DM chat room. Screenshot from Ahsan 2026-04-15 17:45.
-- [ ] Map/globe toggle button unclear — pressing it takes users to the globe/map view correctly, but the affordance isn't obvious. Improve icon label/tooltip.
-- [ ] Map toggle icon disappears on map view + Lincc logo doesn't link home — on the map view the toggle icon vanishes, and the header Lincc logo doesn't navigate back to the home page on that specific page.
-- [ ] Bottom-nav Chats shows empty list but event-initiated chats have messages — messages appear when entering chat from an event, but the Chats tab shows no messages. Likely a query/filter mismatch between the two entry points (event-scoped vs. user-scoped chat fetch).
+- [x] "Add to home screen" / install prompt not surfaced during signup — **Fixed**: Added iOS Safari fallback instructions in onboarding step 5 (Share → Add to Home Screen) since `beforeinstallprompt` never fires on iOS.
+- [x] Follow button formatting broken on user profile page — **Fixed**: Changed from `flex-1` (stretched) to natural width `px-5`, hid "Message" text on small screens (icon-only), grouped Share+More with `ml-auto`.
+- [x] Chat bar formatting broken when messaging someone — **Fixed**: Changed `h-screen` to `h-dvh` on DMChatRoomPage + ChatRoomPage for proper mobile viewport handling. Added `overflow-hidden` and `overscrollBehavior: contain` for iOS keyboard.
+- [x] Map/globe toggle button unclear — **Fixed**: Stable "Discover" label + context-appropriate icons (Compass in list view, Map in map view). No more confusing label/icon swap.
+- [x] Map toggle icon disappears on map view + Lincc logo doesn't link home — **Fixed**: Part of the toggle rewrite above. Logo was already a `<Link to="/">` (no-op on home page is correct behavior).
+- [x] Bottom-nav Chats shows empty list but event-initiated chats have messages — **Fixed**: Rewrote `getUserChats` in chatService to avoid circular nested join (event_participants → events → event_participants). Now uses simple two-step query: get participant event IDs, then query events directly with OR filter.
 - [x] Directions / "find my location" not working — **Fixed**: (a) `EventDetailPage` Directions link was using `maps/place/?q=place_id:...` which just shows the place — swapped to the proper directions deep link `maps/dir/?api=1&destination=lat,lng&destination_place_id=...` which opens Google Maps with turn-by-turn on web/iOS/Android. (b) `MapView.handleFindMe` was silently failing on permission-denied / timeout — added clear toast messages ("Location access denied", "Location unavailable", etc.) and bumped the geolocation timeout from 5s → 10s with a 60s cache.
 
 - [x] Magic link login broken — **Fixed**: Added explicit `getSession()` bootstrap after auth listener setup to catch hash token exchange that completes before listener is ready. Also handle `INITIAL_SESSION` event alongside `SIGNED_IN`. Added `TOKEN_REFRESHED` handling to avoid resetting profile/loading state. Added profile fetch retry (1s delay) for transient DB failures.
@@ -288,23 +292,21 @@ _(Nothing currently blocked)_
 ## Backlog (New Feature Requests)
 
 - [x] Save event as draft — **Fixed**: Migration 037 adds `'draft'` to the `event_status` enum. Existing RLS already restricts visibility (host-only for non-`'active'` statuses; feed queries filter by `status='active'`; `expire_past_events()` cron only touches active rows so drafts never expire). `CreateEventPage` now has a "Save as Draft" button on the final step. New `MyEventsPage` "Drafts" tab lists the user's drafts with Publish (→ `status='active'`) and Delete actions. Auto-save of in-progress form was already implemented via `sessionStorage` under key `lincc-create-event-draft`.
-- [ ] Message host option — let hosts opt in/out of direct messages from users when creating an event
-- [ ] Join without group chat — participants can join an event but opt out of the group chat, with a DM-to-host option instead
-- [ ] PWA install screen in onboarding — dedicated step in onboarding flow prompting users to install the app to their home screen / desktop
-- [ ] Search by postcode — add postcode/location search to the filter (not just GPS)
+- [x] PWA install screen in onboarding — iOS fallback instructions added to step 5; native `beforeinstallprompt` already handled
+- [x] Search by postcode — **Fixed**: Typing a UK postcode or place name in the search bar geocodes via Mapbox and filters events around that location. Coral pill shows custom location with X to clear back to GPS.
 - [ ] Header logo resolution — replace current @4x webp with higher-res source file and scale down for crisp rendering
-- [ ] Dark mode colour audit — review all text/button colours (skip, secondary actions, etc.) for proper contrast in dark mode
+- [x] Dark mode colour audit — **Fixed**: Replaced hardcoded grays (`bg-gray-50/100`, `hover:bg-gray-50`, `border-gray-200`) with semantic tokens (`bg-background`, `border-border`) across 38 files
 - [ ] OAuth login — Google, Apple, Facebook buttons added to UI (disabled with "not set up" label), needs provider credentials configured in Supabase Auth
 - [ ] Business events posted under business identity — when a business account creates an event, it should be attributed to the business name (and logo) rather than the personal account. Likely needs a schema change (e.g. `events.posted_as` enum of `'user' | 'business'`, or always resolve host→business when `business_id` is set at create time). Note: display layer already joins `business:businesses!business_id(*)` on event queries, so this is mainly about the create-event flow and making the attribution explicit/selectable.
-- [ ] Main filter — single category select only. Currently the home/explore filter allows multi-select categories, but users expect a single category to mean "show me only this". Change to radio-style single-select (with an "All" option) so the result is predictable and not mixed.
-- [ ] Removed / left event notifications — when a user is removed from an event by the host, or leaves voluntarily, send a notification. When that same user re-joins the event, the re-join should also fire a notification (both to the user and to the host). Check `notifications` table + notification_preferences for the new types.
-- [ ] Guest list visibility rules — on event detail, the host can see the full guest list, but regular participants should not see other guests' identities (privacy). Today everyone sees the approved participants list. Decide on the right PRD behaviour (hide names entirely? show only avatars + count? show only mutuals?) and tighten both the UI and RLS.
-- [ ] iOS "Add to Home Screen" entry in Settings — iOS Safari doesn't expose `beforeinstallprompt`, so the standard install banner doesn't fire. Add a manual "Add to home screen" row in Settings (near the Feedback row) that opens an instruction sheet (Share button → Add to Home Screen) with screenshots. Detect iOS Safari and show it there too.
-- [ ] Event images — remove user-uploaded cover image option from CreateEventPage. Restrict cover source to: (a) Google Places photo of the selected venue, or (b) a single hosted stock image as fallback. Keep upload for vouchers and profiles; only remove from events.
-- [ ] Dark mode persistence + UI audit — (a) persist the user's dark-mode toggle state across sessions/devices (currently appears to reset). Save to `profiles.settings` or localStorage with user-scoped key. (b) Full UI audit in dark mode: buttons, skip text, secondary actions, inputs, borders, gradient overlays, category icons, map markers. Known weak spots called out in earlier feedback.
-- [ ] Chat viewport behaviour — in the event group chat and DM chat rooms, the header and text input should remain pinned in the viewport (not scroll away). On upward scroll the header can collapse/hide; on downward scroll it should re-appear. Text input must always be visible. Verify with iOS Safari keyboard open (known viewport-shrink footgun).
-- [ ] Settings icon on every main page — add a settings gear to the top-right of every primary-nav page's header (Home, Explore, Vouchers, Chats, Profile), not just Profile. Links to `/settings`.
-- [ ] Google OAuth prefill — when a user signs up via Google, prefill as much of onboarding as possible from the OAuth payload: email, full name (→ first_name/last_name split), profile picture (→ avatar_url), locale. DOB and sex are NOT in standard Google OAuth scopes, so those stay manual unless we request `https://www.googleapis.com/auth/user.birthday.read` + `user.gender.read` (requires People API call + added consent scopes — worth the friction tradeoff review).
+- [x] Main filter — single category select only. **Fixed**: Changed to radio-style single-select on HomePage FilterPills and BottomSheet category grid. Tapping selected category deselects (shows all).
+- [x] Removed / left event notifications — **Fixed**: Added `participant_removed`, `participant_left`, `participant_rejoined` notification types. Triggers fire in participantService on reject/leave/rejoin.
+- [x] Guest list visibility rules — **Fixed**: Host sees full list (names + avatars + profile links). Participants see avatar stack + count only. Non-participants see count text only.
+- [x] iOS "Add to Home Screen" entry in Settings — **Fixed**: Added conditional row in About section that renders on iOS Safari (non-standalone) with Share → Add to Home Screen instructions.
+- [x] Event images — **Fixed**: Removed user upload from CreateEventPage. Cover auto-populates from Google Places venue photo or category stock image. Venue photo carousel retained for picking between photos.
+- [x] Dark mode persistence + UI audit — **Fixed**: (a) localStorage persistence with try-catch in useDarkMode hook. (b) Full audit of 38 files replacing hardcoded grays with semantic tokens.
+- [x] Chat viewport behaviour — **Fixed**: `h-dvh` + `overflow-hidden` on root, `overscrollBehavior: contain` on messages area. Header and input stay pinned.
+- [x] Settings icon on every main page — **Fixed**: Added settings gear `rightContent` to Header on HomePage, ChatsPage, MyEventsPage, VouchersPage.
+- [x] Google OAuth prefill — **Fixed**: OnboardingPage reads `user.user_metadata` from Google OAuth payload and prefills `first_name` and `avatar_url` (name split + avatar). DOB and gender remain manual (not in standard Google scopes).
 
 ### From tester feedback (2026-04-15 — Tami)
 - [x] Remove old demo/test events — **Re-scoped & fixed**: User confirmed they didn't want to delete from DB — the real ask was that the UI shouldn't show expired events. Audited every event query: home feed, map, search, explore, user profile, and event detail were already filtering correctly. The two surfaces that were still showing expired events were `MyEventsPage` (Hosting + Joined tabs) and `SavedEventsPage`. Both now filter to `status ∈ ('active','full')` and `expires_at >= now`. DB rows are left intact (hosts could see their own past events via a future "history" tab, and cascade-delete of 37 rows wasn't worth the risk).

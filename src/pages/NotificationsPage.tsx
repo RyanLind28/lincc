@@ -177,7 +177,7 @@ export default function NotificationsPage() {
                   onClick={() => handleNotificationClick(notification)}
                   className={`w-full flex items-start gap-3 p-4 rounded-xl border transition-colors text-left ${
                     notification.is_read
-                      ? 'bg-surface border-border hover:border-gray-300'
+                      ? 'bg-surface border-border hover:border-border-dark'
                       : 'bg-coral/5 border-coral/20 hover:border-coral/40'
                   }`}
                 >

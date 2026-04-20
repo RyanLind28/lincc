@@ -95,9 +95,9 @@ export default function BusinessDirectoryPage() {
               <div key={biz.id} className="bg-surface rounded-2xl border border-border overflow-hidden">
                 <Link
                   to={`/business/${biz.id}`}
-                  className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-4 hover:bg-background transition-colors"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-background overflow-hidden flex-shrink-0">
                     {biz.logo_url ? (
                       <img src={biz.logo_url} alt={biz.name} className="w-full h-full object-cover" />
                     ) : (

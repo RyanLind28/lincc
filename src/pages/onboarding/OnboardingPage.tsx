@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { GradientButton, Input, TextArea, Avatar, ChipGroup } from '../../components/ui';
-import { Camera, ArrowLeft, ArrowRight, Download, Bell } from 'lucide-react';
+import { Camera, ArrowLeft, ArrowRight, Download, Bell, Share, ChevronRight } from 'lucide-react';
 import { usePWA } from '../../hooks/usePWA';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { validateImageSize, compressImage } from '../../lib/imageCompression';
@@ -54,10 +54,28 @@ export default function OnboardingPage() {
   const { isInstallable, isInstalled, promptInstall } = usePWA();
   const { permission: pushPermission, subscribe: pushSubscribe } = usePushNotifications();
 
+  // Prefill from OAuth metadata (Google sign-up provides name + avatar)
+  useEffect(() => {
+    if (!user) return;
+    const meta = user.user_metadata;
+    if (meta) {
+      if (meta.full_name && !firstName) {
+        const parts = (meta.full_name as string).split(' ');
+        setFirstName(parts[0] || '');
+      }
+      if (meta.avatar_url && !avatarUrl) {
+        setAvatarUrl(meta.avatar_url as string);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   // If profile is already complete on mount (before user starts), redirect to home.
   // Don't redirect once user is actively going through onboarding (step > 1)
   // or after saving profile (step 5) — let them see the final setup screen.
+  // ?preview=true bypasses this for testing.
   useEffect(() => {
+    if (window.location.search.includes('preview=true')) return;
     if (isProfileComplete && step === 1 && !avatarUrl) {
       navigate('/', { replace: true });
     }
@@ -219,15 +237,13 @@ export default function OnboardingPage() {
         </div>
 
         {/* Progress bar */}
-        <div className="flex gap-1 mb-8">
-          {Array.from({ length: totalSteps }).map((_, i) => (
+        <div className="mb-8">
+          <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
             <div
-              key={i}
-              className={`h-1 flex-1 rounded-full ${
-                i < step ? 'gradient-primary' : 'bg-border'
-              }`}
+              className="h-full rounded-full gradient-primary transition-all duration-500 ease-out"
+              style={{ width: `${(step / totalSteps) * 100}%` }}
             />
-          ))}
+          </div>
         </div>
 
         {/* Step content wrapped in surface card */}
@@ -355,24 +371,62 @@ export default function OnboardingPage() {
             <div className="text-center">
               <h1 className="text-2xl font-bold gradient-text mb-2">You're all set!</h1>
               <p className="text-text-muted mb-8">
-                A couple more things to get the best experience.
+                One last thing — get the full app experience.
               </p>
 
-              <div className="space-y-4 text-left">
-                {/* Install prompt */}
+              <div className="space-y-3 text-left">
+                {/* Install prompt — native beforeinstallprompt (Android/Chrome desktop) */}
                 {isInstallable && !isInstalled && (
                   <button
                     onClick={handleInstall}
-                    className="w-full p-4 bg-background rounded-xl border border-border flex items-center gap-4 hover:border-coral transition-colors"
+                    className="w-full p-4 bg-coral/5 rounded-xl border border-coral/20 flex items-center gap-4 hover:bg-coral/10 transition-colors"
                   >
-                    <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Download className="h-6 w-6 text-white" />
+                    <div className="w-11 h-11 bg-coral rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Download className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 text-left">
                       <h3 className="font-semibold text-text">Install Lincc</h3>
-                      <p className="text-sm text-text-muted">Add to your home screen for quick access</p>
+                      <p className="text-xs text-text-muted">Tap to add to your home screen</p>
                     </div>
+                    <ChevronRight className="h-5 w-5 text-coral" />
                   </button>
+                )}
+
+                {/* iOS — detect Safari vs other browsers */}
+                {!isInstallable && !isInstalled && /iPad|iPhone|iPod/.test(navigator.userAgent) && (
+                  <div className="w-full p-4 bg-coral/5 rounded-xl border border-coral/20">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-11 h-11 bg-coral rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Download className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-text">Add to Home Screen</h3>
+                        <p className="text-xs text-text-muted">Use Lincc like a native app</p>
+                      </div>
+                    </div>
+                    {/* Detect if NOT Safari (Chrome/Firefox/etc on iOS can't install PWAs) */}
+                    {!/Safari/.test(navigator.userAgent) || /CriOS|FxiOS|OPiOS|EdgiOS/.test(navigator.userAgent) ? (
+                      <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 text-xs text-text-muted">
+                        <p className="font-medium text-warning mb-1">Open in Safari to install</p>
+                        <p>PWAs can only be installed from Safari on iOS. Copy this URL and open it in Safari, then follow the steps below.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border">
+                          <span className="w-6 h-6 bg-coral/10 rounded-full flex items-center justify-center text-xs font-bold text-coral">1</span>
+                          <p className="text-sm text-text">Tap the <Share className="inline h-4 w-4 text-blue" /> Share button below</p>
+                        </div>
+                        <div className="flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border">
+                          <span className="w-6 h-6 bg-coral/10 rounded-full flex items-center justify-center text-xs font-bold text-coral">2</span>
+                          <p className="text-sm text-text">Scroll down and tap <span className="font-medium">"Add to Home Screen"</span></p>
+                        </div>
+                        <div className="flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border">
+                          <span className="w-6 h-6 bg-coral/10 rounded-full flex items-center justify-center text-xs font-bold text-coral">3</span>
+                          <p className="text-sm text-text">Tap <span className="font-medium">"Add"</span> in the top right</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* Notification prompt */}
@@ -381,8 +435,8 @@ export default function OnboardingPage() {
                     onClick={handleEnableNotifications}
                     className="w-full p-4 bg-background rounded-xl border border-border flex items-center gap-4 hover:border-coral transition-colors"
                   >
-                    <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Bell className="h-6 w-6 text-white" />
+                    <div className="w-11 h-11 bg-purple rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Bell className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 text-left">
                       <h3 className="font-semibold text-text">Enable Notifications</h3>

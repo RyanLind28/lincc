@@ -1,6 +1,7 @@
 // Participant service for event join/leave functionality
 
 import { supabase } from '../../lib/supabase';
+import { createNotification } from '../notificationService';
 import type { EventParticipant, EventParticipantWithProfile, ParticipantStatus, JoinMode } from '../../types';
 
 export interface ParticipantResult {
@@ -50,6 +51,27 @@ export async function requestToJoin(
         console.error('Error re-joining event:', error);
         return { success: false, error: error.message };
       }
+
+      // Notify host about rejoin (only if previous status was 'left')
+      if (existing.status === 'left') {
+        // Fetch event and user info for notification
+        const [eventRes, userRes] = await Promise.all([
+          supabase.from('events').select('host_id, title').eq('id', eventId).single(),
+          supabase.from('profiles').select('first_name').eq('id', userId).single(),
+        ]);
+        if (eventRes.data && userRes.data) {
+          const userName = userRes.data.first_name || 'Someone';
+          const eventTitle = eventRes.data.title || 'an event';
+          createNotification(
+            eventRes.data.host_id,
+            'participant_rejoined',
+            'Rejoin Request',
+            `${userName} requested to rejoin ${eventTitle}`,
+            { event_id: eventId, user_id: userId }
+          );
+        }
+      }
+
       return { success: true, data };
     }
     // Already pending or approved
@@ -93,6 +115,23 @@ export async function cancelRequest(eventId: string, userId: string): Promise<Pa
     return { success: false, error: error.message };
   }
 
+  // Notify host that user left
+  const [eventRes, userRes] = await Promise.all([
+    supabase.from('events').select('host_id, title').eq('id', eventId).single(),
+    supabase.from('profiles').select('first_name').eq('id', userId).single(),
+  ]);
+  if (eventRes.data && userRes.data && eventRes.data.host_id !== userId) {
+    const userName = userRes.data.first_name || 'Someone';
+    const eventTitle = eventRes.data.title || 'your event';
+    createNotification(
+      eventRes.data.host_id,
+      'participant_left',
+      'Participant Left',
+      `${userName} left your event ${eventTitle}`,
+      { event_id: eventId, user_id: userId }
+    );
+  }
+
   return { success: true, data };
 }
 
@@ -121,6 +160,7 @@ export async function approveParticipant(
 
 /**
  * Reject a participant (host action)
+ * Also used to remove an approved participant from an event
  */
 export async function rejectParticipant(
   eventId: string,
@@ -137,6 +177,19 @@ export async function rejectParticipant(
   if (error) {
     console.error('Error rejecting participant:', error);
     return { success: false, error: error.message };
+  }
+
+  // Notify the removed user
+  const eventRes = await supabase.from('events').select('title').eq('id', eventId).single();
+  if (eventRes.data) {
+    const eventTitle = eventRes.data.title || 'an event';
+    createNotification(
+      userId,
+      'participant_removed',
+      'Removed from Event',
+      `You were removed from ${eventTitle}`,
+      { event_id: eventId }
+    );
   }
 
   return { success: true, data };

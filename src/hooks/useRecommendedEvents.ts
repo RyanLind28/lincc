@@ -49,6 +49,7 @@ interface UseRecommendedEventsResult {
 interface UseRecommendedEventsOptions {
   maxDistance?: number;
   initialFilters?: Partial<Filters>;
+  locationOverride?: { latitude: number; longitude: number } | null;
 }
 
 export function useRecommendedEvents(
@@ -64,6 +65,9 @@ export function useRecommendedEvents(
   } = useUserLocation();
   const { engagementByCategory, preferredHours, isLoading: isEngagementLoading } = useUserEngagement();
   const filterState = useFilters(options.initialFilters);
+
+  // Use location override if provided, otherwise GPS location
+  const effectiveLocation = options.locationOverride ?? location;
 
   // State for async recommendation results
   const [scoredEvents, setScoredEvents] = useState<ScoredEvent[]>([]);
@@ -89,7 +93,7 @@ export function useRecommendedEvents(
     try {
       const result = await getRecommendationsAsync({
         userProfile: profile,
-        userLocation: location,
+        userLocation: effectiveLocation,
         engagementByCategory,
         preferredHours,
         filterCategories: filterState.filters.categories,
@@ -111,7 +115,7 @@ export function useRecommendedEvents(
     }
   }, [
     profile,
-    location,
+    effectiveLocation,
     engagementByCategory,
     preferredHours,
     filterState.filters.categories,

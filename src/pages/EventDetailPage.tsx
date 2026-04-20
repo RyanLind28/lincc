@@ -457,7 +457,7 @@ export default function EventDetailPage() {
                       <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-xl border border-border shadow-lg z-50 overflow-hidden">
                         <button
                           onClick={handleBlockHost}
-                          className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                          className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-background flex items-center gap-3 transition-colors"
                         >
                           <Ban className="h-4 w-4" />
                           {hostBlocked ? 'Blocked' : 'Block host'}
@@ -467,7 +467,7 @@ export default function EventDetailPage() {
                             setShowMoreMenu(false);
                             setShowReportDialog(true);
                           }}
-                          className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                          className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-background flex items-center gap-3 transition-colors"
                         >
                           <ShieldAlert className="h-4 w-4" />
                           Report event
@@ -615,40 +615,90 @@ export default function EventDetailPage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Host */}
-            <Link to={`/user/${event.host.id}`} className="relative">
-              <Avatar
-                src={event.host.avatar_url}
-                name={event.host.first_name}
-                size="md"
-              />
-              <span className="absolute -bottom-1 -right-1 bg-coral text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full">
-                Host
-              </span>
-            </Link>
+          {/* Host view: full guest list with names and profile links */}
+          {isHost && (
+            <>
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Host */}
+                <Link to={`/user/${event.host.id}`} className="relative">
+                  <Avatar
+                    src={event.host.avatar_url}
+                    name={event.host.first_name}
+                    size="md"
+                  />
+                  <span className="absolute -bottom-1 -right-1 bg-coral text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full">
+                    Host
+                  </span>
+                </Link>
 
-            {/* Approved Participants */}
-            {approvedParticipants.map((participant) => (
-              <Link key={participant.id} to={`/user/${participant.user_id}`}>
-                <Avatar
-                  src={participant.user?.avatar_url}
-                  name={participant.user?.first_name || 'User'}
-                  size="md"
-                />
-              </Link>
-            ))}
+                {/* Approved Participants with names */}
+                {approvedParticipants.map((participant) => (
+                  <Link key={participant.id} to={`/user/${participant.user_id}`} className="flex flex-col items-center gap-1">
+                    <Avatar
+                      src={participant.user?.avatar_url}
+                      name={participant.user?.first_name || 'User'}
+                      size="md"
+                    />
+                    <span className="text-xs text-text-muted truncate max-w-[4rem]">
+                      {participant.user?.first_name || 'User'}
+                    </span>
+                  </Link>
+                ))}
 
-            {/* Empty spots */}
-            {Array.from({ length: Math.max(0, spotsLeft) }).map((_, i) => (
-              <div
-                key={`empty-${i}`}
-                className="w-10 h-10 rounded-full border-2 border-dashed border-border flex items-center justify-center"
-              >
-                <span className="text-text-light text-lg">+</span>
+                {/* Empty spots */}
+                {Array.from({ length: Math.max(0, spotsLeft) }).map((_, i) => (
+                  <div
+                    key={`empty-${i}`}
+                    className="w-10 h-10 rounded-full border-2 border-dashed border-border flex items-center justify-center"
+                  >
+                    <span className="text-text-light text-lg">+</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
+
+          {/* Participant view: avatar stack + count (no names) */}
+          {!isHost && userStatus === 'approved' && (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center -space-x-2">
+                <div className="relative z-10">
+                  <Avatar
+                    src={event.host.avatar_url}
+                    name={event.host.first_name}
+                    size="sm"
+                  />
+                </div>
+                {approvedParticipants.slice(0, 5).map((participant, idx) => (
+                  <div key={participant.id} className="relative" style={{ zIndex: 9 - idx }}>
+                    <Avatar
+                      src={participant.user?.avatar_url}
+                      name={participant.user?.first_name || 'User'}
+                      size="sm"
+                    />
+                  </div>
+                ))}
+                {approvedParticipants.length > 5 && (
+                  <div className="relative z-0 w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center">
+                    <span className="text-xs text-text-muted font-medium">+{approvedParticipants.length - 5}</span>
+                  </div>
+                )}
+              </div>
+              <span className="text-sm text-text-muted font-medium">
+                {approvedParticipants.length + 1} going
+              </span>
+            </div>
+          )}
+
+          {/* Non-participant view: count only */}
+          {!isHost && userStatus !== 'approved' && (
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-text-light" />
+              <span className="text-sm text-text-muted font-medium">
+                {approvedParticipants.length + 1} {approvedParticipants.length + 1 === 1 ? 'person' : 'people'} going
+              </span>
+            </div>
+          )}
 
           {spotsLeft > 0 ? (
             <p className="text-sm text-coral font-medium mt-3">

@@ -19,7 +19,7 @@ function Chip({
   ...props
 }: ChipProps) {
   const variants = {
-    default: 'bg-gray-100 text-text-muted hover:bg-gray-200',
+    default: 'bg-background text-text-muted hover:bg-border',
     primary: 'bg-primary/10 text-primary hover:bg-primary/20',
     selected: 'bg-primary text-white',
   };

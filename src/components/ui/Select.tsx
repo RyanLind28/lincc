@@ -49,7 +49,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             className={cn(
               'block w-full rounded-lg border bg-surface text-text appearance-none cursor-pointer',
               'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-              'disabled:bg-gray-100 disabled:cursor-not-allowed',
+              'disabled:bg-background disabled:cursor-not-allowed',
               'transition-colors',
               error ? 'border-error focus:ring-error' : 'border-border',
               'pl-4 pr-10 py-2.5',

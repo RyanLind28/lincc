@@ -189,7 +189,7 @@ export function ScratchCard({ code, onRevealed, initialRevealed = false }: Scrat
         <button
           onClick={handleCopy}
           className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border
-                     text-sm font-medium text-text hover:bg-gray-50 transition-colors animate-fade-in"
+                     text-sm font-medium text-text hover:bg-background transition-colors animate-fade-in"
         >
           {copied ? (
             <>

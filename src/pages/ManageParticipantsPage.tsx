@@ -168,7 +168,7 @@ export default function ManageParticipantsPage() {
                 className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs ${
                   activeTab === tab
                     ? 'bg-coral/20 text-coral'
-                    : 'bg-gray-100 text-text-muted'
+                    : 'bg-background text-text-muted'
                 }`}
               >
                 {getTabCount(tab)}
@@ -185,7 +185,7 @@ export default function ManageParticipantsPage() {
       <div className="p-4">
         {getCurrentParticipants().length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto mb-4">
               {activeTab === 'pending' && <Clock className="h-8 w-8 text-text-light" />}
               {activeTab === 'approved' && <Check className="h-8 w-8 text-text-light" />}
               {activeTab === 'rejected' && <X className="h-8 w-8 text-text-light" />}
@@ -231,7 +231,7 @@ export default function ManageParticipantsPage() {
                           {participant.user.tags.slice(0, 3).map((tag) => (
                             <span
                               key={tag}
-                              className="px-2 py-0.5 bg-gray-100 rounded-full text-xs text-text-muted"
+                              className="px-2 py-0.5 bg-background rounded-full text-xs text-text-muted"
                             >
                               {tag}
                             </span>

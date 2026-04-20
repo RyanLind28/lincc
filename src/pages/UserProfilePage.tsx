@@ -336,7 +336,7 @@ export default function UserProfilePage() {
                   <button
                     onClick={handleFollow}
                     disabled={socialLoading}
-                    className={`flex-1 h-11 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 ${
+                    className={`h-11 px-5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 ${
                       following
                         ? 'bg-surface border border-border text-text-muted hover:text-error hover:border-error'
                         : 'gradient-primary text-white shadow-sm'
@@ -350,10 +350,11 @@ export default function UserProfilePage() {
                     aria-label="Message"
                   >
                     <MessageCircle className="h-4 w-4" />
-                    Message
+                    <span className="hidden sm:inline">Message</span>
                   </button>
                 </>
               )}
+              <div className="ml-auto flex items-center gap-2">
               <button
                 onClick={handleShare}
                 className="h-11 w-11 rounded-xl border border-border text-text-muted hover:text-text hover:border-text-muted transition-colors flex items-center justify-center flex-shrink-0"
@@ -375,7 +376,7 @@ export default function UserProfilePage() {
                     <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-xl border border-border shadow-lg z-50 overflow-hidden">
                       <button
                         onClick={handleBlock}
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                        className="w-full px-4 py-3 text-left text-sm font-medium text-text hover:bg-background flex items-center gap-3 transition-colors"
                       >
                         <Ban className="h-4 w-4" />
                         {blocked ? 'Unblock user' : 'Block user'}
@@ -385,7 +386,7 @@ export default function UserProfilePage() {
                           setShowMenu(false);
                           setShowReport(true);
                         }}
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                        className="w-full px-4 py-3 text-left text-sm font-medium text-error hover:bg-background flex items-center gap-3 transition-colors"
                       >
                         <ShieldAlert className="h-4 w-4" />
                         Report user
@@ -393,6 +394,7 @@ export default function UserProfilePage() {
                     </div>
                   </>
                 )}
+              </div>
               </div>
             </div>
           )}
@@ -419,7 +421,7 @@ export default function UserProfilePage() {
                 <Link
                   key={event.id}
                   to={`/event/${event.id}`}
-                  className="flex items-center gap-3 bg-surface rounded-xl p-4 hover:bg-gray-50 transition-colors group"
+                  className="flex items-center gap-3 bg-surface rounded-xl p-4 hover:bg-background transition-colors group"
                 >
                   <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
                     <CategoryIcon
@@ -463,7 +465,7 @@ export default function UserProfilePage() {
         {/* Empty State for Hosted Events */}
         {hostedEvents.length === 0 && (
           <div className="bg-surface rounded-2xl p-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+            <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center mx-auto mb-3">
               <Calendar className="h-8 w-8 text-text-muted" />
             </div>
             <p className="text-text-muted mb-4">

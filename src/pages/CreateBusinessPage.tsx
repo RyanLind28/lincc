@@ -127,7 +127,7 @@ export default function CreateBusinessPage() {
       <Header
         showLogo
         leftContent={
-          <button onClick={handleBack} className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors">
+          <button onClick={handleBack} className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors">
             <ChevronLeft className="h-5 w-5" />
           </button>
         }
@@ -214,7 +214,7 @@ export default function CreateBusinessPage() {
             <p className="text-text-muted">Optional — you can always add one later.</p>
 
             <div className="flex flex-col items-center gap-4">
-              <div className="relative w-32 h-32 rounded-2xl bg-gray-100 overflow-hidden">
+              <div className="relative w-32 h-32 rounded-2xl bg-background overflow-hidden">
                 {logoPreview ? (
                   <>
                     <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />

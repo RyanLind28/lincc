@@ -45,7 +45,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
           className={cn(
             'block w-full rounded-lg border bg-surface text-text placeholder:text-text-light',
             'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-            'disabled:bg-gray-100 disabled:cursor-not-allowed',
+            'disabled:bg-background disabled:cursor-not-allowed',
             'transition-colors resize-none',
             error ? 'border-error focus:ring-error' : 'border-border',
             'px-4 py-2.5',

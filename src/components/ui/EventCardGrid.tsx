@@ -113,10 +113,10 @@ function EventCardTile({
   return (
     <Link
       to={`/event/${event.id}`}
-      className="flex flex-col bg-surface rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all group"
+      className="flex flex-col bg-surface rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all press-effect group"
     >
       {/* Cover Image */}
-      <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+      <div className="relative aspect-[4/3] bg-background overflow-hidden">
         {coverImage ? (
           <img
             src={coverImage}
@@ -145,7 +145,7 @@ function EventCardTile({
             <Bookmark
               className={cn(
                 'h-4 w-4 transition-colors',
-                isSaved ? 'fill-coral text-coral' : 'text-text-muted'
+                isSaved ? 'fill-coral text-coral animate-pop' : 'text-text-muted'
               )}
             />
           </button>
@@ -165,27 +165,24 @@ function EventCardTile({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-3 flex flex-col flex-1">
-        {/* Title */}
-        <h3 className="font-semibold text-text text-sm line-clamp-2 mb-1.5">
+      {/* Content — fixed height for uniformity */}
+      <div className="p-3 flex flex-col h-[104px]">
+        {/* Title — single line, truncate */}
+        <h3 className="font-semibold text-text text-sm truncate mb-1.5">
           {event.title}
         </h3>
 
-        {/* Spacer pushes meta to bottom */}
-        <div className="mt-auto" />
-
-        {/* Time · Location on same line */}
-        <div className="flex items-center gap-1 text-xs text-text-muted mb-2 truncate">
+        {/* Time · Location — single line */}
+        <div className="flex items-center gap-1 text-xs text-text-muted mb-2 min-w-0">
           <Clock className="h-3 w-3 text-coral flex-shrink-0" />
-          <span className="text-coral font-medium">{formatRelativeTime(event.start_time)}</span>
-          <span className="text-text-light">·</span>
+          <span className="text-coral font-medium flex-shrink-0">{formatRelativeTime(event.start_time)}</span>
+          <span className="text-text-light flex-shrink-0">·</span>
           <span className="truncate">{event.venue_short || event.venue_name}</span>
         </div>
 
-        {/* Host + Capacity */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+        {/* Host + Capacity — pushed to bottom */}
+        <div className="flex items-center justify-between mt-auto">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2">
             <Avatar
               src={event.business?.logo_url ?? event.host.avatar_url}
               name={event.business?.name ?? event.host.first_name}
@@ -203,13 +200,14 @@ function EventCardTile({
 export function EventCardGrid({ events, onToggleSave, savedIds, className }: EventCardGridProps) {
   return (
     <div className={cn('grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4', className)}>
-      {events.map((event) => (
-        <EventCardTile
-          key={event.id}
-          event={event}
-          onToggleSave={onToggleSave}
-          isSaved={savedIds?.has(event.id)}
-        />
+      {events.map((event, i) => (
+        <div key={event.id} className="animate-stagger-item" style={i >= 7 ? { animationDelay: `${Math.min(i * 50, 350)}ms` } : undefined}>
+          <EventCardTile
+            event={event}
+            onToggleSave={onToggleSave}
+            isSaved={savedIds?.has(event.id)}
+          />
+        </div>
       ))}
     </div>
   );

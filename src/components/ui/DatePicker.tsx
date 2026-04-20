@@ -83,7 +83,7 @@ export function DatePicker({
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={prevMonth}
-          className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+          className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-background transition-colors"
           aria-label="Previous month"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -93,7 +93,7 @@ export function DatePicker({
         </span>
         <button
           onClick={nextMonth}
-          className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+          className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-background transition-colors"
           aria-label="Next month"
         >
           <ChevronRight className="h-4 w-4" />
@@ -134,7 +134,7 @@ export function DatePicker({
               className={cn(
                 'aspect-square flex items-center justify-center text-sm rounded-lg transition-all',
                 disabled && 'text-text-light cursor-not-allowed',
-                !disabled && !selected && 'text-text hover:bg-gray-100',
+                !disabled && !selected && 'text-text hover:bg-background',
                 selected && 'gradient-primary text-white',
                 today && !selected && 'ring-1 ring-coral'
               )}

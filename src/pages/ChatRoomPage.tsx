@@ -89,7 +89,7 @@ export default function ChatRoomPage() {
 
   if (isLoading || eventLoading) {
     return (
-      <div className="h-screen flex flex-col bg-background">
+      <div className="h-dvh flex flex-col overflow-hidden bg-background">
         <Header showBack title={event?.title || 'Chat'} />
         <div className="flex-1 flex items-center justify-center">
           <Spinner size="lg" />
@@ -100,10 +100,10 @@ export default function ChatRoomPage() {
 
   if (!hasAccess) {
     return (
-      <div className="h-screen flex flex-col bg-background">
+      <div className="h-dvh flex flex-col overflow-hidden bg-background">
         <Header showBack title="Chat" />
         <div className="flex-1 flex flex-col items-center justify-center p-8">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mb-4">
             <Lock className="h-8 w-8 text-text-light" />
           </div>
           <h2 className="text-xl font-semibold text-text mb-2">Access Denied</h2>
@@ -119,7 +119,7 @@ export default function ChatRoomPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-dvh flex flex-col overflow-hidden bg-background">
       {/* Header */}
       <Header showBack title="Chat" />
 
@@ -128,7 +128,7 @@ export default function ChatRoomPage() {
         <>
           <Link
             to={`/event/${eventId}`}
-            className="flex items-center gap-3 px-4 py-3 bg-surface border-b border-border hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-3 px-4 py-3 bg-surface border-b border-border hover:bg-background transition-colors"
           >
             <div className="h-10 w-10 gradient-primary rounded-xl flex items-center justify-center shrink-0">
               <CategoryIcon icon={event.category?.icon} size="sm" className="text-white" />
@@ -170,7 +170,7 @@ export default function ChatRoomPage() {
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide p-4">
+      <div className="flex-1 overflow-y-auto scrollbar-hide p-4" style={{ overscrollBehavior: 'contain' }}>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mb-4">
@@ -187,7 +187,7 @@ export default function ChatRoomPage() {
               <div key={date}>
                 {/* Date separator */}
                 <div className="flex items-center justify-center mb-4">
-                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs text-text-muted">
+                  <span className="px-3 py-1 bg-background rounded-full text-xs text-text-muted">
                     {date}
                   </span>
                 </div>

@@ -4,7 +4,6 @@ import { cn } from '../../lib/utils';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 import { OfflineBanner } from '../pwa/OfflineBanner';
 import { UpdateNotification } from '../pwa/UpdateNotification';
-import { AnnouncementBanner } from '../ui/AnnouncementBanner';
 
 // Lincc Logo — just the image. The Link wrapper lives in the Header so the whole
 // center column is a clickable home-link (bigger tap target than the image alone).
@@ -75,7 +74,7 @@ export function Header({
           ) : shouldShowBack ? (
             <button
               onClick={() => navigate(-1)}
-              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -115,7 +114,7 @@ export function Header({
           {rightContent}
           <Link
             to="/notifications"
-            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors relative"
+            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors relative"
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
@@ -131,7 +130,6 @@ export function Header({
       {/* Banner shelf — renders below the header bar, inside the sticky container */}
       <OfflineBanner />
       <UpdateNotification />
-      <AnnouncementBanner />
     </header>
   );
 }

@@ -244,7 +244,7 @@ export default function CreateVoucherPage() {
           step !== 'basics' ? (
             <button
               onClick={handleBack}
-              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -416,7 +416,7 @@ export default function CreateVoucherPage() {
             <div>
               <label className="block text-sm font-medium text-text mb-1">Cover photo</label>
               <p className="text-xs text-text-muted mb-2">Upload a photo of the product or venue. Optional, but recommended.</p>
-              <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100">
+              <div className="relative aspect-video rounded-xl overflow-hidden bg-background">
                 {coverImageUrl ? (
                   <img
                     src={coverImageUrl}
