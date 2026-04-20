@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# Lighthouse reports (contain API keys in network requests)
+PRD/*.json
+PRD/*.html
+
 # Logs
 logs
 *.log
