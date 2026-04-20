@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/layout';
@@ -41,7 +42,7 @@ export default function ManageParticipantsPage() {
         .single();
 
       if (error) {
-        console.error('Error fetching event:', error);
+        logger.error('Error fetching event:', error);
         setIsLoading(false);
         return;
       }

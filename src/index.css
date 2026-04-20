@@ -270,9 +270,10 @@
     animation: backdrop-in 0.2s ease-out both;
   }
 
-  /* Staggered list items — apply .animate-stagger-item to children */
+  /* Staggered list items — apply .animate-stagger-item to children
+     Uses fade-in only (no translateY) to avoid CLS */
   .animate-stagger-item {
-    animation: slide-up-sm 0.3s ease-out both;
+    animation: fade-in 0.3s ease-out both;
   }
   .animate-stagger-item:nth-child(1) { animation-delay: 0ms; }
   .animate-stagger-item:nth-child(2) { animation-delay: 50ms; }

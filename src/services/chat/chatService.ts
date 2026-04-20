@@ -1,3 +1,4 @@
+import { logger } from '../../lib/utils';
 // Chat service for event messaging
 
 import { supabase } from '../../lib/supabase';
@@ -40,7 +41,7 @@ export async function sendMessage(
     .single();
 
   if (error) {
-    console.error('Error sending message:', error);
+    logger.error('Error sending message:', error);
     return { success: false, error: error.message };
   }
 
@@ -61,7 +62,7 @@ export async function getMessages(eventId: string): Promise<MessagesResult> {
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching messages:', error);
+    logger.error('Error fetching messages:', error);
     return { success: false, error: error.message };
   }
 
@@ -118,7 +119,7 @@ export async function getUserChats(userId: string): Promise<EventWithDetails[]> 
     .eq('status', 'approved');
 
   if (participantError) {
-    console.error('Error fetching participant events:', participantError);
+    logger.error('Error fetching participant events:', participantError);
   }
 
   const participantEventIds = (participantRows || []).map((r) => r.event_id);
@@ -136,7 +137,7 @@ export async function getUserChats(userId: string): Promise<EventWithDetails[]> 
     .or(`host_id.eq.${userId}${participantEventIds.length > 0 ? `,id.in.(${participantEventIds.join(',')})` : ''}`);
 
   if (eventsError) {
-    console.error('Error fetching chat events:', eventsError);
+    logger.error('Error fetching chat events:', eventsError);
   }
 
   // Dedupe and transform
@@ -171,7 +172,7 @@ export async function getLastMessage(eventId: string): Promise<MessageWithSender
     .maybeSingle();
 
   if (error) {
-    console.error('Error fetching last message:', error);
+    logger.error('Error fetching last message:', error);
     return null;
   }
 

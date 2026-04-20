@@ -1,3 +1,4 @@
+import { logger } from '../../lib/utils';
 // Participant service for event join/leave functionality
 
 import { supabase } from '../../lib/supabase';
@@ -48,7 +49,7 @@ export async function requestToJoin(
         .single();
 
       if (error) {
-        console.error('Error re-joining event:', error);
+        logger.error('Error re-joining event:', error);
         return { success: false, error: error.message };
       }
 
@@ -90,7 +91,7 @@ export async function requestToJoin(
     .single();
 
   if (error) {
-    console.error('Error requesting to join:', error);
+    logger.error('Error requesting to join:', error);
     return { success: false, error: error.message };
   }
 
@@ -111,7 +112,7 @@ export async function cancelRequest(eventId: string, userId: string): Promise<Pa
     .single();
 
   if (error) {
-    console.error('Error canceling request:', error);
+    logger.error('Error canceling request:', error);
     return { success: false, error: error.message };
   }
 
@@ -151,7 +152,7 @@ export async function approveParticipant(
     .single();
 
   if (error) {
-    console.error('Error approving participant:', error);
+    logger.error('Error approving participant:', error);
     return { success: false, error: error.message };
   }
 
@@ -175,7 +176,7 @@ export async function rejectParticipant(
     .single();
 
   if (error) {
-    console.error('Error rejecting participant:', error);
+    logger.error('Error rejecting participant:', error);
     return { success: false, error: error.message };
   }
 
@@ -210,7 +211,7 @@ export async function getParticipants(eventId: string): Promise<ParticipantsList
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching participants:', error);
+    logger.error('Error fetching participants:', error);
     return { success: false, error: error.message };
   }
 
@@ -232,7 +233,7 @@ export async function getApprovedParticipants(eventId: string): Promise<Particip
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching approved participants:', error);
+    logger.error('Error fetching approved participants:', error);
     return { success: false, error: error.message };
   }
 
@@ -254,7 +255,7 @@ export async function getUserParticipation(
     .maybeSingle();
 
   if (error) {
-    console.error('Error checking participation:', error);
+    logger.error('Error checking participation:', error);
     return { status: null, participant: null };
   }
 
@@ -277,7 +278,7 @@ export async function getPendingRequestsCount(eventId: string): Promise<number> 
     .eq('status', 'pending');
 
   if (error) {
-    console.error('Error counting pending requests:', error);
+    logger.error('Error counting pending requests:', error);
     return 0;
   }
 
@@ -302,7 +303,7 @@ export async function getUserApprovedEvents(userId: string) {
     .eq('status', 'approved');
 
   if (error) {
-    console.error('Error fetching user approved events:', error);
+    logger.error('Error fetching user approved events:', error);
     return [];
   }
 

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { logger } from '../lib/utils';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { SlidersHorizontal, MapPin, Ticket, Clock, LayoutGrid, Calendar, RotateCcw, Loader2, Settings, Navigation, X } from 'lucide-react';
 import {
@@ -10,11 +11,13 @@ import {
   Slider,
   DatePicker,
   CategoryIcon,
-  MapView,
   VoucherTile,
   EventCardGridSkeleton,
   QUICK_DATE_OPTIONS,
 } from '../components/ui';
+
+// Lazy-load MapView so Mapbox GL JS (~1MB) is only downloaded when map view is active
+const LazyMapView = lazy(() => import('../components/ui/MapView'));
 import { useUserLocation } from '../hooks/useUserLocation';
 import { useLocationName } from '../hooks/useLocationName';
 import { useGeocode } from '../hooks/useGeocode';
@@ -151,7 +154,7 @@ export default function HomePage() {
 
   // Fetch vouchers and split by distance
   useEffect(() => {
-    getActiveVouchers().then(setVouchers).catch(console.error);
+    getActiveVouchers().then(setVouchers).catch(logger.error);
   }, []);
 
   // Split vouchers into nearby vs further away
@@ -411,12 +414,18 @@ export default function HomePage() {
                 </div>
               </div>
             ) : (
-              <MapView
-                events={scoredEvents}
-                userLocation={effectiveLocation}
-                radiusKm={distance}
-                className="absolute inset-0"
-              />
+              <Suspense fallback={
+                <div className="absolute inset-0 flex items-center justify-center bg-background">
+                  <Loader2 className="h-8 w-8 text-coral animate-spin" />
+                </div>
+              }>
+                <LazyMapView
+                  events={scoredEvents}
+                  userLocation={effectiveLocation}
+                  radiusKm={distance}
+                  className="absolute inset-0"
+                />
+              </Suspense>
             )}
           </div>
         )}

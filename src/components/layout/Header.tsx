@@ -14,11 +14,19 @@ function LinccLogo({ className, size = 'md' }: { className?: string; size?: 'sm'
     lg: 'h-10',
   };
 
+  const widths = {
+    sm: 'w-[84px]',
+    md: 'w-[96px]',
+    lg: 'w-[120px]',
+  };
+
   return (
     <img
       src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp"
       alt="Lincc"
-      className={cn(heights[size], 'w-auto max-w-full object-contain', className)}
+      width={size === 'sm' ? 84 : size === 'md' ? 96 : 120}
+      height={size === 'sm' ? 28 : size === 'md' ? 32 : 40}
+      className={cn(heights[size], widths[size], 'max-w-full object-contain', className)}
     />
   );
 }

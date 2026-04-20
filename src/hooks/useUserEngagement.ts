@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // User engagement hook
 // Tracks past event participation by category and preferred activity hours
 
@@ -117,7 +118,7 @@ export function useUserEngagement(): UseUserEngagementResult {
         setPreferredHours(computePreferredHours(hourCounts));
       } catch (err) {
         if (!isMounted) return;
-        console.error('Error fetching engagement:', err);
+        logger.error('Error fetching engagement:', err);
         setError(err instanceof Error ? err.message : 'Failed to load engagement');
         setEngagementByCategory({});
         setPreferredHours([]);

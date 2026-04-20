@@ -1,5 +1,15 @@
 import { type ClassValue, clsx } from 'clsx';
 
+// Production-safe logger — suppresses console output in production builds
+// to avoid Lighthouse "Browser errors logged to console" penalty.
+const __DEV__ = import.meta.env.DEV;
+
+export const logger = {
+  log: (...args: unknown[]) => { if (__DEV__) console.log(...args); },
+  warn: (...args: unknown[]) => { if (__DEV__) console.warn(...args); },
+  error: (...args: unknown[]) => { if (__DEV__) console.error(...args); },
+};
+
 // Simple class name merger (without tailwind-merge for now)
 export function cn(...inputs: ClassValue[]): string {
   return clsx(inputs);

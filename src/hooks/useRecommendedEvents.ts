@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Main recommendation hook
 // Combines all data sources and returns scored, filtered events
 
@@ -107,7 +108,7 @@ export function useRecommendedEvents(
       setFallbackUsed(result.fallbackUsed);
       setTotalAvailable(result.totalAvailable);
     } catch (error) {
-      console.error('Error fetching recommendations:', error);
+      logger.error('Error fetching recommendations:', error);
       setScoredEvents([]);
       setGridEvents([]);
     } finally {

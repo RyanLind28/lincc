@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
@@ -51,7 +52,7 @@ export async function subscribeToPush(userId: string): Promise<{ success: boolea
 
     return { success: true };
   } catch (err) {
-    console.error('Push subscription failed:', err);
+    logger.error('Push subscription failed:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
   }
 }
@@ -78,7 +79,7 @@ export async function unsubscribeFromPush(userId: string): Promise<{ success: bo
 
     return { success: true };
   } catch (err) {
-    console.error('Push unsubscribe failed:', err);
+    logger.error('Push unsubscribe failed:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
   }
 }

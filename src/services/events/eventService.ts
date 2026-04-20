@@ -1,3 +1,4 @@
+import { logger } from '../../lib/utils';
 // Event fetching service
 // Handles both demo mode and production (Supabase) events
 
@@ -98,7 +99,7 @@ export async function fetchProductionEvents(
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching events:', error);
+      logger.error('Error fetching events:', error);
       return [];
     }
 
@@ -172,7 +173,7 @@ export async function createEvent(
       );
 
       if (!matchedCategory) {
-        console.error('Category not found:', eventData.category_name);
+        logger.error('Category not found:', eventData.category_name);
         return { success: false, error: 'Category not found. Please try again.' };
       }
 
@@ -213,14 +214,14 @@ export async function createEvent(
       .single();
 
     if (error) {
-      console.error('Error creating event:', error);
+      logger.error('Error creating event:', error);
       return { success: false, error: error.message };
     }
 
     invalidatePrefix('events:');
     return { success: true, data: data as Event };
   } catch (err) {
-    console.error('Error creating event:', err);
+    logger.error('Error creating event:', err);
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to create event',
@@ -266,14 +267,14 @@ export async function updateEvent(
       .single();
 
     if (error) {
-      console.error('Error updating event:', error);
+      logger.error('Error updating event:', error);
       return { success: false, error: error.message };
     }
 
     invalidatePrefix('events:');
     return { success: true, data: data as Event };
   } catch (err) {
-    console.error('Error updating event:', err);
+    logger.error('Error updating event:', err);
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to update event',
@@ -306,7 +307,7 @@ export async function deleteEvent(eventId: string): Promise<{ success: boolean; 
     .eq('id', eventId);
 
   if (error) {
-    console.error('Error deleting event:', error);
+    logger.error('Error deleting event:', error);
     return { success: false, error: error.message };
   }
 
@@ -330,7 +331,7 @@ export async function getEventById(eventId: string): Promise<EventWithDetails | 
     .single();
 
   if (error) {
-    console.error('Error fetching event:', error);
+    logger.error('Error fetching event:', error);
     return null;
   }
 

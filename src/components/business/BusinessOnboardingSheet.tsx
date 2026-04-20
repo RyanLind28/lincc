@@ -1,3 +1,4 @@
+import { logger } from '../../lib/utils';
 import { useState, useRef } from 'react';
 import { BottomSheet, Input, TextArea, GradientButton } from '../ui';
 import { Camera, X, Loader2 } from 'lucide-react';
@@ -68,7 +69,7 @@ export function BusinessOnboardingSheet({ isOpen, onClose }: Props) {
           .upload(fileName, compressed, { contentType: 'image/jpeg' });
 
         if (uploadError) {
-          console.error('Logo upload error:', uploadError);
+          logger.error('Logo upload error:', uploadError);
           showToast('Failed to upload logo, continuing without it', 'error');
         } else {
           const { data: urlData } = supabase.storage
@@ -94,7 +95,7 @@ export function BusinessOnboardingSheet({ isOpen, onClose }: Props) {
         showToast(result.error || 'Failed to activate business profile', 'error');
       }
     } catch (err) {
-      console.error('Business onboarding error:', err);
+      logger.error('Business onboarding error:', err);
       showToast('Something went wrong', 'error');
     } finally {
       setIsSubmitting(false);

@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Notification service for user notifications
 
 import { supabase } from '../lib/supabase';
@@ -28,7 +29,7 @@ export async function getNotifications(userId: string): Promise<NotificationsRes
     .limit(50);
 
   if (error) {
-    console.error('Error fetching notifications:', error);
+    logger.error('Error fetching notifications:', error);
     return { success: false, error: error.message };
   }
 
@@ -47,7 +48,7 @@ export async function markAsRead(notificationId: string): Promise<NotificationRe
     .single();
 
   if (error) {
-    console.error('Error marking notification as read:', error);
+    logger.error('Error marking notification as read:', error);
     return { success: false, error: error.message };
   }
 
@@ -65,7 +66,7 @@ export async function markAllAsRead(userId: string): Promise<{ success: boolean;
     .eq('is_read', false);
 
   if (error) {
-    console.error('Error marking all notifications as read:', error);
+    logger.error('Error marking all notifications as read:', error);
     return { success: false, error: error.message };
   }
 
@@ -83,7 +84,7 @@ export async function getUnreadCount(userId: string): Promise<number> {
     .eq('is_read', false);
 
   if (error) {
-    console.error('Error counting unread notifications:', error);
+    logger.error('Error counting unread notifications:', error);
     return 0;
   }
 
@@ -146,7 +147,7 @@ export async function createNotification(
     .single();
 
   if (error) {
-    console.error('Error creating notification:', error);
+    logger.error('Error creating notification:', error);
     return { success: false, error: error.message };
   }
 
@@ -165,7 +166,7 @@ export async function deleteNotification(
     .eq('id', notificationId);
 
   if (error) {
-    console.error('Error deleting notification:', error);
+    logger.error('Error deleting notification:', error);
     return { success: false, error: error.message };
   }
 

@@ -13,6 +13,7 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
   build: {
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks: {

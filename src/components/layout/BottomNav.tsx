@@ -27,8 +27,8 @@ function NavSlot({ isActive, label, children }: NavSlotProps) {
       </span>
       <span
         className={cn(
-          'text-[10px] font-medium transition-colors leading-none',
-          isActive ? 'text-coral' : 'text-text-muted'
+          'text-[10px] font-semibold transition-colors leading-none',
+          isActive ? 'text-coral-dark' : 'text-text-muted'
         )}
       >
         {label}
@@ -61,7 +61,7 @@ export function BottomNav() {
             type="button"
             onClick={toggleViewMode}
             className="flex-1 flex items-center justify-center"
-            aria-label={viewMode === 'list' ? 'Switch to map view' : 'Switch to list view'}
+            aria-label="Discover"
           >
             <NavSlot isActive={discoverActive} label="Discover">
               {viewMode === 'list' ? (

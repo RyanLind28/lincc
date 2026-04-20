@@ -8,7 +8,7 @@ import type { Coordinates } from '../../types';
 
 // Set access token
 const token = import.meta.env.VITE_MAPBOX_TOKEN;
-if (!token) {
+if (!token && import.meta.env.DEV) {
   console.warn('[MapView] VITE_MAPBOX_TOKEN is not set — map tiles will not load');
 }
 mapboxgl.accessToken = token || '';

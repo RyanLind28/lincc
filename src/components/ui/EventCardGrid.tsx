@@ -122,6 +122,9 @@ function EventCardTile({
             src={coverImage}
             alt={event.title}
             loading="lazy"
+            width={400}
+            height={300}
+            decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
@@ -174,8 +177,8 @@ function EventCardTile({
 
         {/* Time · Location — single line */}
         <div className="flex items-center gap-1 text-xs text-text-muted mb-2 min-w-0">
-          <Clock className="h-3 w-3 text-coral flex-shrink-0" />
-          <span className="text-coral font-medium flex-shrink-0">{formatRelativeTime(event.start_time)}</span>
+          <Clock className="h-3 w-3 text-coral-dark flex-shrink-0" />
+          <span className="text-coral-dark font-medium flex-shrink-0">{formatRelativeTime(event.start_time)}</span>
           <span className="text-text-light flex-shrink-0">·</span>
           <span className="truncate">{event.venue_short || event.venue_name}</span>
         </div>

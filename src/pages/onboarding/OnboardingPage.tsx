@@ -1,3 +1,4 @@
+import { logger } from '../../lib/utils';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -105,7 +106,7 @@ export default function OnboardingPage() {
 
       if (uploadError) {
         showToast('Failed to upload photo', 'error');
-        console.error(uploadError);
+        logger.error(uploadError);
       } else {
         const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
         setAvatarUrl(data.publicUrl);
@@ -209,7 +210,7 @@ export default function OnboardingPage() {
 
     if (error) {
       showToast('Failed to save profile', 'error');
-      console.error(error);
+      logger.error(error);
     } else {
       await refreshProfile(user.id);
       setStep(5);

@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
@@ -58,7 +59,7 @@ export default function UserProfilePage() {
         .single();
 
       if (profileError || !profileData) {
-        console.error('Error fetching profile:', profileError);
+        logger.error('Error fetching profile:', profileError);
         setError('User not found');
         setIsLoading(false);
         return;
