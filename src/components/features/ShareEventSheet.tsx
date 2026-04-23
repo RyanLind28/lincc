@@ -127,7 +127,7 @@ export function ShareEventSheet({ isOpen, onClose, event }: ShareEventSheetProps
           <button
             onClick={handleExternalShare}
             className="flex items-center gap-3 w-full p-3 rounded-xl border border-border
-                       hover:bg-gray-50 transition-colors"
+                       hover:bg-background transition-colors"
           >
             <div className="w-10 h-10 rounded-xl bg-coral/10 flex items-center justify-center flex-shrink-0">
               {linkCopied ? (
@@ -168,7 +168,7 @@ export function ShareEventSheet({ isOpen, onClose, event }: ShareEventSheetProps
                 return (
                   <div
                     key={friend.id}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-background transition-colors"
                   >
                     <Avatar
                       src={friend.avatar_url}

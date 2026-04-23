@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Search service — full-text search + recent searches
 
 import { supabase } from '../lib/supabase';
@@ -29,7 +30,7 @@ export async function searchEvents(query: string, limit = 20): Promise<SearchRes
   });
 
   if (error) {
-    console.error('Search error:', error);
+    logger.error('Search error:', error);
     // Fallback to ILIKE search if full-text fails
     return fallbackSearch(query, limit);
   }
@@ -55,7 +56,7 @@ async function fallbackSearch(query: string, limit: number): Promise<SearchResul
     .limit(limit);
 
   if (error) {
-    console.error('Fallback search error:', error);
+    logger.error('Fallback search error:', error);
     return [];
   }
 

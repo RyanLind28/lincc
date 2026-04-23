@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -82,7 +83,7 @@ export default function EditProfilePage() {
         });
 
       if (uploadError) {
-        console.error('Avatar upload error:', uploadError);
+        logger.error('Avatar upload error:', uploadError);
         showToast('Failed to upload photo', 'error');
       } else {
         const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
@@ -96,7 +97,7 @@ export default function EditProfilePage() {
           .eq('id', user.id);
 
         if (updateError) {
-          console.error('Avatar DB update error:', updateError);
+          logger.error('Avatar DB update error:', updateError);
           showToast('Photo uploaded but failed to save', 'error');
         } else {
           await refreshProfile(user.id);
@@ -104,7 +105,7 @@ export default function EditProfilePage() {
         }
       }
     } catch (err) {
-      console.error('Image processing error:', err);
+      logger.error('Image processing error:', err);
       showToast('Failed to process image', 'error');
     }
 
@@ -156,7 +157,7 @@ export default function EditProfilePage() {
       .eq('id', user.id);
 
     if (error) {
-      console.error('Profile update error:', error);
+      logger.error('Profile update error:', error);
       showToast('Failed to save profile', 'error');
     } else {
       await refreshProfile(user.id);

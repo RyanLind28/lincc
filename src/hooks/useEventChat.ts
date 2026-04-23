@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Hook for event chat with real-time updates
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -58,7 +59,7 @@ export function useEventChat(eventId: string | undefined): UseEventChatResult {
         setError(result.error || 'Failed to load messages');
       }
     } catch (err) {
-      console.error('Error fetching chat data:', err);
+      logger.error('Error fetching chat data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load chat');
     } finally {
       setIsLoading(false);
@@ -210,7 +211,7 @@ export function useUserChats() {
 
       setChats(chatsWithMessages);
     } catch (err) {
-      console.error('Error fetching chats:', err);
+      logger.error('Error fetching chats:', err);
       setError(err instanceof Error ? err.message : 'Failed to load chats');
     } finally {
       setIsLoading(false);

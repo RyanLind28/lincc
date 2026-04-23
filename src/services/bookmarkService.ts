@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Bookmark (saved events) service
 
 import { supabase } from '../lib/supabase';
@@ -21,7 +22,7 @@ export async function saveEvent(userId: string, eventId: string): Promise<Bookma
       // Already saved (unique constraint)
       return { success: true };
     }
-    console.error('Error saving event:', error);
+    logger.error('Error saving event:', error);
     return { success: false, error: error.message };
   }
 
@@ -39,7 +40,7 @@ export async function unsaveEvent(userId: string, eventId: string): Promise<Book
     .eq('event_id', eventId);
 
   if (error) {
-    console.error('Error unsaving event:', error);
+    logger.error('Error unsaving event:', error);
     return { success: false, error: error.message };
   }
 
@@ -71,7 +72,7 @@ export async function getSavedEventIds(userId: string): Promise<string[]> {
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error fetching saved event IDs:', error);
+    logger.error('Error fetching saved event IDs:', error);
     return [];
   }
 
@@ -97,7 +98,7 @@ export async function getSavedEvents(userId: string): Promise<EventWithDetails[]
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching saved events:', error);
+    logger.error('Error fetching saved events:', error);
     return [];
   }
 

@@ -63,7 +63,7 @@ function BottomSheet({
     >
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/50 transition-opacity"
+        className="fixed inset-0 bg-black/50 animate-backdrop-in"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -72,7 +72,7 @@ function BottomSheet({
       <div
         className={cn(
           'relative w-full bg-surface rounded-t-2xl shadow-xl',
-          'animate-in slide-in-from-bottom duration-300',
+          'animate-sheet-up',
           heights[height],
           'flex flex-col',
           'safe-bottom',
@@ -97,7 +97,7 @@ function BottomSheet({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg text-text-muted hover:text-text hover:bg-gray-100 transition-colors ml-auto"
+                className="p-1 rounded-lg text-text-muted hover:text-text hover:bg-background transition-colors ml-auto"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />

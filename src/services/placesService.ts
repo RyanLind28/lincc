@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Google Places API service
 // Uses the Google Maps JavaScript SDK — Places API (New)
 // AutocompleteSuggestion + Place classes (replaces legacy AutocompleteService)
@@ -100,7 +101,7 @@ export async function searchPlaces(
   location?: { lat: number; lng: number },
 ): Promise<PlacePrediction[]> {
   if (!API_KEY || !query.trim() || query.trim().length < 2) {
-    if (!API_KEY) console.warn('[Places] No API key found');
+    if (!API_KEY && import.meta.env.DEV) console.warn('[Places] No API key found');
     return [];
   }
 
@@ -158,7 +159,7 @@ export async function searchPlaces(
       description: p.description || '',
     }));
   } catch (err) {
-    console.error('Places autocomplete failed:', err);
+    logger.error('Places autocomplete failed:', err);
     return [];
   }
 }
@@ -243,7 +244,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
           resetSessionToken();
 
           if (status !== google.maps.places.PlacesServiceStatus.OK || !place) {
-            console.error('Places detail error:', status);
+            logger.error('Places detail error:', status);
             resolve(null);
             return;
           }
@@ -269,7 +270,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
       );
     });
   } catch (err) {
-    console.error('Places detail failed:', err);
+    logger.error('Places detail failed:', err);
     resetSessionToken();
     return null;
   }

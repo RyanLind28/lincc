@@ -55,7 +55,7 @@ export class ErrorBoundary extends Component<Props, State> {
           {this.state.retryCount >= 3 && (
             <button
               onClick={() => window.location.reload()}
-              className="px-5 py-2.5 rounded-xl bg-gray-100 text-text-muted text-sm font-medium hover:bg-gray-200 transition-colors"
+              className="px-5 py-2.5 rounded-xl bg-background text-text-muted text-sm font-medium hover:bg-border transition-colors"
             >
               Reload Page
             </button>

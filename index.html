@@ -18,9 +18,13 @@
     <!-- PWA -->
     <link rel="manifest" href="/site.webmanifest" />
 
-    <!-- Fonts -->
+    <!-- Preconnect to critical origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://srrubyupwiiqnehshszd.supabase.co" />
+    <link rel="dns-prefetch" href="https://api.mapbox.com" />
+
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <!-- iOS PWA -->
@@ -29,7 +33,13 @@
     <meta name="apple-mobile-web-app-title" content="Lincc" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Inline shell for instant FCP while React boots -->
+      <div style="min-height:100vh;background:#FAFAFA;display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#FF6B6B,#845EF7);animation:pulse 1.5s ease-in-out infinite"></div>
+      </div>
+      <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}</style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

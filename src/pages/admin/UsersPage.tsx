@@ -186,7 +186,7 @@ export default function AdminUsersPage() {
               {selectedIds.size === users.length ? 'Deselect all' : 'Select all'}
             </button>
             {users.map((user) => (
-              <div key={user.id} className="p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+              <div key={user.id} className="p-4 flex items-center gap-3 hover:bg-background transition-colors">
                 <button onClick={() => toggleSelect(user.id)} className="flex-shrink-0">
                   {selectedIds.has(user.id) ? <CheckSquare className="h-5 w-5 text-coral" /> : <Square className="h-5 w-5 text-text-light" />}
                 </button>

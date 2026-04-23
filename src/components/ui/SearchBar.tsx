@@ -175,7 +175,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             onClick={onClear}
             className={cn(
               'absolute top-1/2 -translate-y-1/2 p-1 rounded-full z-10',
-              'text-text-muted hover:text-text hover:bg-gray-100',
+              'text-text-muted hover:text-text hover:bg-background',
               'transition-colors',
               rightPadding[size]
             )}
@@ -210,7 +210,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => handleSelectSuggestion(term)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-background transition-colors text-left"
                   >
                     <Clock className="h-4 w-4 text-text-light flex-shrink-0" />
                     <span className="text-sm text-text flex-1 truncate">{term}</span>
@@ -242,7 +242,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => handleSelectSuggestion(suggestion)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-background transition-colors text-left"
                   >
                     <TrendingUp className="h-4 w-4 text-text-light flex-shrink-0" />
                     <span className="text-sm text-text truncate">{suggestion}</span>

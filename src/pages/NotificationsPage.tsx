@@ -4,6 +4,7 @@ import { GradientButton, Spinner } from '../components/ui';
 import {
   Bell,
   UserPlus,
+  UserMinus,
   CheckCircle,
   XCircle,
   MessageCircle,
@@ -13,6 +14,8 @@ import {
   Ticket,
   Trash2,
   CheckCheck,
+  LogOut,
+  RotateCcw,
 } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { getNotificationPath } from '../services/notificationService';
@@ -29,6 +32,9 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
   event_cancelled: <AlertCircle className="h-5 w-5 text-error" />,
   nearby_event: <MapPin className="h-5 w-5 text-blue" />,
   voucher_shared: <Ticket className="h-5 w-5 text-coral" />,
+  participant_removed: <UserMinus className="h-5 w-5 text-error" />,
+  participant_left: <LogOut className="h-5 w-5 text-warning" />,
+  participant_rejoined: <RotateCcw className="h-5 w-5 text-success" />,
 };
 
 // Background colors for notification types
@@ -41,6 +47,9 @@ const notificationBgColors: Record<NotificationType, string> = {
   event_cancelled: 'bg-error/10',
   nearby_event: 'bg-blue/10',
   voucher_shared: 'bg-coral/10',
+  participant_removed: 'bg-error/10',
+  participant_left: 'bg-warning/10',
+  participant_rejoined: 'bg-success/10',
 };
 
 export default function NotificationsPage() {
@@ -177,7 +186,7 @@ export default function NotificationsPage() {
                   onClick={() => handleNotificationClick(notification)}
                   className={`w-full flex items-start gap-3 p-4 rounded-xl border transition-colors text-left ${
                     notification.is_read
-                      ? 'bg-surface border-border hover:border-gray-300'
+                      ? 'bg-surface border-border hover:border-border-dark'
                       : 'bg-coral/5 border-coral/20 hover:border-coral/40'
                   }`}
                 >

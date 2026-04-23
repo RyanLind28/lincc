@@ -55,6 +55,8 @@ function Avatar({ src, name, size = 'md', className, ...props }: AvatarProps) {
           src={src}
           alt={name || 'Avatar'}
           className="h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
           onError={() => setHasError(true)}
           {...props}
         />

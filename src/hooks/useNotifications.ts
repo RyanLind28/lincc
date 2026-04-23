@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Hook for managing user notifications with real-time updates
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -57,7 +58,7 @@ export function useNotifications(): UseNotificationsResult {
 
       setUnreadCount(count);
     } catch (err) {
-      console.error('Error fetching notifications:', err);
+      logger.error('Error fetching notifications:', err);
       setError(err instanceof Error ? err.message : 'Failed to load notifications');
     } finally {
       setIsLoading(false);

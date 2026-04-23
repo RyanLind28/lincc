@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Hook for managing event participation
 
 import { useState, useEffect, useCallback } from 'react';
@@ -71,7 +72,7 @@ export function useEventParticipants(
         setUserStatus(userResult.status);
       }
     } catch (err) {
-      console.error('Error fetching participants:', err);
+      logger.error('Error fetching participants:', err);
       setError(err instanceof Error ? err.message : 'Failed to load participants');
     } finally {
       setIsLoading(false);

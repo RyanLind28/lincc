@@ -111,7 +111,7 @@ export default function FollowListPage() {
             <Link
               key={person.id}
               to={`/user/${person.id}`}
-              className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-4 hover:bg-background transition-colors"
             >
               <Avatar src={person.avatar_url} name={person.first_name} size="md" />
               <div className="flex-1 min-w-0">

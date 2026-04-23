@@ -4,7 +4,6 @@ import { cn } from '../../lib/utils';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 import { OfflineBanner } from '../pwa/OfflineBanner';
 import { UpdateNotification } from '../pwa/UpdateNotification';
-import { AnnouncementBanner } from '../ui/AnnouncementBanner';
 
 // Lincc Logo — just the image. The Link wrapper lives in the Header so the whole
 // center column is a clickable home-link (bigger tap target than the image alone).
@@ -15,11 +14,19 @@ function LinccLogo({ className, size = 'md' }: { className?: string; size?: 'sm'
     lg: 'h-10',
   };
 
+  const widths = {
+    sm: 'w-[84px]',
+    md: 'w-[96px]',
+    lg: 'w-[120px]',
+  };
+
   return (
     <img
       src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp"
       alt="Lincc"
-      className={cn(heights[size], 'w-auto max-w-full object-contain', className)}
+      width={size === 'sm' ? 84 : size === 'md' ? 96 : 120}
+      height={size === 'sm' ? 28 : size === 'md' ? 32 : 40}
+      className={cn(heights[size], widths[size], 'max-w-full object-contain', className)}
     />
   );
 }
@@ -75,7 +82,7 @@ export function Header({
           ) : shouldShowBack ? (
             <button
               onClick={() => navigate(-1)}
-              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -115,7 +122,7 @@ export function Header({
           {rightContent}
           <Link
             to="/notifications"
-            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors relative"
+            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors relative"
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
@@ -131,7 +138,6 @@ export function Header({
       {/* Banner shelf — renders below the header bar, inside the sticky container */}
       <OfflineBanner />
       <UpdateNotification />
-      <AnnouncementBanner />
     </header>
   );
 }

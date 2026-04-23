@@ -69,7 +69,7 @@ export function SwipeToRedeem({
     <div
       ref={trackRef}
       className={`relative h-14 rounded-xl overflow-hidden select-none ${
-        confirmed ? 'bg-green-500' : 'bg-gray-100'
+        confirmed ? 'bg-green-500' : 'bg-background'
       } transition-colors duration-300`}
       style={{ touchAction: 'pan-y' }}
     >

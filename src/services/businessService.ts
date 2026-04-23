@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import type { Business, BusinessWithOwner, BusinessLocation, CreateBusinessForm, BusinessOpeningHours } from '../types';
 
@@ -31,7 +32,7 @@ export async function createBusiness(
     .single();
 
   if (error) {
-    console.error('Error creating business:', error);
+    logger.error('Error creating business:', error);
     return { success: false, error: error.message };
   }
 
@@ -59,7 +60,7 @@ export async function updateBusiness(
     .eq('id', businessId);
 
   if (error) {
-    console.error('Error updating business:', error);
+    logger.error('Error updating business:', error);
     return { success: false, error: error.message };
   }
 
@@ -76,7 +77,7 @@ export async function deleteBusiness(businessId: string): Promise<ServiceResult>
     .eq('id', businessId);
 
   if (error) {
-    console.error('Error deleting business:', error);
+    logger.error('Error deleting business:', error);
     return { success: false, error: error.message };
   }
 
@@ -97,7 +98,7 @@ export async function getBusinessById(id: string): Promise<BusinessWithOwner | n
     .single();
 
   if (error) {
-    console.error('Error fetching business:', error);
+    logger.error('Error fetching business:', error);
     return null;
   }
 
@@ -115,7 +116,7 @@ export async function getBusinessesByOwner(ownerId: string): Promise<Business[]>
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching user businesses:', error);
+    logger.error('Error fetching user businesses:', error);
     return [];
   }
 
@@ -148,7 +149,7 @@ export async function getActiveBusinesses(
   const { data, error } = await q;
 
   if (error) {
-    console.error('Error fetching active businesses:', error);
+    logger.error('Error fetching active businesses:', error);
     return [];
   }
 
@@ -169,7 +170,7 @@ export async function getLocationsByBusiness(businessId: string): Promise<Busine
     .order('is_primary', { ascending: false });
 
   if (error) {
-    console.error('Error fetching locations:', error);
+    logger.error('Error fetching locations:', error);
     return [];
   }
 
@@ -197,7 +198,7 @@ export async function addLocation(
     .single();
 
   if (error) {
-    console.error('Error adding location:', error);
+    logger.error('Error adding location:', error);
     return { success: false, error: error.message };
   }
 
@@ -214,7 +215,7 @@ export async function deleteLocation(locationId: string): Promise<{ success: boo
     .eq('id', locationId);
 
   if (error) {
-    console.error('Error deleting location:', error);
+    logger.error('Error deleting location:', error);
     return { success: false, error: error.message };
   }
 

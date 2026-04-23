@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Hooks for DM chat with real-time updates
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -56,7 +57,7 @@ export function useDMChat(conversationId: string | undefined): UseDMChatResult {
         setError(result.error || 'Failed to load messages');
       }
     } catch (err) {
-      console.error('Error fetching DM data:', err);
+      logger.error('Error fetching DM data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load chat');
     } finally {
       setIsLoading(false);
@@ -183,7 +184,7 @@ export function useUserDMs() {
       const data = await getUserConversations(user.id);
       setConversations(data);
     } catch (err) {
-      console.error('Error fetching DM conversations:', err);
+      logger.error('Error fetching DM conversations:', err);
       setError(err instanceof Error ? err.message : 'Failed to load conversations');
     } finally {
       setIsLoading(false);

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { GradientButton, Spinner, CategoryIcon, Badge } from '../components/ui';
-import { Calendar, Plus, Clock, MapPin, Users, Send, Trash2, ChevronRight } from 'lucide-react';
+import { Calendar, Plus, Clock, MapPin, Users, Send, Trash2, ChevronRight, Settings } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -33,7 +33,7 @@ function formatEventTime(dateString: string): string {
   });
 }
 
-function EventRow({ event, showStatus }: { event: MyEvent; showStatus?: boolean }) {
+function EventRow({ event, showStatus, isPast }: { event: MyEvent; showStatus?: boolean; isPast?: boolean }) {
   const participantCount = typeof event.participant_count === 'number'
     ? event.participant_count
     : (event.participant_count as any)?.[0]?.count || 0;
@@ -44,7 +44,10 @@ function EventRow({ event, showStatus }: { event: MyEvent; showStatus?: boolean 
   return (
     <Link
       to={`/event/${event.id}`}
-      className="group flex items-center gap-3 p-3 bg-surface rounded-2xl border border-border hover:border-coral/50 hover:shadow-sm transition-all"
+      className={cn(
+        "group flex items-center gap-3 p-3 bg-surface rounded-2xl border border-border hover:border-coral/50 hover:shadow-sm transition-all",
+        isPast && "opacity-50"
+      )}
     >
       {/* Cover image — matches chat row / profile card treatment */}
       <div className="relative flex-shrink-0">
@@ -174,7 +177,7 @@ export default function MyEventsPage() {
     if (!user) return;
     setIsLoading(true);
 
-    // Fetch upcoming events hosted by user (exclude drafts + expired)
+    // Fetch all events hosted by user (exclude drafts)
     const { data: hosted } = await supabase
       .from('events')
       .select(`
@@ -185,8 +188,7 @@ export default function MyEventsPage() {
       `)
       .eq('host_id', user.id)
       .in('status', ['active', 'full'])
-      .gte('expires_at', new Date().toISOString())
-      .order('start_time', { ascending: true });
+      .order('start_time', { ascending: false });
 
     // Fetch the user's own drafts
     const { data: drafts } = await supabase
@@ -224,7 +226,6 @@ export default function MyEventsPage() {
 
     setDraftEvents((drafts || []) as MyEvent[]);
 
-    const nowMs = Date.now();
     setJoinedEvents(
       (participations || [])
         .filter((p) => p.event)
@@ -236,12 +237,9 @@ export default function MyEventsPage() {
             participant_status: p.status,
           };
         })
-        .filter((e: MyEvent) =>
-          ['active', 'full'].includes(e.status) &&
-          new Date(e.expires_at ?? e.start_time).getTime() >= nowMs
-        )
+        .filter((e: MyEvent) => ['active', 'full'].includes(e.status))
         .sort((a: MyEvent, b: MyEvent) =>
-          new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+          new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
         ) as MyEvent[]
     );
 
@@ -286,7 +284,7 @@ export default function MyEventsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24 max-w-3xl mx-auto">
-      <Header showLogo showCreateEvent showNotifications />
+      <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       {/* Tabs */}
       <div className="flex border-b border-border">
@@ -388,13 +386,41 @@ export default function MyEventsPage() {
                     onDelete={() => handleDeleteDraft(event.id)}
                   />
                 ))
-              : events.map((event) => (
-                  <EventRow
-                    key={event.id}
-                    event={event}
-                    showStatus={activeTab === 'joined'}
-                  />
-                ))}
+              : (() => {
+                  const now = new Date().toISOString();
+                  const upcoming = events.filter((e) => (e.expires_at ?? e.start_time) >= now);
+                  const past = events.filter((e) => (e.expires_at ?? e.start_time) < now);
+                  return (
+                    <>
+                      {upcoming.length > 0 && (
+                        <div className="space-y-3">
+                          {upcoming.map((event) => (
+                            <EventRow
+                              key={event.id}
+                              event={event}
+                              showStatus={activeTab === 'joined'}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {past.length > 0 && (
+                        <div className="mt-6">
+                          <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">Past</h3>
+                          <div className="space-y-3">
+                            {past.map((event) => (
+                              <EventRow
+                                key={event.id}
+                                event={event}
+                                showStatus={activeTab === 'joined'}
+                                isPast
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
           </div>
         )}
       </div>

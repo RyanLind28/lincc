@@ -1,3 +1,4 @@
+import { logger } from '../../lib/utils';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -72,7 +73,7 @@ export default function TermsPage() {
 
     if (error) {
       showToast('Something went wrong. Please try again.', 'error');
-      console.error(error);
+      logger.error(error);
     } else {
       await refreshProfile(user.id);
       navigate('/onboarding');

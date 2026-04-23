@@ -14,7 +14,7 @@ export function EventCardSkeleton() {
   return (
     <div className="bg-surface rounded-2xl border border-border overflow-hidden">
       <Skeleton className="aspect-[4/3] rounded-none" />
-      <div className="p-3 space-y-2">
+      <div className="p-3 h-[104px] space-y-2">
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-3 w-1/2" />
         <Skeleton className="h-3 w-2/3" />
@@ -25,7 +25,7 @@ export function EventCardSkeleton() {
 
 export function EventCardGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
       {Array.from({ length: count }).map((_, i) => (
         <EventCardSkeleton key={i} />
       ))}

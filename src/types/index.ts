@@ -232,7 +232,10 @@ export type NotificationType =
   | 'event_starting'
   | 'event_cancelled'
   | 'nearby_event'
-  | 'voucher_shared';
+  | 'voucher_shared'
+  | 'participant_removed'
+  | 'participant_left'
+  | 'participant_rejoined';
 
 // Notification preference keys (toggleable push types)
 export interface NotificationPreferences {

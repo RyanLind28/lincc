@@ -127,7 +127,7 @@ export default function AdminUserDetailPage() {
               {p.tags && p.tags.length > 0 && (
                 <div className="flex gap-1 flex-wrap mt-2">
                   {p.tags.map((t: string) => (
-                    <span key={t} className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-text-muted">{t}</span>
+                    <span key={t} className="text-xs px-2 py-0.5 bg-background rounded-full text-text-muted">{t}</span>
                   ))}
                 </div>
               )}
@@ -258,7 +258,7 @@ export default function AdminUserDetailPage() {
         {/* Events hosted */}
         <Section title={`Events hosted (${detail.eventsHosted.total})`} empty="No events hosted" items={detail.eventsHosted.items}>
           {(e) => (
-            <Link key={e.id} to={`/event/${e.id}`} className="block p-3 border-b border-border last:border-b-0 hover:bg-gray-50 transition-colors">
+            <Link key={e.id} to={`/event/${e.id}`} className="block p-3 border-b border-border last:border-b-0 hover:bg-background transition-colors">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-text truncate">{e.title}</p>
@@ -278,7 +278,7 @@ export default function AdminUserDetailPage() {
             const ev = ep.event;
             if (!ev) return null;
             return (
-              <Link key={ep.id} to={`/event/${ev.id}`} className="block p-3 border-b border-border last:border-b-0 hover:bg-gray-50 transition-colors">
+              <Link key={ep.id} to={`/event/${ev.id}`} className="block p-3 border-b border-border last:border-b-0 hover:bg-background transition-colors">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-text truncate">{ev.title}</p>

@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, MapPin, Camera, X, Tag, Store, Loader2 } from 'lucide-react';
@@ -175,7 +176,7 @@ export default function CreateVoucherPage() {
             .upload(fileName, compressed, { contentType: 'image/jpeg' });
 
           if (uploadError) {
-            console.error('Upload error:', uploadError);
+            logger.error('Upload error:', uploadError);
             showToast('Failed to upload image', 'error');
           } else {
             const { data: urlData } = supabase.storage
@@ -184,7 +185,7 @@ export default function CreateVoucherPage() {
             finalCoverImageUrl = urlData.publicUrl;
           }
         } catch (uploadErr) {
-          console.error('Image upload failed:', uploadErr);
+          logger.error('Image upload failed:', uploadErr);
         } finally {
           setIsUploading(false);
         }
@@ -212,14 +213,14 @@ export default function CreateVoucherPage() {
         });
 
       if (error) {
-        console.error('Error creating voucher:', error);
+        logger.error('Error creating voucher:', error);
         showToast(error.message || 'Failed to create voucher', 'error');
       } else {
         showToast('Voucher created!', 'success');
         navigate('/profile');
       }
     } catch (err) {
-      console.error('Error:', err);
+      logger.error('Error:', err);
       showToast('Something went wrong', 'error');
     } finally {
       setIsLoading(false);
@@ -244,7 +245,7 @@ export default function CreateVoucherPage() {
           step !== 'basics' ? (
             <button
               onClick={handleBack}
-              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -416,7 +417,7 @@ export default function CreateVoucherPage() {
             <div>
               <label className="block text-sm font-medium text-text mb-1">Cover photo</label>
               <p className="text-xs text-text-muted mb-2">Upload a photo of the product or venue. Optional, but recommended.</p>
-              <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100">
+              <div className="relative aspect-video rounded-xl overflow-hidden bg-background">
                 {coverImageUrl ? (
                   <img
                     src={coverImageUrl}

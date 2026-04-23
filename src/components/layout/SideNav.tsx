@@ -53,14 +53,14 @@ export function SideNav() {
                 {/* Collapsed */}
                 <div className={cn(
                   'flex items-center justify-center w-10 h-10 rounded-full transition-all group-hover/sidebar:hidden mx-auto',
-                  isActive ? 'bg-coral/10' : 'hover:bg-gray-100'
+                  isActive ? 'bg-coral/10' : 'hover:bg-background'
                 )}>
                   <NavIcon icon={Map} isActive={isActive} />
                 </div>
                 {/* Expanded */}
                 <div className={cn(
                   'hidden group-hover/sidebar:flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all',
-                  isActive ? 'bg-coral/10' : 'hover:bg-gray-100'
+                  isActive ? 'bg-coral/10' : 'hover:bg-background'
                 )}>
                   <NavIcon icon={Map} isActive={isActive} />
                   <span className={cn('text-sm font-medium whitespace-nowrap', isActive ? 'text-coral' : 'text-text-muted')}>Discover</span>
@@ -78,14 +78,14 @@ export function SideNav() {
                 {/* Collapsed: circle */}
                 <div className={cn(
                   'flex items-center justify-center w-10 h-10 rounded-full transition-all group-hover/sidebar:hidden mx-auto',
-                  isActive ? 'bg-coral/10' : 'hover:bg-gray-100'
+                  isActive ? 'bg-coral/10' : 'hover:bg-background'
                 )}>
                   <NavIcon icon={item.icon} isActive={isActive} badge={item.badge || undefined} />
                 </div>
                 {/* Expanded: row */}
                 <div className={cn(
                   'hidden group-hover/sidebar:flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all',
-                  isActive ? 'bg-coral/10' : 'hover:bg-gray-100'
+                  isActive ? 'bg-coral/10' : 'hover:bg-background'
                 )}>
                   <NavIcon icon={item.icon} isActive={isActive} badge={item.badge || undefined} />
                   <span className={cn('text-sm font-medium whitespace-nowrap', isActive ? 'text-coral' : 'text-text-muted')}>{item.label}</span>

@@ -1,3 +1,4 @@
+import { logger } from '../../lib/utils';
 // DM service for 1-on-1 direct messaging
 
 import { supabase } from '../../lib/supabase';
@@ -28,7 +29,7 @@ export async function getOrCreateConversation(
     .maybeSingle();
 
   if (findErr) {
-    console.error('Error finding conversation:', findErr);
+    logger.error('Error finding conversation:', findErr);
     return { success: false, error: findErr.message };
   }
 
@@ -44,7 +45,7 @@ export async function getOrCreateConversation(
     .single();
 
   if (createErr) {
-    console.error('Error creating conversation:', createErr);
+    logger.error('Error creating conversation:', createErr);
     return { success: false, error: createErr.message };
   }
 
@@ -77,7 +78,7 @@ export async function sendDirectMessage(
     .single();
 
   if (error) {
-    console.error('Error sending DM:', error);
+    logger.error('Error sending DM:', error);
     return { success: false, error: error.message };
   }
 
@@ -98,7 +99,7 @@ export async function getDirectMessages(
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching DMs:', error);
+    logger.error('Error fetching DMs:', error);
     return { success: false, error: error.message };
   }
 
@@ -117,7 +118,7 @@ export async function getUserConversations(
     .order('last_message_at', { ascending: false });
 
   if (error || !convos) {
-    console.error('Error fetching conversations:', error);
+    logger.error('Error fetching conversations:', error);
     return [];
   }
 

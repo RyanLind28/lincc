@@ -119,13 +119,13 @@ export default function AdminCategoriesPage() {
             {categories.map((category) => (
               <div
                 key={category.id}
-                className="flex items-center gap-3 p-3.5 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 p-3.5 hover:bg-background transition-colors"
               >
                 <span className="text-xl w-8 text-center">{category.icon}</span>
                 <span className="flex-1 font-medium text-text">{category.name}</span>
                 <button
                   onClick={() => handleEdit(category)}
-                  className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-background transition-colors"
                 >
                   <Edit2 className="h-4 w-4" />
                 </button>

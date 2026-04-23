@@ -475,7 +475,7 @@ function WaitlistForm() {
           },
           body: JSON.stringify({ email, name }),
         }).catch((err) => {
-          console.warn('Waitlist email send failed:', err);
+          if (import.meta.env.DEV) console.warn('Waitlist email send failed:', err);
         });
       }
     } catch {

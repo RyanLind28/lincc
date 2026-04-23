@@ -139,7 +139,7 @@ export default function AdminReportsPage() {
               <button
                 key={report.id}
                 onClick={() => { setSelectedReport(report); setAdminNotes(report.admin_notes || ''); }}
-                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
               >
                 <div className="w-10 h-10 bg-warning/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Flag className="h-5 w-5 text-warning" />

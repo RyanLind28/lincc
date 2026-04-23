@@ -1,3 +1,4 @@
+import { logger } from '../../lib/utils';
 // Event Recommendation Service
 // Applies scoring algorithm and fallback cascade
 
@@ -72,7 +73,7 @@ export async function fetchActiveEvents(audience?: string): Promise<EventWithDet
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching events:', error);
+    logger.error('Error fetching events:', error);
     return [];
   }
 

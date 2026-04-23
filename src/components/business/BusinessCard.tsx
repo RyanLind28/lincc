@@ -17,7 +17,7 @@ export function BusinessCard({ business, linkTo }: BusinessCardProps) {
       className="flex items-center gap-4 bg-surface rounded-2xl p-4 border border-border hover:border-coral/30 transition-colors group"
     >
       {/* Logo */}
-      <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+      <div className="w-14 h-14 rounded-xl bg-background overflow-hidden flex-shrink-0">
         {business.logo_url ? (
           <img src={business.logo_url} alt={business.name} className="w-full h-full object-cover" />
         ) : (

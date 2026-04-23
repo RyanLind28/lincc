@@ -14,7 +14,7 @@ function Badge({
   ...props
 }: BadgeProps) {
   const variants = {
-    default: 'bg-gray-100 text-text-muted',
+    default: 'bg-background text-text-muted',
     primary: 'bg-primary/10 text-primary',
     secondary: 'bg-secondary/10 text-secondary-dark',
     success: 'bg-success/10 text-success-dark',

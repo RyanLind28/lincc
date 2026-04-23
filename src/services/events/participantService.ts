@@ -1,6 +1,8 @@
+import { logger } from '../../lib/utils';
 // Participant service for event join/leave functionality
 
 import { supabase } from '../../lib/supabase';
+import { createNotification } from '../notificationService';
 import type { EventParticipant, EventParticipantWithProfile, ParticipantStatus, JoinMode } from '../../types';
 
 export interface ParticipantResult {
@@ -47,9 +49,30 @@ export async function requestToJoin(
         .single();
 
       if (error) {
-        console.error('Error re-joining event:', error);
+        logger.error('Error re-joining event:', error);
         return { success: false, error: error.message };
       }
+
+      // Notify host about rejoin (only if previous status was 'left')
+      if (existing.status === 'left') {
+        // Fetch event and user info for notification
+        const [eventRes, userRes] = await Promise.all([
+          supabase.from('events').select('host_id, title').eq('id', eventId).single(),
+          supabase.from('profiles').select('first_name').eq('id', userId).single(),
+        ]);
+        if (eventRes.data && userRes.data) {
+          const userName = userRes.data.first_name || 'Someone';
+          const eventTitle = eventRes.data.title || 'an event';
+          createNotification(
+            eventRes.data.host_id,
+            'participant_rejoined',
+            'Rejoin Request',
+            `${userName} requested to rejoin ${eventTitle}`,
+            { event_id: eventId, user_id: userId }
+          );
+        }
+      }
+
       return { success: true, data };
     }
     // Already pending or approved
@@ -68,7 +91,7 @@ export async function requestToJoin(
     .single();
 
   if (error) {
-    console.error('Error requesting to join:', error);
+    logger.error('Error requesting to join:', error);
     return { success: false, error: error.message };
   }
 
@@ -89,8 +112,25 @@ export async function cancelRequest(eventId: string, userId: string): Promise<Pa
     .single();
 
   if (error) {
-    console.error('Error canceling request:', error);
+    logger.error('Error canceling request:', error);
     return { success: false, error: error.message };
+  }
+
+  // Notify host that user left
+  const [eventRes, userRes] = await Promise.all([
+    supabase.from('events').select('host_id, title').eq('id', eventId).single(),
+    supabase.from('profiles').select('first_name').eq('id', userId).single(),
+  ]);
+  if (eventRes.data && userRes.data && eventRes.data.host_id !== userId) {
+    const userName = userRes.data.first_name || 'Someone';
+    const eventTitle = eventRes.data.title || 'your event';
+    createNotification(
+      eventRes.data.host_id,
+      'participant_left',
+      'Participant Left',
+      `${userName} left your event ${eventTitle}`,
+      { event_id: eventId, user_id: userId }
+    );
   }
 
   return { success: true, data };
@@ -112,7 +152,7 @@ export async function approveParticipant(
     .single();
 
   if (error) {
-    console.error('Error approving participant:', error);
+    logger.error('Error approving participant:', error);
     return { success: false, error: error.message };
   }
 
@@ -121,6 +161,7 @@ export async function approveParticipant(
 
 /**
  * Reject a participant (host action)
+ * Also used to remove an approved participant from an event
  */
 export async function rejectParticipant(
   eventId: string,
@@ -135,8 +176,21 @@ export async function rejectParticipant(
     .single();
 
   if (error) {
-    console.error('Error rejecting participant:', error);
+    logger.error('Error rejecting participant:', error);
     return { success: false, error: error.message };
+  }
+
+  // Notify the removed user
+  const eventRes = await supabase.from('events').select('title').eq('id', eventId).single();
+  if (eventRes.data) {
+    const eventTitle = eventRes.data.title || 'an event';
+    createNotification(
+      userId,
+      'participant_removed',
+      'Removed from Event',
+      `You were removed from ${eventTitle}`,
+      { event_id: eventId }
+    );
   }
 
   return { success: true, data };
@@ -157,7 +211,7 @@ export async function getParticipants(eventId: string): Promise<ParticipantsList
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching participants:', error);
+    logger.error('Error fetching participants:', error);
     return { success: false, error: error.message };
   }
 
@@ -179,7 +233,7 @@ export async function getApprovedParticipants(eventId: string): Promise<Particip
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching approved participants:', error);
+    logger.error('Error fetching approved participants:', error);
     return { success: false, error: error.message };
   }
 
@@ -201,7 +255,7 @@ export async function getUserParticipation(
     .maybeSingle();
 
   if (error) {
-    console.error('Error checking participation:', error);
+    logger.error('Error checking participation:', error);
     return { status: null, participant: null };
   }
 
@@ -224,7 +278,7 @@ export async function getPendingRequestsCount(eventId: string): Promise<number> 
     .eq('status', 'pending');
 
   if (error) {
-    console.error('Error counting pending requests:', error);
+    logger.error('Error counting pending requests:', error);
     return 0;
   }
 
@@ -249,7 +303,7 @@ export async function getUserApprovedEvents(userId: string) {
     .eq('status', 'approved');
 
   if (error) {
-    console.error('Error fetching user approved events:', error);
+    logger.error('Error fetching user approved events:', error);
     return [];
   }
 

@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles, HelpCircle, Camera, X, MessageCircle } from 'lucide-react';
@@ -264,7 +265,7 @@ export default function CreateEventPage() {
             .upload(fileName, compressed, { contentType: 'image/jpeg' });
 
           if (uploadError) {
-            console.error('Upload error:', uploadError);
+            logger.error('Upload error:', uploadError);
             showToast('Failed to upload image, using default', 'error');
           } else {
             const { data: urlData } = supabase.storage
@@ -273,7 +274,7 @@ export default function CreateEventPage() {
             finalCoverImageUrl = urlData.publicUrl;
           }
         } catch (uploadErr) {
-          console.error('Image upload failed:', uploadErr);
+          logger.error('Image upload failed:', uploadErr);
           showToast('Failed to upload image, using default', 'error');
         } finally {
           setIsUploading(false);
@@ -316,7 +317,7 @@ export default function CreateEventPage() {
         showToast(result.error || 'Failed to create event', 'error');
       }
     } catch (err) {
-      console.error('Error creating event:', err);
+      logger.error('Error creating event:', err);
       showToast('An unexpected error occurred', 'error');
     } finally {
       setIsLoading(false);
@@ -372,7 +373,7 @@ export default function CreateEventPage() {
           step !== 'category' ? (
             <button
               onClick={handleBack}
-              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -548,7 +549,7 @@ export default function CreateEventPage() {
             {/* Cover image picker */}
             <div>
               <label className="block text-sm font-medium text-text mb-2">Cover image</label>
-              <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100">
+              <div className="relative aspect-video rounded-xl overflow-hidden bg-background">
                 {coverImageUrl ? (
                   <img
                     src={coverImageUrl}

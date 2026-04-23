@@ -1,3 +1,4 @@
+import { logger } from '../lib/utils';
 // Voucher service — fetch, redeem, and query vouchers
 
 import { supabase } from '../lib/supabase';
@@ -21,7 +22,7 @@ export async function getActiveVouchers(): Promise<VoucherWithDetails[]> {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching vouchers:', error);
+      logger.error('Error fetching vouchers:', error);
       return [];
     }
 
@@ -44,7 +45,7 @@ export async function getVoucherById(id: string): Promise<VoucherWithDetails | n
     .single();
 
   if (error) {
-    console.error('Error fetching voucher:', error);
+    logger.error('Error fetching voucher:', error);
     return null;
   }
 
@@ -67,7 +68,7 @@ export async function redeemVoucher(
     if (insertError.code === '23505') {
       return { success: false, error: 'You have already redeemed this voucher.' };
     }
-    console.error('Error redeeming voucher:', insertError);
+    logger.error('Error redeeming voucher:', insertError);
     return { success: false, error: insertError.message };
   }
 
@@ -142,7 +143,7 @@ export async function getVouchersByBusiness(businessId: string): Promise<Voucher
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching business vouchers:', error);
+    logger.error('Error fetching business vouchers:', error);
     return [];
   }
 
@@ -166,7 +167,7 @@ export async function getActiveVouchersByBusiness(businessId: string): Promise<V
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching active business vouchers:', error);
+    logger.error('Error fetching active business vouchers:', error);
     return [];
   }
 

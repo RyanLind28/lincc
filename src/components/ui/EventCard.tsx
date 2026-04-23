@@ -91,7 +91,7 @@ export function EventCard({
   return (
     <div
       className={cn(
-        'bg-surface rounded-2xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow relative',
+        'bg-surface rounded-2xl border border-border p-4 shadow-sm hover:shadow-md transition-all press-effect relative',
         className
       )}
     >
@@ -104,13 +104,13 @@ export function EventCard({
             e.stopPropagation();
             onToggleSave(event.id);
           }}
-          className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-gray-100 transition-colors z-10"
+          className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-background transition-colors z-10"
           aria-label={isSaved ? 'Unsave event' : 'Save event'}
         >
           <Bookmark
             className={cn(
               'h-4 w-4 transition-colors',
-              isSaved ? 'fill-coral text-coral' : 'text-text-light'
+              isSaved ? 'fill-coral text-coral animate-pop' : 'text-text-light'
             )}
           />
         </button>

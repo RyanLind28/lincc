@@ -85,7 +85,7 @@ export default function SearchPeoplePage() {
   const renderRow = (person: UserResult) => (
     <div
       key={person.id}
-      className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
+      className="flex items-center gap-3 p-4 hover:bg-background transition-colors"
     >
       <Link to={`/user/${person.id}`} className="flex items-center gap-3 flex-1 min-w-0">
         <Avatar src={person.avatar_url} name={person.first_name ?? 'User'} size="md" />
@@ -107,7 +107,7 @@ export default function SearchPeoplePage() {
               {person.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="text-[10px] px-1.5 py-0.5 bg-gray-100 rounded-full text-text-light whitespace-nowrap"
+                  className="text-[10px] px-1.5 py-0.5 bg-background rounded-full text-text-light whitespace-nowrap"
                 >
                   {tag}
                 </span>

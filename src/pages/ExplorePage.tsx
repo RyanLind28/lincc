@@ -152,7 +152,7 @@ export default function ExplorePage() {
           <div className="flex items-center gap-3 px-4 py-3">
             <button
               onClick={() => setSearchParams({})}
-              className="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-xl hover:bg-background transition-colors"
             >
               <ArrowLeft className="h-5 w-5 text-text" />
             </button>
