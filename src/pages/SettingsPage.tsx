@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
 import { Slider, Toggle, Modal, Input, Button } from '../components/ui';
-import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Monitor, Mail, Lock, HelpCircle, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus } from 'lucide-react';
+import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Monitor, Mail, Lock, HelpCircle, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus, Sparkles, FlaskConical } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { useLocationName } from '../hooks/useLocationName';
@@ -600,6 +600,47 @@ export default function SettingsPage() {
             </button>
           </div>
         </section>
+
+        {profile?.role === 'admin' && (
+          <section>
+            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
+              Developer
+            </h2>
+            <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+              <button
+                onClick={() => {
+                  localStorage.removeItem('lincc-welcome-guide-dismissed');
+                  showToast('Replaying welcome tour…', 'success');
+                  window.location.href = '/';
+                }}
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="h-5 w-5 text-coral" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-text">Replay welcome tour</h3>
+                  <p className="text-sm text-text-muted">Re-show the first-time user walkthrough</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-text-muted" />
+              </button>
+
+              <button
+                onClick={() => navigate('/onboarding')}
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <FlaskConical className="h-5 w-5 text-purple" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-text">Preview onboarding</h3>
+                  <p className="text-sm text-text-muted">Open the profile builder flow (read-only test)</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-text-muted" />
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Session */}
         <div className="space-y-3">
