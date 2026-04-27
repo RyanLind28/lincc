@@ -205,7 +205,7 @@ export default function ExplorePage() {
 
   // Category grid view
   return (
-    <div className="min-h-screen bg-background max-w-3xl mx-auto">
+    <div className="min-h-screen bg-background max-w-5xl mx-auto">
       <Header showBack title="Explore" />
 
       <div className="p-4 space-y-4">
@@ -248,7 +248,7 @@ export default function ExplorePage() {
         </div>
 
         {/* Categories grid */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {filteredCategories.map((category) => (
             <button
               key={category.value}

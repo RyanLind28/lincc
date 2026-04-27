@@ -133,7 +133,7 @@ export default function SearchPeoplePage() {
   const showSearch = query.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-background pb-20 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background pb-20 max-w-4xl mx-auto">
       <Header showBack />
 
       <div className="p-4 space-y-4">

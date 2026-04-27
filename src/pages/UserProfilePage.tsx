@@ -259,7 +259,7 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-8 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background pb-8 max-w-4xl mx-auto">
       <Header showBack />
 
       {/* Profile Header */}

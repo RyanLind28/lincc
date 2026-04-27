@@ -62,6 +62,25 @@ export default function PrivacyPage() {
               </ul>
             </div>
 
+            <div id="delete-data">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Delete Your Data</h2>
+              <p className="mb-4">
+                You can delete your Lincc account and all associated data at any time. This is permanent and cannot be undone.
+              </p>
+              <ol className="list-decimal pl-6 space-y-2 mb-4">
+                <li>Log in to your Lincc account</li>
+                <li>Go to Settings</li>
+                <li>Scroll to the bottom and tap "Delete Account"</li>
+                <li>Type DELETE to confirm</li>
+              </ol>
+              <p>
+                This will permanently remove your profile, events, messages, and all other data from Lincc. If you signed up with Facebook, this also removes any data received from Facebook. If you need help, email us at{' '}
+                <a href="mailto:hello@lincc.live" className="text-purple hover:underline">
+                  hello@lincc.live
+                </a>
+              </p>
+            </div>
+
             <div>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Data Security</h2>
               <p>

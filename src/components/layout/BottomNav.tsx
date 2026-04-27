@@ -46,10 +46,10 @@ export function BottomNav() {
   const discoverActive = isOnHomePage;
 
   const navItems = [
-    { to: '/vouchers', icon: Tag, label: 'Vouchers' },
-    { to: '/chats', icon: MessageCircle, label: 'Chats' },
-    { to: '/my-events', icon: Calendar, label: 'Events' },
-    { to: '/profile', icon: User, label: 'Profile' },
+    { to: '/vouchers', icon: Tag, label: 'Vouchers', tourId: 'vouchers' },
+    { to: '/chats', icon: MessageCircle, label: 'Chats', tourId: 'chats' },
+    { to: '/my-events', icon: Calendar, label: 'Events', tourId: 'my-events' },
+    { to: '/profile', icon: User, label: 'Profile', tourId: 'profile' },
   ];
 
   return (
@@ -60,6 +60,7 @@ export function BottomNav() {
           <button
             type="button"
             onClick={toggleViewMode}
+            data-tour="discover"
             className="flex-1 flex items-center justify-center"
             aria-label="Discover"
           >
@@ -72,7 +73,7 @@ export function BottomNav() {
             </NavSlot>
           </button>
         ) : (
-          <NavLink to="/" className="flex-1 flex items-center justify-center" aria-label="Discover">
+          <NavLink to="/" data-tour="discover" className="flex-1 flex items-center justify-center" aria-label="Discover">
             {({ isActive }) => (
               <NavSlot isActive={isActive} label="Discover">
                 <Compass className="h-6 w-6" strokeWidth={2} />
@@ -85,6 +86,7 @@ export function BottomNav() {
           <NavLink
             key={item.to}
             to={item.to}
+            data-tour={item.tourId}
             className="flex-1 flex items-center justify-center"
             aria-label={item.label}
           >

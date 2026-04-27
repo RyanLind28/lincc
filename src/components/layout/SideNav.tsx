@@ -24,10 +24,10 @@ export function SideNav() {
   const unreadCount = useUnreadNotificationCount();
 
   const navItems = [
-    { to: '/chats', icon: MessageCircle, label: 'Chats', badge: 0 },
-    { to: '/my-events', icon: Calendar, label: 'Events', badge: 0 },
-    { to: '/notifications', icon: Bell, label: 'Alerts', badge: unreadCount },
-    { to: '/profile', icon: User, label: 'Profile', badge: 0 },
+    { to: '/chats', icon: MessageCircle, label: 'Chats', badge: 0, tourId: 'chats' },
+    { to: '/my-events', icon: Calendar, label: 'Events', badge: 0, tourId: 'my-events' },
+    { to: '/notifications', icon: Bell, label: 'Alerts', badge: unreadCount, tourId: undefined },
+    { to: '/profile', icon: User, label: 'Profile', badge: 0, tourId: undefined },
   ];
 
   return (
@@ -35,7 +35,7 @@ export function SideNav() {
       <nav className="flex-1 flex flex-col items-center justify-center gap-3 px-3">
         {/* Discover / Toggle */}
         {isOnHomePage ? (
-          <button onClick={toggleViewMode} className="relative">
+          <button onClick={toggleViewMode} data-tour="discover" className="relative">
             {/* Collapsed */}
             <div className="flex items-center justify-center w-10 h-10 rounded-full text-coral hover:bg-coral/10 transition-all group-hover/sidebar:hidden mx-auto">
               {viewMode === 'list' ? <Map className="h-6 w-6" /> : <List className="h-6 w-6" />}
@@ -47,7 +47,7 @@ export function SideNav() {
             </div>
           </button>
         ) : (
-          <NavLink to="/">
+          <NavLink to="/" data-tour="discover">
             {({ isActive }) => (
               <>
                 {/* Collapsed */}
@@ -72,7 +72,7 @@ export function SideNav() {
 
         {/* Nav items */}
         {navItems.map((item) => (
-          <NavLink key={item.to} to={item.to}>
+          <NavLink key={item.to} to={item.to} data-tour={item.tourId}>
             {({ isActive }) => (
               <>
                 {/* Collapsed: circle */}
@@ -96,7 +96,7 @@ export function SideNav() {
         ))}
 
         {/* Create Event */}
-        <NavLink to="/event/new" className="mt-2">
+        <NavLink to="/event/new" data-tour="create-event" className="mt-2">
           {/* Collapsed: circle */}
           <div className="flex items-center justify-center w-10 h-10 rounded-full gradient-primary text-white hover:shadow-lg transition-all group-hover/sidebar:hidden mx-auto">
             <Plus className="h-5 w-5" />

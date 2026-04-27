@@ -153,7 +153,7 @@ export default function ProfilePage() {
     savedEventCards;
 
   return (
-    <div className="min-h-screen bg-background pb-20 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background pb-20 max-w-4xl mx-auto">
       <Header
         showLogo
         rightContent={

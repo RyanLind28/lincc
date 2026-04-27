@@ -1,37 +1,124 @@
-import { useState } from 'react';
-import { X, MapPin, Plus, MessageCircle, Bookmark } from 'lucide-react';
-import { GradientButton } from './GradientButton';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X } from 'lucide-react';
 
 const GUIDE_DISMISSED_KEY = 'lincc-welcome-guide-dismissed';
 
 const steps = [
   {
-    icon: MapPin,
-    title: 'Discover nearby events',
-    description: 'Browse events happening around you right now. Switch between list and map view.',
+    target: 'discover',
+    title: 'Discover events',
+    description: 'Browse events happening near you. Tap to switch between list and map view.',
   },
   {
-    icon: Plus,
-    title: 'Create your own event',
-    description: 'Hosting something? Tap the + button to post an event in under 30 seconds.',
+    target: 'create-event',
+    title: 'Create an event',
+    description: 'Tap here to post your own event in under 30 seconds.',
   },
   {
-    icon: MessageCircle,
-    title: 'Chat with participants',
-    description: 'Once you join an event, chat with the host and other participants in real time.',
+    target: 'chats',
+    title: 'Your chats',
+    description: 'Chat with event hosts and participants in real time.',
   },
   {
-    icon: Bookmark,
-    title: 'Save for later',
-    description: 'Bookmark events you\'re interested in to check back later.',
+    target: 'my-events',
+    title: 'Your events',
+    description: 'See events you\'re hosting or attending, all in one place.',
   },
 ];
+
+type Position = 'top' | 'bottom' | 'right';
 
 export function WelcomeGuide() {
   const [dismissed, setDismissed] = useState(() =>
     localStorage.getItem(GUIDE_DISMISSED_KEY) === 'true'
   );
   const [currentStep, setCurrentStep] = useState(0);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const [spotlightStyle, setSpotlightStyle] = useState<React.CSSProperties>({});
+  const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
+  const [position, setPosition] = useState<Position>('top');
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  const isDesktop = () => window.innerWidth >= 1024;
+
+  const positionTooltip = useCallback(() => {
+    const step = steps[currentStep];
+    const el = document.querySelector(`[data-tour="${step.target}"]`);
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const padding = 6;
+    const gap = 12;
+    const tooltipWidth = isDesktop() ? 280 : 260;
+
+    // Spotlight around target element
+    setSpotlightStyle({
+      top: rect.top - padding,
+      left: rect.left - padding,
+      width: rect.width + padding * 2,
+      height: rect.height + padding * 2,
+      borderRadius: '12px',
+    });
+
+    // Determine position based on layout
+    let pos: Position;
+    if (isDesktop()) {
+      // Desktop: sidebar is on the left, tooltip goes to the right
+      pos = 'right';
+    } else {
+      // Mobile: bottom nav is at the bottom, tooltip goes above
+      // Header create button → tooltip goes below
+      pos = rect.top < 100 ? 'bottom' : 'top';
+    }
+    setPosition(pos);
+
+    if (pos === 'right') {
+      // Position to the right of the sidebar element
+      const top = rect.top + rect.height / 2 - 50; // roughly center vertically
+      const left = rect.right + padding + gap;
+
+      setTooltipStyle({
+        top: Math.max(12, Math.min(top, window.innerHeight - 180)),
+        left,
+        width: tooltipWidth,
+      });
+
+      // Arrow pointing left toward the element
+      const arrowTop = rect.top + rect.height / 2 - (Math.max(12, Math.min(top, window.innerHeight - 180))) - 6;
+      setArrowStyle({
+        top: Math.max(16, Math.min(arrowTop, 80)),
+      });
+    } else {
+      // Mobile: position above or below
+      let left = rect.left + rect.width / 2 - tooltipWidth / 2;
+      if (left < 12) left = 12;
+      if (left + tooltipWidth > window.innerWidth - 12) left = window.innerWidth - 12 - tooltipWidth;
+
+      if (pos === 'top') {
+        const bottom = window.innerHeight - rect.top + padding + gap;
+        setTooltipStyle({ bottom, left, width: tooltipWidth });
+      } else {
+        const top = rect.bottom + padding + gap;
+        setTooltipStyle({ top, left, width: tooltipWidth });
+      }
+
+      // Arrow pointing toward the element
+      const arrowLeft = rect.left + rect.width / 2 - left - 6;
+      setArrowStyle({
+        left: Math.max(16, Math.min(arrowLeft, tooltipWidth - 16)),
+      });
+    }
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (dismissed) return;
+    const timer = setTimeout(positionTooltip, 300);
+    window.addEventListener('resize', positionTooltip);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', positionTooltip);
+    };
+  }, [dismissed, positionTooltip]);
 
   if (dismissed) return null;
 
@@ -49,46 +136,81 @@ export function WelcomeGuide() {
   };
 
   const step = steps[currentStep];
-  const Icon = step.icon;
+
+  // Arrow classes per position
+  const arrowClasses: Record<Position, string> = {
+    top: 'bottom-[-7px] border-r border-b',
+    bottom: 'top-[-7px] border-l border-t',
+    right: 'left-[-7px] border-l border-b',
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in p-4">
-      <div className="bg-surface rounded-2xl border border-border shadow-xl max-w-sm w-full p-6 animate-slide-up">
-        <div className="flex justify-end mb-2">
-          <button onClick={handleDismiss} className="p-1 text-text-light hover:text-text">
-            <X className="h-4 w-4" />
+    <>
+      {/* Overlay with spotlight cutout */}
+      <div
+        className="fixed inset-0 z-[60] transition-opacity duration-300"
+        onClick={handleNext}
+        style={{ pointerEvents: 'auto' }}
+      >
+        <div className="absolute inset-0 bg-black/40" />
+        <div
+          className="absolute transition-all duration-300 ease-out"
+          style={{
+            ...spotlightStyle,
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)',
+            background: 'transparent',
+            zIndex: 1,
+          }}
+        />
+      </div>
+
+      {/* Tooltip */}
+      <div
+        ref={tooltipRef}
+        className="fixed z-[61] animate-slide-up"
+        style={tooltipStyle}
+      >
+        <div className="bg-surface rounded-xl border border-border shadow-xl p-4 relative">
+          {/* Arrow */}
+          <div
+            className={`absolute w-3 h-3 bg-surface border-border rotate-45 ${arrowClasses[position]}`}
+            style={arrowStyle}
+          />
+
+          {/* Close button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
+            className="absolute top-2 right-2 p-1 text-text-light hover:text-text rounded-lg"
+          >
+            <X className="h-3.5 w-3.5" />
           </button>
-        </div>
 
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-            <Icon className="h-8 w-8 text-white" />
+          {/* Content */}
+          <h3 className="font-semibold text-text text-sm pr-6">{step.title}</h3>
+          <p className="text-text-muted text-xs mt-1 leading-relaxed">{step.description}</p>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex gap-1">
+              {steps.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === currentStep ? 'w-4 gradient-primary' : 'w-1.5 bg-gray-200'
+                  }`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={(e) => { e.stopPropagation(); handleNext(); }}
+              className="text-xs font-semibold text-coral hover:text-coral-dark transition-colors"
+            >
+              {currentStep < steps.length - 1 ? 'Next' : 'Got it'}
+            </button>
           </div>
-          <h2 className="text-xl font-bold text-text mb-2">{step.title}</h2>
-          <p className="text-text-muted">{step.description}</p>
-        </div>
-
-        {/* Progress dots */}
-        <div className="flex justify-center gap-1.5 mb-5">
-          {steps.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1.5 rounded-full transition-all ${
-                i === currentStep ? 'w-6 gradient-primary' : 'w-1.5 bg-gray-200'
-              }`}
-            />
-          ))}
-        </div>
-
-        <div className="flex gap-3">
-          <GradientButton variant="outline" onClick={handleDismiss} fullWidth>
-            Skip
-          </GradientButton>
-          <GradientButton onClick={handleNext} fullWidth>
-            {currentStep < steps.length - 1 ? 'Next' : 'Get Started'}
-          </GradientButton>
         </div>
       </div>
-    </div>
+    </>
   );
 }

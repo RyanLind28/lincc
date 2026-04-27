@@ -365,7 +365,7 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background max-w-3xl mx-auto">
       <Header
         showBack={step === 'category'}
         showLogo
@@ -412,7 +412,7 @@ export default function CreateEventPage() {
 
         {/* Step content */}
         {step === 'category' && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             {CATEGORIES.map((category) => (
               <button
                 key={category.value}

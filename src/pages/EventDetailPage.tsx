@@ -386,7 +386,7 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-6 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-background pb-6 max-w-5xl mx-auto">
       {/* Header — global unified bar */}
       <Header showBack showLogo showCreateEvent showNotifications />
 
@@ -566,7 +566,7 @@ export default function EventDetailPage() {
             <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">Location</h2>
           </div>
 
-          <div className="h-36 rounded-xl overflow-hidden mb-3">
+          <div className="h-36 lg:h-56 rounded-xl overflow-hidden mb-3">
             <img
               src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-s+FF6B6B(${event.venue_lng},${event.venue_lat})/${event.venue_lng},${event.venue_lat},15,0/800x400@2x?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`}
               alt={`Map showing ${event.venue_name}`}

@@ -89,7 +89,7 @@ export default function ChatRoomPage() {
 
   if (isLoading || eventLoading) {
     return (
-      <div className="h-dvh flex flex-col overflow-hidden bg-background">
+      <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-5xl mx-auto">
         <Header showBack title={event?.title || 'Chat'} />
         <div className="flex-1 flex items-center justify-center">
           <Spinner size="lg" />
@@ -100,7 +100,7 @@ export default function ChatRoomPage() {
 
   if (!hasAccess) {
     return (
-      <div className="h-dvh flex flex-col overflow-hidden bg-background">
+      <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-5xl mx-auto">
         <Header showBack title="Chat" />
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mb-4">
@@ -119,7 +119,7 @@ export default function ChatRoomPage() {
   }
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden bg-background">
+    <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-5xl mx-auto">
       {/* Header */}
       <Header showBack title="Chat" />
 

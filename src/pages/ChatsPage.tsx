@@ -98,7 +98,7 @@ export default function ChatsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background max-w-3xl mx-auto" {...pullHandlers}>
+    <div className="min-h-screen bg-background max-w-5xl mx-auto" {...pullHandlers}>
       <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       {/* Pull-to-refresh indicator */}

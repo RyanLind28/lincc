@@ -144,7 +144,7 @@ export default function BusinessDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-6 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-background pb-6 max-w-5xl mx-auto">
       <Header showBack showLogo showNotifications />
 
       <div className="p-4">

@@ -1,5 +1,5 @@
 // Reverse-geocode coordinates to a human-readable location name
-// Uses OpenStreetMap Nominatim (free, no API key)
+// Uses OpenStreetMap Nominatim (free, no API key required)
 
 import { useState, useEffect } from 'react';
 import type { Coordinates } from '../types';
@@ -14,19 +14,22 @@ export function useLocationName(location: Coordinates | null) {
     let cancelled = false;
     setIsLoading(true);
 
-    fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json&zoom=10`,
-      { headers: { 'User-Agent': 'Lincc/0.1.0' } }
-    )
-      .then((res) => res.json())
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json&zoom=14&addressdetails=1`;
+
+    fetch(url, { headers: { 'User-Agent': 'Lincc/0.1.0' } })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Nominatim returned ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
         if (cancelled) return;
+
         const addr = data.address;
         if (addr) {
-          const city = addr.city || addr.town || addr.village || addr.hamlet || addr.suburb || '';
+          const locality = addr.village || addr.suburb || addr.hamlet || addr.town || addr.city || '';
+          const county = addr.county || '';
           const state = addr.state || addr.region || '';
-          const country = addr.country || '';
-          const parts = [city, state, country].filter(Boolean);
+          const parts = [locality, county, state].filter(Boolean);
           setLocationName(parts.join(', ') || data.display_name || null);
         }
       })

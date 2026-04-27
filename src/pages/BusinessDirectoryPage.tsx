@@ -37,7 +37,7 @@ export default function BusinessDirectoryPage() {
   }, [query, categoryFilter]);
 
   return (
-    <div className="min-h-screen bg-background pb-20 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-background pb-20 max-w-5xl mx-auto">
       <Header showBack />
 
       <div className="p-4 space-y-4">

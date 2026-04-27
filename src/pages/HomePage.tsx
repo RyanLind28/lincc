@@ -172,7 +172,7 @@ export default function HomePage() {
     : [];
 
   return (
-    <div className="h-screen flex flex-col bg-background max-w-4xl mx-auto">
+    <div className="h-screen flex flex-col bg-background max-w-6xl mx-auto">
       {/* Header - Instagram style */}
       <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
@@ -540,7 +540,7 @@ export default function HomePage() {
               </span>
             )}
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 lg:grid-cols-6 gap-2">
             {ALL_CATEGORIES.map((category) => {
               const isSelected = filters.categories.includes(category.value);
               return (

@@ -39,7 +39,7 @@ export default function VouchersPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-24 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-background pb-24 max-w-5xl mx-auto">
       <Header rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       <div className="p-4 space-y-4">

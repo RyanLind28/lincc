@@ -64,7 +64,7 @@ export default function BusinessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-6 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-background pb-6 max-w-4xl mx-auto">
       <Header showBack showLogo showNotifications />
 
       <div className="px-4 mt-2">

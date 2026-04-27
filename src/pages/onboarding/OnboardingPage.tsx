@@ -5,11 +5,21 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { GradientButton, Input, TextArea, Avatar, ChipGroup } from '../../components/ui';
-import { Camera, ArrowLeft, ArrowRight, Download, Bell, Share, ChevronRight } from 'lucide-react';
+import { Camera, ArrowLeft, ArrowRight, Download, Bell, Share, ChevronRight, MapPin, CheckCircle } from 'lucide-react';
 import { usePWA } from '../../hooks/usePWA';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { useLocationName } from '../../hooks/useLocationName';
 import { validateImageSize, compressImage } from '../../lib/imageCompression';
-import type { Gender } from '../../types';
+import type { Gender, Coordinates } from '../../types';
+
+const LOCATION_VIBES = [
+  'A lovely spot with so much going on!',
+  'What a great area, events are waiting for you!',
+  'Great location, there\'s always something happening nearby!',
+  'Nice! You\'re in a buzzing area!',
+  'Perfect, plenty of things to do around here!',
+  'Love it, your neighbourhood has great energy!',
+];
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
@@ -44,16 +54,46 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
-  const [dob, setDob] = useState('');
+  const [dobDay, setDobDay] = useState('');
+  const [dobMonth, setDobMonth] = useState('');
+  const [dobYear, setDobYear] = useState('');
   const [gender, setGender] = useState<Gender | ''>('');
+
+  // Compose dob string from parts
+  const dob = dobYear && dobMonth && dobDay ? `${dobYear}-${dobMonth}-${dobDay}` : '';
   const [tags, setTags] = useState<string[]>([]);
   const [bio, setBio] = useState('');
+
+  const [locationPermission, setLocationPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
+  const [locationCoords, setLocationCoords] = useState<Coordinates | null>(null);
+  const [locationVibe] = useState(() => LOCATION_VIBES[Math.floor(Math.random() * LOCATION_VIBES.length)]);
 
   const { user, isProfileComplete, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const { isInstallable, isInstalled, promptInstall } = usePWA();
   const { permission: pushPermission, subscribe: pushSubscribe } = usePushNotifications();
+  const { locationName, isLoading: locationNameLoading } = useLocationName(locationCoords);
+
+  // Check current location permission state and fetch coords if already granted
+  useEffect(() => {
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        setLocationPermission(result.state as 'prompt' | 'granted' | 'denied');
+        // If already granted, fetch the coords so we can resolve the name
+        if (result.state === 'granted') {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => setLocationCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+            () => {},
+            { timeout: 10000 }
+          );
+        }
+        result.addEventListener('change', () => {
+          setLocationPermission(result.state as 'prompt' | 'granted' | 'denied');
+        });
+      });
+    }
+  }, []);
 
   // Prefill from OAuth metadata (Google sign-up provides name + avatar)
   useEffect(() => {
@@ -82,7 +122,12 @@ export default function OnboardingPage() {
     }
   }, [isProfileComplete, navigate, step, avatarUrl]);
 
-  const totalSteps = 5;
+  // Skip the install step entirely if the app is already installed
+  const showInstallStep = !isInstalled;
+  const installStep = showInstallStep ? 5 : -1;
+  const locationStep = showInstallStep ? 6 : 5;
+  const notificationStep = showInstallStep ? 7 : 6;
+  const totalSteps = notificationStep;
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -129,20 +174,8 @@ export default function OnboardingPage() {
           showToast('Please enter your name', 'error');
           return false;
         }
-        if (!dob) {
-          showToast('Please enter your date of birth', 'error');
-          return false;
-        }
-        // Check age 18+
-        const birthDate = new Date(dob);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-          age--;
-        }
-        if (age < 18) {
-          showToast('You must be 18 or older to use Lincc', 'error');
+        if (!dobDay || !dobMonth || !dobYear) {
+          showToast('Please select your date of birth', 'error');
           return false;
         }
         if (!gender) {
@@ -167,13 +200,13 @@ export default function OnboardingPage() {
   const handleNext = async () => {
     if (!validateStep()) return;
 
-    // After bio (step 4), save profile then advance to setup step
+    // After bio (step 4), save profile then advance to install step
     if (step === 4) {
       await saveProfile();
       return;
     }
 
-    // Step 5 (setup) — done, go home
+    // Step 6 (final) — done, go home
     if (step === totalSteps) {
       navigate('/');
       return;
@@ -183,7 +216,7 @@ export default function OnboardingPage() {
   };
 
   const handleBack = () => {
-    if (step > 1 && step < 5) {
+    if (step > 1 && step < totalSteps) {
       setStep(step - 1);
     }
   };
@@ -213,7 +246,7 @@ export default function OnboardingPage() {
       logger.error(error);
     } else {
       await refreshProfile(user.id);
-      setStep(5);
+      setStep(showInstallStep ? installStep : locationStep);
     }
 
     setIsLoading(false);
@@ -223,7 +256,24 @@ export default function OnboardingPage() {
     await promptInstall();
   };
 
+  const handleEnableLocation = () => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationPermission('granted');
+        setLocationCoords({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      () => setLocationPermission('denied'),
+      { timeout: 10000 }
+    );
+  };
+
+  const [notifToggled, setNotifToggled] = useState(false);
+
   const handleEnableNotifications = async () => {
+    setNotifToggled(true);
     await pushSubscribe();
   };
 
@@ -295,13 +345,44 @@ export default function OnboardingPage() {
                   placeholder="Your first name"
                 />
 
-                <Input
-                  label="Date of Birth"
-                  type="date"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                  helperText="You must be 18 or older"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1.5">
+                    Date of Birth
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      value={dobDay}
+                      onChange={(e) => setDobDay(e.target.value)}
+                      className="flex-1 px-3 py-2.5 bg-background border border-border rounded-lg text-text text-sm appearance-none"
+                    >
+                      <option value="">Day</option>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                        <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={dobMonth}
+                      onChange={(e) => setDobMonth(e.target.value)}
+                      className="flex-[1.4] px-3 py-2.5 bg-background border border-border rounded-lg text-text text-sm appearance-none"
+                    >
+                      <option value="">Month</option>
+                      {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
+                        <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={dobYear}
+                      onChange={(e) => setDobYear(e.target.value)}
+                      className="flex-1 px-3 py-2.5 bg-background border border-border rounded-lg text-text text-sm appearance-none"
+                    >
+                      <option value="">Year</option>
+                      {Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - 18 - i).map((y) => (
+                        <option key={y} value={String(y)}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-xs text-text-muted mt-1.5">You must be 18 or older</p>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-text mb-1.5">
@@ -367,16 +448,16 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 5: Install & Notifications */}
-          {step === 5 && (
+          {/* Install App (skipped if already installed) */}
+          {step === installStep && (
             <div className="text-center">
-              <h1 className="text-2xl font-bold gradient-text mb-2">You're all set!</h1>
+              <h1 className="text-2xl font-bold gradient-text mb-2">Add to Home Screen</h1>
               <p className="text-text-muted mb-8">
-                One last thing — get the full app experience.
+                Install Lincc for the best experience. Instant access, just like a native app.
               </p>
 
               <div className="space-y-3 text-left">
-                {/* Install prompt — native beforeinstallprompt (Android/Chrome desktop) */}
+                {/* Android / Chrome desktop — native install prompt */}
                 {isInstallable && !isInstalled && (
                   <button
                     onClick={handleInstall}
@@ -393,7 +474,7 @@ export default function OnboardingPage() {
                   </button>
                 )}
 
-                {/* iOS — detect Safari vs other browsers */}
+                {/* iOS Safari — step-by-step instructions */}
                 {!isInstallable && !isInstalled && /iPad|iPhone|iPod/.test(navigator.userAgent) && (
                   <div className="w-full p-4 bg-coral/5 rounded-xl border border-coral/20">
                     <div className="flex items-center gap-3 mb-3">
@@ -430,35 +511,161 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {/* Notification prompt */}
-                {pushPermission !== 'granted' && 'Notification' in window && (
-                  <button
-                    onClick={handleEnableNotifications}
-                    className="w-full p-4 bg-background rounded-xl border border-border flex items-center gap-4 hover:border-coral transition-colors"
-                  >
-                    <div className="w-11 h-11 bg-purple rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Bell className="h-5 w-5 text-white" />
+                {/* Already installed or desktop — show confirmation */}
+                {(isInstalled || (!isInstallable && !/iPad|iPhone|iPod/.test(navigator.userAgent))) && (
+                  <div className="text-center py-4">
+                    <div className="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Download className="h-7 w-7 text-green-500" />
                     </div>
-                    <div className="flex-1 text-left">
-                      <h3 className="font-semibold text-text">Enable Notifications</h3>
-                      <p className="text-sm text-text-muted">Get notified about events, messages, and more</p>
-                    </div>
-                  </button>
-                )}
-
-                {pushPermission === 'granted' && !isInstallable && (
-                  <p className="text-center text-text-muted text-sm py-4">
-                    You're good to go!
-                  </p>
+                    <p className="text-text-muted text-sm">
+                      {isInstalled ? 'Lincc is already installed!' : 'You can install Lincc anytime from your browser menu.'}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
           )}
+
+          {/* Location Step */}
+          {step === locationStep && (
+            <div className="text-center">
+              {locationPermission === 'granted' ? (
+                <>
+                  <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-scale-in">
+                    <CheckCircle className="h-8 w-8 text-green-500" />
+                  </div>
+                  {locationNameLoading ? (
+                    <>
+                      <h1 className="text-2xl font-bold gradient-text mb-2">Finding your location...</h1>
+                      <div className="mt-4 p-4 bg-blue/5 rounded-xl border border-blue/20">
+                        <div className="flex items-center justify-center gap-2">
+                          <MapPin className="h-4 w-4 text-blue animate-pulse" />
+                          <div className="h-5 w-36 bg-border rounded-full animate-shimmer" />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h1 className="text-2xl font-bold gradient-text mb-2">Location enabled</h1>
+                      <div className="mt-4 p-4 bg-blue/5 rounded-xl border border-blue/20">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <MapPin className="h-4 w-4 text-blue" />
+                          <span className="font-semibold text-text">{locationName || 'Location found'}</span>
+                        </div>
+                        <p className="text-sm text-text-muted">{locationVibe}</p>
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : locationPermission === 'denied' ? (
+                <>
+                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MapPin className="h-8 w-8 text-white" />
+                  </div>
+                  <h1 className="text-2xl font-bold gradient-text mb-2">Location not enabled</h1>
+                  <p className="text-text-muted mb-6">
+                    Lincc works best with your location. Without it, you'll miss events happening right around you.
+                  </p>
+
+                  <GradientButton onClick={handleEnableLocation} fullWidth>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Try Again
+                  </GradientButton>
+
+                  <p className="text-xs text-text-light mt-3">
+                    If your browser blocked the request, you may need to allow location access in your browser settings and try again
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MapPin className="h-8 w-8 text-white" />
+                  </div>
+                  <h1 className="text-2xl font-bold gradient-text mb-2">Enable your location</h1>
+                  <p className="text-text-muted mb-8">
+                    Lincc needs your location to find events, people, and things to do near you. Without it, you'll miss out on what's happening in your area.
+                  </p>
+
+                  <GradientButton onClick={handleEnableLocation} fullWidth>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Allow Location Access
+                  </GradientButton>
+
+                  <p className="text-xs text-text-light mt-3">
+                    You can change this anytime in Settings
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Notifications Step */}
+          {step === notificationStep && (() => {
+            const notifEnabled = pushPermission === 'granted' || notifToggled;
+            return (
+            <div className="text-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300 ${
+                notifEnabled ? 'bg-green-500/10 animate-scale-in' : 'gradient-primary'
+              }`}>
+                {notifEnabled ? (
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                ) : (
+                  <Bell className="h-8 w-8 text-white" />
+                )}
+              </div>
+
+              {notifEnabled ? (
+                <>
+                  <h1 className="text-2xl font-bold gradient-text mb-2">Notifications enabled</h1>
+                  <p className="text-text-muted">
+                    You'll be the first to know when something's happening near you.
+                  </p>
+                </>
+              ) : 'Notification' in window ? (
+                <>
+                  <h1 className="text-2xl font-bold gradient-text mb-2">Don't miss out</h1>
+                  <p className="text-text-muted mb-8">
+                    People are posting events all the time. Turn on notifications so you're the first to know when something pops up nearby.
+                  </p>
+
+                  {/* Toggle-style card */}
+                  <button
+                    onClick={handleEnableNotifications}
+                    className="w-full p-5 bg-purple/5 rounded-2xl border border-purple/20 flex items-center gap-4 hover:bg-purple/10 transition-colors text-left"
+                  >
+                    <div className="w-12 h-12 bg-purple rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Bell className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-text">Turn on notifications</h3>
+                      <p className="text-xs text-text-muted mt-0.5">Your browser will ask for permission</p>
+                    </div>
+                    {/* Toggle visual */}
+                    <div className="w-12 h-7 bg-border rounded-full flex items-center px-0.5 flex-shrink-0">
+                      <div className="w-6 h-6 bg-white rounded-full shadow-sm" />
+                    </div>
+                  </button>
+
+                  <p className="text-xs text-text-light mt-3">
+                    You can change this anytime in Settings
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-bold gradient-text mb-2">You're all set!</h1>
+                  <p className="text-text-muted">
+                    Notifications aren't supported on this browser, but you can check Lincc anytime to see what's happening.
+                  </p>
+                </>
+              )}
+            </div>
+            );
+          })()}
         </div>
 
         {/* Navigation */}
         <div className="flex gap-3 mt-6">
-          {step > 1 && step < 5 && (
+          {step > 1 && step < totalSteps && (
             <GradientButton
               variant="outline"
               onClick={handleBack}
@@ -473,7 +680,12 @@ export default function OnboardingPage() {
             isLoading={isLoading}
             rightIcon={step < 4 ? <ArrowRight className="h-4 w-4" /> : undefined}
           >
-            {step < 4 ? 'Continue' : step === 4 ? 'Save Profile' : 'Get Started'}
+            {step < 4 ? 'Continue'
+              : step === 4 ? 'Save Profile'
+              : step === locationStep && locationPermission === 'prompt' ? 'Skip for now'
+              : step === notificationStep && !notifToggled && pushPermission !== 'granted' && pushPermission !== 'denied' ? 'Skip for now'
+              : step === totalSteps ? 'Get Started'
+              : 'Next'}
           </GradientButton>
         </div>
       </div>

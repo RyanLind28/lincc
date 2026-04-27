@@ -90,6 +90,7 @@ export function Header({
           ) : (
             <Link
               to="/event/new"
+              data-tour="create-event"
               className="p-2 -ml-2 rounded-xl text-text-muted hover:text-coral hover:bg-coral/10 transition-colors lg:hidden"
               aria-label="Create event"
             >

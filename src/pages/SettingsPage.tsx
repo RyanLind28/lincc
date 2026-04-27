@@ -715,31 +715,31 @@ export default function SettingsPage() {
               <button
                 onClick={() => {
                   localStorage.removeItem('lincc-welcome-guide-dismissed');
-                  showToast('Replaying welcome tour…', 'success');
+                  showToast('Replaying welcome guide…', 'success');
                   window.location.href = '/';
                 }}
-                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
               >
                 <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Sparkles className="h-5 w-5 text-coral" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-medium text-text">Replay welcome tour</h3>
-                  <p className="text-sm text-text-muted">Re-show the first-time user walkthrough</p>
+                  <h3 className="font-medium text-text">Replay welcome guide</h3>
+                  <p className="text-sm text-text-muted">Re-show the tooltip walkthrough on the home screen</p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-text-muted" />
               </button>
 
               <button
-                onClick={() => navigate('/onboarding')}
-                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+                onClick={() => navigate('/onboarding?preview=true')}
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
               >
                 <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <FlaskConical className="h-5 w-5 text-purple" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-medium text-text">Preview onboarding</h3>
-                  <p className="text-sm text-text-muted">Open the profile builder flow (read-only test)</p>
+                  <h3 className="font-medium text-text">Replay onboarding</h3>
+                  <p className="text-sm text-text-muted">Walk through the full signup onboarding flow</p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-text-muted" />
               </button>

@@ -283,7 +283,7 @@ export default function MyEventsPage() {
   const isEmpty = !isLoading && events.length === 0;
 
   return (
-    <div className="min-h-screen bg-background pb-24 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-background pb-24 max-w-5xl mx-auto">
       <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       {/* Tabs */}
