@@ -74,7 +74,7 @@ export default function PrivacyPage() {
                 <li>Type DELETE to confirm</li>
               </ol>
               <p>
-                This will permanently remove your profile, events, messages, and all other data from Lincc. If you signed up with Facebook, this also removes any data received from Facebook. If you need help, email us at{' '}
+                This will permanently remove your profile, events, messages, and all other data from Lincc. If you need help, email us at{' '}
                 <a href="mailto:hello@lincc.live" className="text-purple hover:underline">
                   hello@lincc.live
                 </a>

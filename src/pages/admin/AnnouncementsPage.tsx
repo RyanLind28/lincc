@@ -88,7 +88,7 @@ export default function AnnouncementsPage() {
         }
       />
 
-      <div className="p-4">
+      <div className="p-4 lg:p-6 max-w-5xl mx-auto">
         {isLoading ? (
           <ChatListSkeleton count={4} />
         ) : announcements.length === 0 ? (

@@ -8,6 +8,9 @@ import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute, PublicRoute } from './components/layout/ProtectedRoute';
 import { ErrorBoundary } from './components/layout/ErrorBoundary';
 import { ScrollToTop } from './components/layout/ScrollToTop';
+import { AnalyticsTracker } from './components/AnalyticsTracker';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
+import { UpdateNotification } from './components/pwa/UpdateNotification';
 import { FullPageSpinner } from './components/ui';
 
 // Auth pages (small, loaded eagerly for fast first paint)
@@ -18,6 +21,7 @@ import SignupPage from './pages/auth/SignupPage';
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
 const TermsPage = lazy(() => import('./pages/auth/TermsPage'));
+const PendingApprovalPage = lazy(() => import('./pages/auth/PendingApprovalPage'));
 const OnboardingPage = lazy(() => import('./pages/onboarding/OnboardingPage'));
 
 // Lazy-loaded main pages
@@ -49,10 +53,9 @@ const CreateVoucherPage = lazy(() => import('./pages/CreateVoucherPage'));
 
 // Lazy-loaded business pages
 const EditBusinessProfilePage = lazy(() => import('./pages/EditBusinessProfilePage'));
-const CreateBusinessPage = lazy(() => import('./pages/CreateBusinessPage'));
 const BusinessPage = lazy(() => import('./pages/BusinessPage'));
 const BusinessDashboardPage = lazy(() => import('./pages/BusinessDashboardPage'));
-const MyBusinessesPage = lazy(() => import('./pages/MyBusinessesPage'));
+const BusinessVerifyPage = lazy(() => import('./pages/BusinessVerifyPage'));
 
 // Lazy-loaded admin pages
 const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage'));
@@ -62,6 +65,7 @@ const AdminEventsPage = lazy(() => import('./pages/admin/EventsPage'));
 const AdminReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/CategoriesPage'));
 const AdminBusinessesPage = lazy(() => import('./pages/admin/BusinessesPage'));
+const AdminBusinessApplicationsPage = lazy(() => import('./pages/admin/BusinessApplicationsPage'));
 const AdminBusinessDetailPage = lazy(() => import('./pages/admin/BusinessDetailPage'));
 const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
 const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
@@ -85,6 +89,9 @@ function App() {
       <ToastProvider>
         <ViewModeProvider>
         <ScrollToTop />
+        <AnalyticsTracker />
+        <CookieConsentBanner />
+        <UpdateNotification />
         <Suspense fallback={<FullPageSpinner />}>
         <Routes>
           {/* Demo route (no auth required) */}
@@ -148,6 +155,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/pending-approval"
+            element={
+              <ProtectedRoute requireProfile={false} requireTerms={false}>
+                <PendingApprovalPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected routes with main layout (bottom nav + app shell) */}
           <Route
@@ -174,75 +189,36 @@ function App() {
             <Route path="/event/:id/manage" element={<ErrorBoundary><ManageParticipantsPage /></ErrorBoundary>} />
             <Route path="/people" element={<ErrorBoundary><SearchPeoplePage /></ErrorBoundary>} />
             <Route path="/businesses" element={<ErrorBoundary><BusinessDirectoryPage /></ErrorBoundary>} />
-            <Route path="/my-businesses" element={<ErrorBoundary><MyBusinessesPage /></ErrorBoundary>} />
             <Route path="/business/:id" element={<ErrorBoundary><BusinessPage /></ErrorBoundary>} />
           </Route>
 
-          {/* Full-screen protected routes (no bottom nav — own fixed UI) */}
+          {/* Full-screen routes — keep the desktop sidebar but drop the mobile bottom nav */}
           <Route
-            path="/event/new"
             element={
               <ProtectedRoute>
-                <ErrorBoundary><CreateEventPage /></ErrorBoundary>
+                <MainLayout showBottomNav={false} />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route path="/event/new" element={<ErrorBoundary><CreateEventPage /></ErrorBoundary>} />
+            <Route path="/voucher/new" element={<ErrorBoundary><CreateVoucherPage /></ErrorBoundary>} />
+            <Route path="/business/dashboard" element={<ErrorBoundary><BusinessDashboardPage /></ErrorBoundary>} />
+            <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/event/:id/chat" element={<ChatRoomPage />} />
+            <Route path="/dm/:id" element={<DMChatRoomPage />} />
+          </Route>
+
+          {/* Full-screen routes that don't require profile completion (business onboarding) */}
           <Route
-            path="/voucher/new"
             element={
-              <ProtectedRoute>
-                <ErrorBoundary><CreateVoucherPage /></ErrorBoundary>
+              <ProtectedRoute requireProfile={false}>
+                <MainLayout showBottomNav={false} />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/business/new"
-            element={
-              <ProtectedRoute>
-                <ErrorBoundary><CreateBusinessPage /></ErrorBoundary>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/business/:id/dashboard"
-            element={
-              <ProtectedRoute>
-                <ErrorBoundary><BusinessDashboardPage /></ErrorBoundary>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/business/:id/edit"
-            element={
-              <ProtectedRoute>
-                <ErrorBoundary><EditBusinessProfilePage /></ErrorBoundary>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/feedback"
-            element={
-              <ProtectedRoute>
-                <FeedbackPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/event/:id/chat"
-            element={
-              <ProtectedRoute>
-                <ChatRoomPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dm/:id"
-            element={
-              <ProtectedRoute>
-                <DMChatRoomPage />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route path="/business/edit" element={<ErrorBoundary><EditBusinessProfilePage /></ErrorBoundary>} />
+            <Route path="/business/verify" element={<ErrorBoundary><BusinessVerifyPage /></ErrorBoundary>} />
+          </Route>
 
           {/* Admin routes */}
           <Route
@@ -298,6 +274,14 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <AdminBusinessesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/business-applications"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminBusinessApplicationsPage />
               </ProtectedRoute>
             }
           />

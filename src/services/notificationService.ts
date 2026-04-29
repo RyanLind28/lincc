@@ -198,6 +198,12 @@ export function getNotificationPath(notification: Notification): string {
     case 'participant_left':
     case 'participant_rejoined':
       return eventId ? `/event/${eventId}` : '/';
+    case 'review_prompt':
+      return '/?reviewPrompt=1';
+    case 'business_approved':
+      return '/business/dashboard';
+    case 'business_rejected':
+      return '/pending-approval';
     default:
       return '/';
   }

@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Avatar, CategoryIcon, GradientButton, Input, Spinner } from '../components/ui';
-import { Send, Lock, ChevronRight, MapPin, Clock } from 'lucide-react';
+import { Send, Lock, ChevronRight, MapPin, Clock, Flag } from 'lucide-react';
 import { hapticLight } from '../lib/haptics';
 import { useAuth } from '../contexts/AuthContext';
 import { useEventChat } from '../hooks/useEventChat';
 import { useNow } from '../hooks/useNow';
 import { ChatStatusPill } from '../components/features/ChatStatusPill';
+import { ReportMessageDialog } from '../components/social/ReportMessageDialog';
 import { supabase } from '../lib/supabase';
 import type { EventWithDetails } from '../types';
 
@@ -23,6 +24,12 @@ export default function ChatRoomPage() {
   const { messages, isLoading, isSending, hasAccess, error, sendMessage } =
     useEventChat(eventId);
   const nowMs = useNow();
+  const [reportingMessage, setReportingMessage] = useState<{
+    id: string;
+    senderId: string;
+    senderName: string;
+    content: string;
+  } | null>(null);
 
   // Fetch event details
   useEffect(() => {
@@ -89,7 +96,7 @@ export default function ChatRoomPage() {
 
   if (isLoading || eventLoading) {
     return (
-      <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-5xl mx-auto">
+      <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-3xl mx-auto">
         <Header showBack title={event?.title || 'Chat'} />
         <div className="flex-1 flex items-center justify-center">
           <Spinner size="lg" />
@@ -100,7 +107,7 @@ export default function ChatRoomPage() {
 
   if (!hasAccess) {
     return (
-      <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-5xl mx-auto">
+      <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-3xl mx-auto">
         <Header showBack title="Chat" />
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mb-4">
@@ -233,15 +240,32 @@ export default function ChatRoomPage() {
                               </p>
                             </Link>
                           )}
-                          <div
-                            className={`px-4 py-2 rounded-2xl ${isMe
-                                ? 'gradient-primary text-white rounded-tr-sm'
-                                : 'bg-surface border border-border text-text rounded-tl-sm'
-                              }`}
-                          >
-                            <p className="whitespace-pre-wrap break-words">
-                              {msg.content}
-                            </p>
+                          <div className="group relative">
+                            <div
+                              className={`px-4 py-2 rounded-2xl ${isMe
+                                  ? 'gradient-primary text-white rounded-tr-sm'
+                                  : 'bg-surface border border-border text-text rounded-tl-sm'
+                                }`}
+                            >
+                              <p className="whitespace-pre-wrap break-words">
+                                {msg.content}
+                              </p>
+                            </div>
+                            {!isMe && (
+                              <button
+                                type="button"
+                                onClick={() => setReportingMessage({
+                                  id: msg.id,
+                                  senderId: msg.sender_id,
+                                  senderName: msg.sender?.first_name || 'this user',
+                                  content: msg.content,
+                                })}
+                                aria-label="Report message"
+                                className="absolute -right-7 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface border border-border text-text-light hover:text-error hover:border-error/40 transition-colors flex items-center justify-center"
+                              >
+                                <Flag className="h-3 w-3" />
+                              </button>
+                            )}
                           </div>
                           <p
                             className={`text-[10px] text-text-light mt-1 ${isMe ? 'text-right mr-1' : 'ml-1'
@@ -291,6 +315,16 @@ export default function ChatRoomPage() {
         {/* Safe area spacer for iOS home indicator */}
         <div className="safe-bottom" />
       </div>
+
+      <ReportMessageDialog
+        isOpen={!!reportingMessage}
+        onClose={() => setReportingMessage(null)}
+        reportedUserId={reportingMessage?.senderId ?? ''}
+        reportedUserName={reportingMessage?.senderName ?? ''}
+        messagePreview={reportingMessage?.content ?? ''}
+        messageId={reportingMessage?.id}
+        eventId={eventId}
+      />
     </div>
   );
 }

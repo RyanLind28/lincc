@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
 import { Slider, Toggle, Modal, Input, Button } from '../components/ui';
-import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Monitor, Mail, Lock, HelpCircle, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus, Sparkles, FlaskConical, Share } from 'lucide-react';
+import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Monitor, Mail, Lock, HelpCircle, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus, Sparkles, FlaskConical, Share, Shield } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { useLocationName } from '../hooks/useLocationName';
@@ -274,26 +274,28 @@ export default function SettingsPage() {
         </section>
 
         {/* Business */}
-        <section>
-          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
-            Business
-          </h2>
-          <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
-            <button
-              onClick={() => navigate('/my-businesses')}
-              className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
-            >
-              <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Store className="h-5 w-5 text-coral" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-text">My Businesses</h3>
-                <p className="text-sm text-text-muted">Create and manage your business pages</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-text-muted" />
-            </button>
-          </div>
-        </section>
+        {profile?.account_type === 'business' && (
+          <section>
+            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
+              Business
+            </h2>
+            <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+              <button
+                onClick={() => navigate('/business/dashboard')}
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
+              >
+                <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Store className="h-5 w-5 text-coral" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-text">Business dashboard</h3>
+                  <p className="text-sm text-text-muted">Manage your business profile and vouchers</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-text-muted" />
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Notifications */}
         <section>
@@ -712,6 +714,20 @@ export default function SettingsPage() {
               Developer
             </h2>
             <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+              <button
+                onClick={() => navigate('/admin')}
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
+              >
+                <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center flex-shrink-0 text-white">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-text">Admin panel</h3>
+                  <p className="text-sm text-text-muted">User, business, event and report management</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-text-muted" />
+              </button>
+
               <button
                 onClick={() => {
                   localStorage.removeItem('lincc-welcome-guide-dismissed');

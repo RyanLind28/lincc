@@ -44,7 +44,7 @@ export default function FeatureFlagsPage() {
     <div className="min-h-screen bg-background pb-8">
       <Header title="Feature Flags" showBack />
 
-      <div className="p-4">
+      <div className="p-4 lg:p-6 max-w-3xl mx-auto">
         <p className="text-sm text-text-muted mb-4">Toggle features on or off for all users.</p>
 
         {isLoading ? (

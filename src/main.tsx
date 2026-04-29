@@ -6,6 +6,22 @@ import App from './App';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './index.css';
 
+// Apply the dark-mode class synchronously before React renders so we don't flash
+// the wrong colour scheme. Honours the in-app preference first, then the OS.
+(() => {
+  try {
+    const stored = localStorage.getItem('lincc-dark-mode');
+    const wantsDark = stored === 'true'
+      ? true
+      : stored === 'false'
+        ? false
+        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', wantsDark);
+  } catch {
+    // localStorage unavailable — fall through with default
+  }
+})();
+
 // Unregister any stale service workers in development
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {

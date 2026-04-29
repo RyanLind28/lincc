@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 export interface WaitlistStatus {
   onWaitlist: boolean;
   joinedAt: string | null;
-  isBusiness: boolean;
 }
 
 /**
@@ -18,7 +17,6 @@ export function useWaitlistStatus(): WaitlistStatus & { isLoading: boolean } {
   const [status, setStatus] = useState<WaitlistStatus>({
     onWaitlist: false,
     joinedAt: null,
-    isBusiness: false,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,7 +30,7 @@ export function useWaitlistStatus(): WaitlistStatus & { isLoading: boolean } {
 
     supabase
       .from('waitlist')
-      .select('created_at, is_business')
+      .select('created_at')
       .eq('email', user.email)
       .maybeSingle()
       .then(({ data }) => {
@@ -41,7 +39,6 @@ export function useWaitlistStatus(): WaitlistStatus & { isLoading: boolean } {
           setStatus({
             onWaitlist: true,
             joinedAt: data.created_at,
-            isBusiness: !!data.is_business,
           });
         }
         setIsLoading(false);

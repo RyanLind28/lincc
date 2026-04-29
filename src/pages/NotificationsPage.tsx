@@ -16,6 +16,8 @@ import {
   CheckCheck,
   LogOut,
   RotateCcw,
+  Star,
+  Store,
 } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { getNotificationPath } from '../services/notificationService';
@@ -35,6 +37,9 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
   participant_removed: <UserMinus className="h-5 w-5 text-error" />,
   participant_left: <LogOut className="h-5 w-5 text-warning" />,
   participant_rejoined: <RotateCcw className="h-5 w-5 text-success" />,
+  review_prompt: <Star className="h-5 w-5 text-warning" />,
+  business_approved: <Store className="h-5 w-5 text-success" />,
+  business_rejected: <Store className="h-5 w-5 text-error" />,
 };
 
 // Background colors for notification types
@@ -50,6 +55,9 @@ const notificationBgColors: Record<NotificationType, string> = {
   participant_removed: 'bg-error/10',
   participant_left: 'bg-warning/10',
   participant_rejoined: 'bg-success/10',
+  review_prompt: 'bg-warning/10',
+  business_approved: 'bg-success/10',
+  business_rejected: 'bg-error/10',
 };
 
 export default function NotificationsPage() {
@@ -155,7 +163,7 @@ export default function NotificationsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-8 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-background pb-8">
       <Header
         title="Notifications"
         showBack

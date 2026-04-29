@@ -4,6 +4,7 @@ import { cn } from '../../lib/utils';
 import { Avatar } from './Avatar';
 import { GradientButton } from './GradientButton';
 import { CategoryIcon } from './CategoryIcon';
+import { VerifiedTick } from '../business/VerifiedTick';
 
 export interface EventCardEvent {
   id: string;
@@ -21,6 +22,7 @@ export interface EventCardEvent {
   business?: {
     name: string;
     logo_url?: string | null;
+    verified?: boolean;
   } | null;
   venue_name: string;
   distance_km?: number;
@@ -70,7 +72,7 @@ function CapacityDots({ capacity, filled }: { capacity: number; filled: number }
           key={i}
           className={cn(
             'w-2 h-2 rounded-full transition-colors',
-            i < filledCount ? 'bg-coral' : 'bg-gray-200'
+            i < filledCount ? 'bg-coral' : 'bg-muted'
           )}
         />
       ))}
@@ -135,8 +137,13 @@ export function EventCard({
             name={event.business?.name ?? event.host.first_name}
             size="sm"
           />
-          <span className="text-sm text-text">
-            {event.business ? event.business.name : (
+          <span className="text-sm text-text inline-flex items-center gap-1">
+            {event.business ? (
+              <>
+                {event.business.name}
+                {event.business.verified && <VerifiedTick size="xs" />}
+              </>
+            ) : (
               <>
                 {event.host.first_name}
                 {event.host.age && `, ${event.host.age}`}

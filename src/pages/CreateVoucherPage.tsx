@@ -1,6 +1,6 @@
 import { logger } from '../lib/utils';
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, MapPin, Camera, X, Tag, Store, Loader2 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,9 +8,9 @@ import { Header } from '../components/layout';
 import { Input, TextArea, GradientButton, DatePicker } from '../components/ui';
 import { supabase } from '../lib/supabase';
 import { compressImage, validateImageSize } from '../lib/imageCompression';
-import { getBusinessesByOwner, getLocationsByBusiness } from '../services/businessService';
+import { getLocationsByBusiness } from '../services/businessService';
 import { cn } from '../lib/utils';
-import type { Business, BusinessLocation } from '../types';
+import type { BusinessLocation } from '../types';
 
 type Step = 'basics' | 'pricing' | 'location' | 'details';
 
@@ -18,27 +18,11 @@ const STEPS: Step[] = ['basics', 'pricing', 'location', 'details'];
 
 export default function CreateVoucherPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
-  const { user } = useAuth();
+  const { user, profile, business, isBusinessApproved } = useAuth();
 
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
-  const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true);
+  const selectedBusiness = business;
   const [step, setStep] = useState<Step>('basics');
-
-  // Load user's businesses
-  useEffect(() => {
-    if (!user?.id) return;
-    getBusinessesByOwner(user.id).then((data) => {
-      setBusinesses(data);
-      // Pre-select from query param or first business
-      const preselect = searchParams.get('business');
-      const match = data.find((b) => b.id === preselect) || data[0] || null;
-      setSelectedBusiness(match);
-      setIsLoadingBusinesses(false);
-    });
-  }, [user?.id, searchParams]);
 
   // Basics
   const [title, setTitle] = useState('');
@@ -71,8 +55,8 @@ export default function CreateVoucherPage() {
   // Max expiry: 6 months out
   const maxDate = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000);
 
-  // Access guard: no businesses
-  if (!isLoadingBusinesses && businesses.length === 0) {
+  // Personal accounts: full block.
+  if (profile && profile.account_type !== 'business') {
     return (
       <div className="min-h-screen bg-background">
         <Header showBack showLogo />
@@ -80,16 +64,37 @@ export default function CreateVoucherPage() {
           <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
             <Store className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-text mb-2">Create a Business First</h2>
+          <h2 className="text-xl font-semibold text-text mb-2">Vouchers are for businesses</h2>
           <p className="text-text-muted text-center mb-6">
-            You need a business page before you can create vouchers.
+            Sign up as a business and get approved to start publishing vouchers.
           </p>
-          <Link to="/business/new">
-            <GradientButton>
-              <Store className="h-4 w-4 mr-2" />
-              Create Business
-            </GradientButton>
-          </Link>
+          <Link to="/"><GradientButton>Back home</GradientButton></Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Business accounts that aren't approved yet: friendly verify-prompt.
+  if (!selectedBusiness || !isBusinessApproved) {
+    return (
+      <div className="min-h-screen bg-background max-w-2xl mx-auto">
+        <Header showBack showLogo />
+        <div className="p-4 mt-8 bg-surface rounded-2xl border border-border text-center">
+          <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Store className="h-8 w-8 text-warning" />
+          </div>
+          <h1 className="text-xl font-bold text-text mb-2">Verification needed</h1>
+          <p className="text-sm text-text-muted mb-4">
+            You can publish vouchers once your business is approved. Submit your verification documents to speed it up.
+          </p>
+          <div className="flex gap-2 justify-center">
+            <Link to="/business/verify"><GradientButton size="md">Verify business</GradientButton></Link>
+            <Link to="/business/dashboard">
+              <button className="h-10 px-4 rounded-xl border border-border text-text hover:border-coral text-sm font-medium">
+                Open dashboard
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -369,7 +374,7 @@ export default function CreateVoucherPage() {
               <div className="text-center py-8">
                 <MapPin className="h-8 w-8 text-text-light mx-auto mb-2" />
                 <p className="text-text-muted mb-3">No locations added to this business yet.</p>
-                <Link to={`/business/${selectedBusiness?.id}/dashboard`} className="text-sm text-coral font-medium">
+                <Link to="/business/dashboard" className="text-sm text-coral font-medium">
                   Add locations in your dashboard
                 </Link>
               </div>

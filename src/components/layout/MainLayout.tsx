@@ -4,6 +4,7 @@ import { SideNav } from './SideNav';
 import { InstallBanner } from '../pwa/InstallBanner';
 import { NotificationPermissionPrompt } from '../ui/NotificationPermissionPrompt';
 import { WelcomeGuide } from '../ui/WelcomeGuide';
+import { BusinessApprovalBanner } from '../business/BusinessApprovalBanner';
 import { cn } from '../../lib/utils';
 
 interface MainLayoutProps {
@@ -19,11 +20,12 @@ export function MainLayout({ showBottomNav = true, className }: MainLayoutProps)
         Skip to content
       </a>
 
-      {/* Desktop sidebar - hidden on mobile */}
-      {showBottomNav && <SideNav />}
+      {/* Desktop sidebar — always present in the app shell, hidden on mobile via its internal lg:flex */}
+      <SideNav />
 
-      {/* Main content area */}
-      <main id="main-content" className={cn('flex-1 animate-fade-in', showBottomNav && 'pb-20 lg:pb-0 lg:pl-16')}>
+      {/* Main content area — always shifted right of the sidebar on desktop. Bottom-padding only when the mobile bottom nav is visible. */}
+      <main id="main-content" className={cn('flex-1 animate-fade-in lg:pl-16', showBottomNav && 'pb-20 lg:pb-0')}>
+        <BusinessApprovalBanner />
         <NotificationPermissionPrompt />
         <Outlet />
       </main>

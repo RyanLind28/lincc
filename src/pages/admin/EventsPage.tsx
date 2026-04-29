@@ -122,7 +122,7 @@ export default function AdminEventsPage() {
     <div className="min-h-screen bg-background pb-8">
       <Header title="Event Management" showBack />
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-4">
         {/* Event analytics summary */}
         <div className="grid grid-cols-3 gap-2">
           {[

@@ -36,6 +36,8 @@
   --color-text-light: #9CA3AF;
   --color-border: #E5E7EB;
   --color-border-dark: #D1D5DB;
+  --color-muted: #E5E7EB;       /* skeletons, avatar fallbacks, idle progress dots */
+  --color-overlay: #00000080;   /* full-screen image overlays */
 
   /* Font Family */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -64,7 +66,12 @@
   --color-text-light: #8A8F9A;
   --color-border: #2D2D44;
   --color-border-dark: #3D3D5C;
+  --color-muted: #2D2D44;
 }
+
+/* color-scheme tells the browser to use dark form controls, scrollbars etc. */
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
 
 /* Base Styles */
 @layer base {

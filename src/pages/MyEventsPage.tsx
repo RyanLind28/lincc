@@ -177,7 +177,7 @@ export default function MyEventsPage() {
     if (!user) return;
     setIsLoading(true);
 
-    // Fetch all events hosted by user (exclude drafts)
+    // Fetch all events hosted by user (exclude drafts/cancelled/deleted)
     const { data: hosted } = await supabase
       .from('events')
       .select(`
@@ -187,7 +187,7 @@ export default function MyEventsPage() {
         participant_count:event_participants(count)
       `)
       .eq('host_id', user.id)
-      .in('status', ['active', 'full'])
+      .in('status', ['active', 'full', 'expired'])
       .order('start_time', { ascending: false });
 
     // Fetch the user's own drafts
@@ -237,7 +237,7 @@ export default function MyEventsPage() {
             participant_status: p.status,
           };
         })
-        .filter((e: MyEvent) => ['active', 'full'].includes(e.status))
+        .filter((e: MyEvent) => ['active', 'full', 'expired'].includes(e.status))
         .sort((a: MyEvent, b: MyEvent) =>
           new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
         ) as MyEvent[]
@@ -283,7 +283,7 @@ export default function MyEventsPage() {
   const isEmpty = !isLoading && events.length === 0;
 
   return (
-    <div className="min-h-screen bg-background pb-24 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-background pb-24">
       <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       {/* Tabs */}
@@ -375,17 +375,21 @@ export default function MyEventsPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div>
             {activeTab === 'drafts'
-              ? draftEvents.map((event) => (
-                  <DraftRow
-                    key={event.id}
-                    event={event}
-                    isPending={pendingActionId === event.id}
-                    onPublish={() => handlePublishDraft(event.id)}
-                    onDelete={() => handleDeleteDraft(event.id)}
-                  />
-                ))
+              ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {draftEvents.map((event) => (
+                    <DraftRow
+                      key={event.id}
+                      event={event}
+                      isPending={pendingActionId === event.id}
+                      onPublish={() => handlePublishDraft(event.id)}
+                      onDelete={() => handleDeleteDraft(event.id)}
+                    />
+                  ))}
+                </div>
+                )
               : (() => {
                   const now = new Date().toISOString();
                   const upcoming = events.filter((e) => (e.expires_at ?? e.start_time) >= now);
@@ -393,7 +397,7 @@ export default function MyEventsPage() {
                   return (
                     <>
                       {upcoming.length > 0 && (
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                           {upcoming.map((event) => (
                             <EventRow
                               key={event.id}
@@ -406,7 +410,7 @@ export default function MyEventsPage() {
                       {past.length > 0 && (
                         <div className="mt-6">
                           <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">Past</h3>
-                          <div className="space-y-3">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                             {past.map((event) => (
                               <EventRow
                                 key={event.id}

@@ -1,5 +1,32 @@
 import { supabase } from '../lib/supabase';
 
+/**
+ * Counts of items needing admin action across the panel — used for badges
+ * on the Manage tile grid. Each value defaults to 0 if RLS hides it.
+ */
+export async function getAdminActionCounts(): Promise<{
+  pendingApplications: number;
+  pendingVerifications: number;
+  pendingReports: number;
+  flaggedEvents: number;
+  flaggedUsers: number;
+}> {
+  const [apps, verifs, reports, flaggedEvents, flaggedUsers] = await Promise.all([
+    supabase.from('businesses').select('id', { count: 'exact', head: true }).in('status', ['pending_approval', 'rejected']),
+    supabase.from('business_verifications').select('id', { count: 'exact', head: true }).in('status', ['submitted', 'in_review']),
+    supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('events').select('id', { count: 'exact', head: true }).eq('is_flagged', true),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_flagged', true),
+  ]);
+  return {
+    pendingApplications: apps.count ?? 0,
+    pendingVerifications: verifs.count ?? 0,
+    pendingReports: reports.count ?? 0,
+    flaggedEvents: flaggedEvents.count ?? 0,
+    flaggedUsers: flaggedUsers.count ?? 0,
+  };
+}
+
 // Dashboard stats
 export async function getAdminStats() {
   const [users, events, reports, categories] = await Promise.all([
@@ -247,7 +274,7 @@ export async function getRecentActivity(limit = 20) {
 export async function exportUsersCSV() {
   const { data } = await supabase
     .from('profiles')
-    .select('id, email, first_name, gender, role, status, is_business, created_at')
+    .select('id, email, first_name, gender, role, status, account_type, created_at')
     .order('created_at', { ascending: false });
   return data ?? [];
 }
@@ -334,7 +361,7 @@ export async function toggleFeatureFlag(id: string, isEnabled: boolean, updatedB
 export async function logAdminAction(
   adminId: string,
   action: string,
-  targetType: 'user' | 'event' | 'report' | 'category',
+  targetType: 'user' | 'event' | 'report' | 'category' | 'business' | 'business_verification',
   targetId?: string,
   details?: Record<string, unknown>
 ) {
@@ -478,7 +505,7 @@ export async function fetchAdminUsers(
 ) {
   let query = supabase
     .from('profiles')
-    .select('id, email, first_name, avatar_url, gender, role, status, tags, is_flagged, is_business, created_at')
+    .select('id, email, first_name, avatar_url, gender, role, status, tags, is_flagged, account_type, created_at')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -538,20 +565,28 @@ export async function updateEventStatus(eventId: string, status: 'active' | 'can
 }
 
 // Reports
-export async function fetchAdminReports(status = '', offset = 0, limit = 20) {
+export async function fetchAdminReports(status = '', offset = 0, limit = 20, reason = '') {
   let query = supabase
     .from('reports')
     .select(`
       id, reason, details, status, admin_notes, created_at, reviewed_at,
+      host_review_id, guest_review_id, message_id, dm_message_id,
       reporter:profiles!reports_reporter_id_fkey(id, first_name, avatar_url),
       reported:profiles!reports_reported_user_id_fkey(id, first_name, avatar_url),
-      event:events!reports_event_id_fkey(id, title)
+      event:events!reports_event_id_fkey(id, title),
+      host_review:host_reviews!reports_host_review_id_fkey(id, host_rating, event_rating, comment, host_reply, host_replied_at, dispute_reason),
+      guest_review:guest_reviews!reports_guest_review_id_fkey(id, guest_rating, comment, guest_reply, guest_replied_at, dispute_reason),
+      message:messages!reports_message_id_fkey(id, content, created_at, sender_id),
+      dm_message:direct_messages!reports_dm_message_id_fkey(id, content, created_at, sender_id, conversation_id)
     `)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (status) {
     query = query.eq('status', status);
+  }
+  if (reason) {
+    query = query.eq('reason', reason);
   }
 
   const { data, error } = await query;
@@ -675,9 +710,71 @@ export async function getBusinessDetail(businessId: string) {
   };
 }
 
-export async function updateBusinessStatus(businessId: string, status: 'active' | 'suspended') {
+export async function updateBusinessStatus(businessId: string, status: 'approved' | 'suspended' | 'inactive') {
   const { error } = await supabase.from('businesses').update({ status, updated_at: new Date().toISOString() }).eq('id', businessId);
   return { success: !error, error: error?.message };
+}
+
+// Business approval queue
+export async function fetchPendingBusinesses(offset = 0, limit = 30) {
+  const { data, error } = await supabase
+    .from('businesses')
+    .select('id, name, slug, logo_url, category, description, address, status, owner_id, created_at, rejection_reason, owner:profiles!businesses_owner_id_fkey(id, first_name, email, avatar_url)')
+    .in('status', ['pending_approval', 'rejected'])
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  return { data: data ?? [], error };
+}
+
+async function notifyBusinessOwner(ownerId: string, type: 'business_approved' | 'business_rejected', businessName: string, reason?: string) {
+  await supabase.from('notifications').insert({
+    user_id: ownerId,
+    type,
+    title: type === 'business_approved' ? 'Your business is approved' : 'Application not accepted',
+    body: type === 'business_approved'
+      ? `${businessName} is now live on Lincc. You can publish events and vouchers.`
+      : `We couldn't approve ${businessName}. ${reason ? `Reason: ${reason}` : ''}`.trim(),
+    data: { kind: type },
+    is_read: false,
+  });
+}
+
+export async function approveBusiness(businessId: string, adminId: string) {
+  const { data: biz, error: fetchErr } = await supabase
+    .from('businesses').select('id, name, owner_id').eq('id', businessId).single();
+  if (fetchErr || !biz) return { success: false, error: fetchErr?.message ?? 'Business not found' };
+
+  const { error } = await supabase.from('businesses').update({
+    status: 'approved',
+    rejection_reason: null,
+    reviewed_at: new Date().toISOString(),
+    reviewed_by: adminId,
+  }).eq('id', businessId);
+  if (error) return { success: false, error: error.message };
+
+  await logAdminAction(adminId, 'business.approve', 'business', businessId);
+  if (biz.owner_id) await notifyBusinessOwner(biz.owner_id, 'business_approved', biz.name);
+  return { success: true };
+}
+
+export async function rejectBusiness(businessId: string, adminId: string, reason: string) {
+  const trimmed = reason.trim();
+  if (!trimmed) return { success: false, error: 'A reason is required' };
+  const { data: biz, error: fetchErr } = await supabase
+    .from('businesses').select('id, name, owner_id').eq('id', businessId).single();
+  if (fetchErr || !biz) return { success: false, error: fetchErr?.message ?? 'Business not found' };
+
+  const { error } = await supabase.from('businesses').update({
+    status: 'rejected',
+    rejection_reason: trimmed,
+    reviewed_at: new Date().toISOString(),
+    reviewed_by: adminId,
+  }).eq('id', businessId);
+  if (error) return { success: false, error: error.message };
+
+  await logAdminAction(adminId, 'business.reject', 'business', businessId, { reason: trimmed });
+  if (biz.owner_id) await notifyBusinessOwner(biz.owner_id, 'business_rejected', biz.name, trimmed);
+  return { success: true };
 }
 
 export async function exportBusinessesCSV() {
@@ -689,17 +786,20 @@ export async function exportBusinessesCSV() {
 }
 
 // Categories
-export async function saveCategory(id: string | null, name: string, icon: string, value: string, sortOrder: number) {
+export async function saveCategory(
+  id: string | null,
+  name: string,
+  icon: string,
+  value: string,
+  sortOrder: number,
+  parentId: string | null = null,
+) {
+  const payload = { name, icon, value, sort_order: sortOrder, parent_id: parentId };
   if (id) {
-    const { error } = await supabase
-      .from('categories')
-      .update({ name, icon, value, sort_order: sortOrder })
-      .eq('id', id);
+    const { error } = await supabase.from('categories').update(payload).eq('id', id);
     return { success: !error, error: error?.message };
   } else {
-    const { error } = await supabase
-      .from('categories')
-      .insert({ name, icon, value, sort_order: sortOrder, is_active: true });
+    const { error } = await supabase.from('categories').insert({ ...payload, is_active: true });
     return { success: !error, error: error?.message };
   }
 }

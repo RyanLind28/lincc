@@ -39,7 +39,7 @@ export default function VouchersPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-24 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-background pb-24">
       <Header rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       <div className="p-4 space-y-4">
@@ -98,19 +98,19 @@ export default function VouchersPage() {
 
         {/* Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-surface rounded-2xl border border-border overflow-hidden animate-pulse">
-                <div className="aspect-[4/3] bg-gray-200" />
+                <div className="aspect-[4/3] bg-muted" />
                 <div className="p-3 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-3 bg-muted rounded w-1/2" />
                 </div>
               </div>
             ))}
           </div>
         ) : filtered.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {filtered.map((voucher) => (
               <VoucherTile key={voucher.id} voucher={voucher} />
             ))}

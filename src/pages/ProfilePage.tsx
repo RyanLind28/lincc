@@ -1,22 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
-import { Avatar, Badge, GradientButton, EventCardMini, VoucherTile, type EventCardEvent } from '../components/ui';
-import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Store, Users, Sparkles } from 'lucide-react';
+import { Avatar, Badge, GradientButton, EventCardMini, type EventCardEvent } from '../components/ui';
+import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Users, Sparkles, Share2 } from 'lucide-react';
 import { calculateAge } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { getFollowerCount, getFollowingCount } from '../services/followService';
-import { getVouchersByBusiness } from '../services/voucherService';
 import { useWaitlistStatus } from '../hooks/useWaitlistStatus';
 import { useBookmarks } from '../hooks/useBookmarks';
-import type { VoucherWithDetails } from '../types';
+import { useToast } from '../contexts/ToastContext';
+import { InstallAppCard } from '../components/pwa/InstallAppCard';
 
-type EventTab = 'hosting' | 'joined' | 'saved' | 'vouchers';
+type EventTab = 'hosting' | 'joined' | 'saved';
 type TimeFilter = 'upcoming' | 'past';
 
 export default function ProfilePage() {
   const { profile, user } = useAuth();
+  const { showToast } = useToast();
+
+  // Profile tab is for personal accounts only — business accounts have their
+  // own dashboard. ProtectedRoute already gates pending businesses; this redirect
+  // covers approved business accounts that hit /profile.
+  if (profile?.account_type === 'business') {
+    return <Navigate to="/business/dashboard" replace />;
+  }
   const [activeTab, setActiveTab] = useState<EventTab>('hosting');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
   const [hosting, setHosting] = useState<EventCardEvent[]>([]);
@@ -24,8 +32,6 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
-  const [businessVouchers, setBusinessVouchers] = useState<VoucherWithDetails[]>([]);
-  const [isVouchersLoading, setIsVouchersLoading] = useState(false);
   const { savedEvents, loadSavedEvents, isLoading: isSavedLoading } = useBookmarks();
   const waitlist = useWaitlistStatus();
 
@@ -35,17 +41,6 @@ export default function ProfilePage() {
       loadSavedEvents();
     }
   }, [activeTab, loadSavedEvents]);
-
-  // Load vouchers when tab switches to 'vouchers'
-  useEffect(() => {
-    if (activeTab === 'vouchers' && user?.id) {
-      setIsVouchersLoading(true);
-      getVouchersByBusiness(user.id).then((vouchers) => {
-        setBusinessVouchers(vouchers);
-        setIsVouchersLoading(false);
-      });
-    }
-  }, [activeTab, user?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -135,7 +130,7 @@ export default function ProfilePage() {
   }));
 
   // Split hosted + joined into upcoming/past using start_time relative to now.
-  // Saved/vouchers tabs don't have a time filter — they show all.
+  // Saved tab doesn't have a time filter — it shows all.
   const nowMs = Date.now();
   const isUpcoming = (e: EventCardEvent) => new Date(e.start_time).getTime() >= nowMs;
   const showTimeFilter = activeTab === 'hosting' || activeTab === 'joined';
@@ -152,12 +147,30 @@ export default function ProfilePage() {
     activeTab === 'joined' ? filteredJoined :
     savedEventCards;
 
+  const handleShare = async () => {
+    const url = `${window.location.origin}/user/${user?.id}`;
+    if (navigator.share) {
+      navigator.share({ title: profile.first_name, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(url);
+      showToast('Link copied', 'success');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-20 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-background pb-20">
       <Header
         showLogo
+        transparent
         rightContent={
           <div className="flex items-center gap-1">
+            <button
+              onClick={handleShare}
+              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
+              aria-label="Share profile"
+            >
+              <Share2 className="h-5 w-5" />
+            </button>
             <Link
               to="/people"
               className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
@@ -176,113 +189,104 @@ export default function ProfilePage() {
         }
       />
 
-      {/* Profile card */}
-      <div className="px-4 pt-4">
-        <div className="bg-surface rounded-2xl p-6 mb-4">
-          {/* Horizontal profile header: avatar left, info right */}
-          <div className="flex gap-4 items-start">
-            {/* Avatar with gradient ring */}
-            <div className="shrink-0 h-[88px] w-[88px] gradient-primary rounded-full flex items-center justify-center">
-              <div className="h-[84px] w-[84px] bg-surface rounded-full flex items-center justify-center">
-                <Avatar src={profile.avatar_url} name={profile.first_name} size="xl" />
-              </div>
+      {/* HERO — mirrors the business page */}
+      <div className="relative">
+        <div className="absolute inset-x-0 top-0 h-56 sm:h-64 overflow-hidden">
+          {profile.avatar_url ? (
+            <>
+              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover scale-110 blur-2xl opacity-40" />
+              <div className="absolute inset-0 bg-gradient-to-b from-coral/20 via-purple/10 to-background" />
+            </>
+          ) : (
+            <div className="w-full h-full gradient-primary opacity-60" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
+        </div>
+
+        <div className="relative pt-20 sm:pt-32 px-4 max-w-4xl mx-auto">
+          {/* Avatar + identity row */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:gap-6 items-center">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-surface ring-4 ring-surface shadow-2xl overflow-hidden flex-shrink-0">
+              <Avatar src={profile.avatar_url} name={profile.first_name} size="xl" className="!h-full !w-full !rounded-full" />
             </div>
 
-            {/* Info column */}
-            <div className="min-w-0 flex-1">
-              {/* Name + age + edit icon */}
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-text">
-                  {profile.first_name}, {age}
-                </h1>
-                <Link to="/profile/edit" className="text-text-muted hover:text-coral transition-colors" aria-label="Edit Profile">
-                  <Edit2 className="h-4 w-4" />
-                </Link>
+            <div className="flex-1 min-w-0 mt-4 sm:mt-0 text-center sm:text-left">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-text tracking-tight">
+                {profile.first_name}{age ? `, ${age}` : ''}
+              </h1>
+
+              <div className="flex items-center gap-2 mt-2 flex-wrap justify-center sm:justify-start">
+                {waitlist.onWaitlist && (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-purple bg-surface border border-purple/30 shadow-sm rounded-full px-3 py-1">
+                    <Sparkles className="h-3 w-3" />
+                    Early access
+                  </span>
+                )}
+                {profile.is_ghost_mode && (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-warning bg-surface border border-warning/30 shadow-sm rounded-full px-3 py-1">
+                    <Ghost className="h-3 w-3" /> Ghost mode
+                  </span>
+                )}
+                {profile.is_women_only_mode && profile.gender === 'female' && (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-purple bg-surface border border-purple/30 shadow-sm rounded-full px-3 py-1">
+                    <Lock className="h-3 w-3" /> Women-only
+                  </span>
+                )}
               </div>
 
-              {/* Bio */}
               {profile.bio && (
-                <p className="text-text-muted text-sm mt-1">{profile.bio}</p>
+                <p className="text-text-muted mt-3 max-w-2xl mx-auto sm:mx-0">{profile.bio}</p>
               )}
 
-              {/* Waitlist early-access badge — only shown if the user joined the waitlist pre-launch */}
-              {waitlist.onWaitlist && (
-                <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-gradient-to-r from-coral/10 to-purple/10 text-purple text-xs font-medium">
-                  <Sparkles className="h-3 w-3" />
-                  Early access member
-                </div>
-              )}
-
-              {/* Interest tags — horizontal scroll */}
               {profile.tags && profile.tags.length > 0 && (
-                <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-hide -mr-6 pr-6">
+                <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-hide flex-wrap justify-center sm:justify-start">
                   {profile.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" size="sm" className="whitespace-nowrap flex-shrink-0">
+                    <Badge key={tag} variant="outline" size="sm" className="whitespace-nowrap">
                       {tag}
                     </Badge>
                   ))}
                 </div>
               )}
+
+              <div className="flex items-center gap-2 mt-4 flex-wrap justify-center sm:justify-start">
+                <Link to="/profile/edit">
+                  <GradientButton size="md">
+                    <Edit2 className="h-4 w-4 mr-1" /> Edit profile
+                  </GradientButton>
+                </Link>
+              </div>
             </div>
           </div>
 
-          {/* Stats row — full width */}
-          <div className="flex justify-around py-4 mt-4 border-t border-b border-border">
+          {/* Stats strip */}
+          <div className="mt-6 grid grid-cols-4 gap-2 bg-surface rounded-2xl border border-border p-3 shadow-sm">
             <Link to={`/user/${user?.id}/follows?tab=followers`} className="text-center hover:opacity-80 transition-opacity">
-              <p className="text-2xl font-bold text-coral">{followerCount}</p>
-              <p className="text-xs text-text-muted uppercase tracking-wide">Followers</p>
+              <p className="text-xl font-bold text-text">{followerCount}</p>
+              <p className="text-[11px] text-text-muted uppercase tracking-wide">Followers</p>
             </Link>
-            <Link to={`/user/${user?.id}/follows?tab=following`} className="text-center hover:opacity-80 transition-opacity">
-              <p className="text-2xl font-bold text-coral">{followingCount}</p>
-              <p className="text-xs text-text-muted uppercase tracking-wide">Following</p>
+            <Link to={`/user/${user?.id}/follows?tab=following`} className="text-center hover:opacity-80 transition-opacity border-l border-border">
+              <p className="text-xl font-bold text-text">{followingCount}</p>
+              <p className="text-[11px] text-text-muted uppercase tracking-wide">Following</p>
             </Link>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-coral">{hosting.length}</p>
-              <p className="text-xs text-text-muted uppercase tracking-wide">Hosted</p>
+            <div className="text-center border-l border-border">
+              <p className="text-xl font-bold text-text">{hosting.length}</p>
+              <p className="text-[11px] text-text-muted uppercase tracking-wide">Hosted</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-coral">{joined.length}</p>
-              <p className="text-xs text-text-muted uppercase tracking-wide">Joined</p>
+            <div className="text-center border-l border-border">
+              <p className="text-xl font-bold text-text">{joined.length}</p>
+              <p className="text-[11px] text-text-muted uppercase tracking-wide">Joined</p>
             </div>
           </div>
-
-          {/* Status indicators */}
-          {(profile.is_ghost_mode || (profile.is_women_only_mode && profile.gender === 'female')) && (
-            <div className="flex gap-2 flex-wrap mt-3">
-              {profile.is_ghost_mode && (
-                <Badge variant="warning">
-                  <Ghost className="h-3 w-3 mr-1" /> Ghost Mode
-                </Badge>
-              )}
-              {profile.is_women_only_mode && profile.gender === 'female' && (
-                <Badge variant="secondary">
-                  <Lock className="h-3 w-3 mr-1" /> Women-Only
-                </Badge>
-              )}
-            </div>
-          )}
-
         </div>
       </div>
 
-      {/* My Businesses section */}
-      <div className="px-4 mb-4">
-        <Link
-          to="/my-businesses"
-          className="flex items-center gap-3 bg-surface rounded-2xl p-4 border border-border hover:border-coral/30 transition-colors group"
-        >
-          <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
-            <Store className="h-5 w-5 text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="font-medium text-text group-hover:text-coral transition-colors">My Businesses</p>
-            <p className="text-xs text-text-muted">Manage your business pages</p>
-          </div>
-        </Link>
+      {/* Install app card */}
+      <div className="px-4 max-w-4xl mx-auto mt-6">
+        <InstallAppCard />
       </div>
 
       {/* Events section */}
-      <div className="px-4">
+      <div className="px-4 mt-6 max-w-4xl mx-auto">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">
           My Events
         </h2>
@@ -354,44 +358,17 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Event/Voucher list */}
+        {/* Event list */}
         <div className="space-y-3">
-          {activeTab === 'vouchers' ? (
-            isVouchersLoading ? (
-              <div className="grid grid-cols-2 gap-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-surface rounded-2xl border border-border overflow-hidden animate-pulse">
-                    <div className="aspect-[4/3] bg-gray-200" />
-                    <div className="p-3 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-3/4" />
-                      <div className="h-3 bg-gray-200 rounded w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : businessVouchers.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {businessVouchers.map((voucher) => (
-                  <VoucherTile key={voucher.id} voucher={voucher} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="No vouchers yet"
-                description="Create your first voucher to attract customers!"
-                actionLabel="Create Voucher"
-                actionHref="/voucher/new"
-              />
-            )
-          ) : (isLoading || (activeTab === 'saved' && isSavedLoading)) ? (
+          {(isLoading || (activeTab === 'saved' && isSavedLoading)) ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="bg-surface rounded-xl border border-border p-3 flex gap-3 animate-pulse">
-                  <div className="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0" />
+                  <div className="w-16 h-16 rounded-lg bg-muted flex-shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-2/3" />
-                    <div className="h-3 bg-gray-200 rounded w-1/2" />
-                    <div className="h-3 bg-gray-200 rounded w-1/3" />
+                    <div className="h-4 bg-muted rounded w-2/3" />
+                    <div className="h-3 bg-muted rounded w-1/2" />
+                    <div className="h-3 bg-muted rounded w-1/3" />
                   </div>
                 </div>
               ))}

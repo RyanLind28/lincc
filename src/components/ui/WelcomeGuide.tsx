@@ -196,7 +196,7 @@ export function WelcomeGuide() {
                 <div
                   key={i}
                   className={`h-1.5 rounded-full transition-all ${
-                    i === currentStep ? 'w-4 gradient-primary' : 'w-1.5 bg-gray-200'
+                    i === currentStep ? 'w-4 gradient-primary' : 'w-1.5 bg-muted'
                   }`}
                 />
               ))}

@@ -41,21 +41,21 @@ export default function SavedEventsPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-background max-w-5xl mx-auto">
+    <div className="min-h-screen bg-background">
       <Header showBack title="Saved Events" />
 
       <div className="p-4">
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
                 className="bg-surface rounded-2xl border border-border overflow-hidden animate-pulse"
               >
-                <div className="aspect-[4/3] bg-gray-200" />
+                <div className="aspect-[4/3] bg-muted" />
                 <div className="p-3 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-3 bg-muted rounded w-1/2" />
                 </div>
               </div>
             ))}

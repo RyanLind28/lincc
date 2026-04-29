@@ -104,7 +104,7 @@ export default function AdminUserDetailPage() {
     <div className="min-h-screen bg-background pb-8">
       <Header title="User Details" showBack />
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-6">
         {/* Profile card */}
         <div className="bg-surface rounded-2xl border border-border p-4">
           <div className="flex items-start gap-4">
@@ -115,7 +115,7 @@ export default function AdminUserDetailPage() {
                   {p.first_name || 'No name'}{age ? `, ${age}` : ''}
                 </h2>
                 {p.role === 'admin' && <Badge variant="primary">Admin</Badge>}
-                {p.is_business && <Badge variant="default"><Store className="h-3 w-3 inline mr-1" />Business</Badge>}
+                {p.account_type === 'business' && <Badge variant="default"><Store className="h-3 w-3 inline mr-1" />Business</Badge>}
                 {p.is_flagged && <Badge variant="error"><Flag className="h-3 w-3 inline mr-1" />Flagged</Badge>}
               </div>
               <p className="text-sm text-text-muted truncate">{p.email}</p>

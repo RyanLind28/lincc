@@ -45,7 +45,7 @@ function Avatar({ src, name, size = 'md', className, ...props }: AvatarProps) {
   return (
     <div
       className={cn(
-        'relative inline-flex items-center justify-center rounded-full bg-gray-200 overflow-hidden flex-shrink-0',
+        'relative inline-flex items-center justify-center rounded-full bg-muted overflow-hidden flex-shrink-0',
         sizes[size],
         className
       )}

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
-import type { Profile } from '../types';
+import type { Profile, Business, AccountType } from '../types';
 
 // ===========================================
 // DEV MODE - Set to true to bypass auth
@@ -37,13 +37,7 @@ const MOCK_PROFILE: Profile = {
   notification_preferences: null,
   last_lat: null,
   last_lng: null,
-  is_business: false,
-  business_name: null,
-  business_logo_url: null,
-  business_category: null,
-  business_description: null,
-  business_address: null,
-  business_opening_hours: null,
+  account_type: 'personal',
   welcomed_at: new Date().toISOString(),
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
@@ -54,9 +48,11 @@ const log = (...args: unknown[]) => { if (DEV_MODE) console.log('[Auth]', ...arg
 
 function checkProfileComplete(profile: Profile | null): boolean {
   if (!profile) return false;
-  // Avatar is optional — users see a default initial-based avatar via the Avatar
-  // component's name fallback if they skip it. The onboarding avatar step stays
-  // visible (with a Skip button) so users who want to upload still can.
+  // Business accounts only need first_name (= contact name); demographics are
+  // not asked. Personal accounts need the full set.
+  if (profile.account_type === 'business') {
+    return !!profile.first_name?.trim();
+  }
   return (
     !!profile.first_name?.trim() &&
     !!profile.dob?.trim() &&
@@ -65,22 +61,35 @@ function checkProfileComplete(profile: Profile | null): boolean {
   );
 }
 
+export interface SignUpOptions {
+  accountType: AccountType;
+  termsAccepted?: boolean;
+  ageConfirmed?: boolean;
+  // Business-only:
+  businessName?: string;
+  businessCategory?: string;
+  contactName?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
+  business: Business | null;
+  isBusinessApproved: boolean;
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isProfileComplete: boolean;
-  signUp: (email: string, password: string, options?: { isBusiness?: boolean; termsAccepted?: boolean; ageConfirmed?: boolean }) => Promise<{ error: Error | null; alreadyExists?: boolean }>;
+  signUp: (email: string, password: string, options: SignUpOptions) => Promise<{ error: Error | null; alreadyExists?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
-  signInWithProvider: (provider: 'google' | 'apple' | 'facebook') => Promise<{ error: Error | null }>;
+  signInWithProvider: (provider: 'google' | 'apple') => Promise<{ error: Error | null }>;
   resendConfirmation: (email: string) => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: (userId?: string) => Promise<void>;
+  refreshBusiness: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -89,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(DEV_MODE ? MOCK_USER : null);
   const [profile, setProfile] = useState<Profile | null>(DEV_MODE ? MOCK_PROFILE : null);
+  const [business, setBusiness] = useState<Business | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(!DEV_MODE);
 
@@ -133,6 +143,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const p = await fetchProfile(id);
     setProfile(p);
   }, [user, fetchProfile]);
+
+  const fetchBusinessForOwner = useCallback(async (ownerId: string): Promise<Business | null> => {
+    const { data } = await supabase
+      .from('businesses')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .maybeSingle();
+    return (data ?? null) as Business | null;
+  }, []);
+
+  const refreshBusiness = useCallback(async () => {
+    if (!user?.id || profile?.account_type !== 'business') {
+      setBusiness(null);
+      return;
+    }
+    setBusiness(await fetchBusinessForOwner(user.id));
+  }, [user?.id, profile?.account_type, fetchBusinessForOwner]);
 
   // Effect 1: Listen for auth state changes (session/user only, no async work)
   useEffect(() => {
@@ -234,12 +261,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     log('User changed, fetching profile for', user.email);
 
-    fetchProfile(user.id).then((profileData) => {
+    fetchProfile(user.id).then(async (profileData) => {
       if (cancelled) {
         log('Profile fetch cancelled (stale)');
         return;
       }
       setProfile(profileData);
+
+      // For business accounts, also load the linked business record
+      if (profileData?.account_type === 'business') {
+        const biz = await fetchBusinessForOwner(user.id);
+        if (cancelled) return;
+        setBusiness(biz);
+      } else {
+        setBusiness(null);
+      }
+
       setIsLoading(false);
       log('Auth ready:', {
         email: user.email,
@@ -265,19 +302,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user, fetchProfile]);
+  }, [user, fetchProfile, fetchBusinessForOwner]);
 
-  const signUp = async (email: string, password: string, options?: { isBusiness?: boolean; termsAccepted?: boolean; ageConfirmed?: boolean }) => {
+  const signUp = async (email: string, password: string, options: SignUpOptions) => {
     if (DEV_MODE) return { error: null };
-    log('signUp:', email);
-    const metadata: Record<string, unknown> = {};
-    if (options?.isBusiness) metadata.is_business = true;
-    if (options?.termsAccepted) metadata.terms_accepted_at = new Date().toISOString();
-    if (options?.ageConfirmed) metadata.age_confirmed = true;
+    log('signUp:', email, 'as', options.accountType);
+    const metadata: Record<string, unknown> = {
+      account_type: options.accountType,
+      is_business: options.accountType === 'business', // legacy fallback for the trigger during deploy window
+    };
+    if (options.termsAccepted) metadata.terms_accepted_at = new Date().toISOString();
+    if (options.ageConfirmed) metadata.age_confirmed = true;
+    if (options.accountType === 'business') {
+      if (options.businessName) metadata.business_name = options.businessName.trim();
+      if (options.businessCategory) metadata.business_category = options.businessCategory;
+      if (options.contactName) metadata.contact_name = options.contactName.trim();
+    }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: Object.keys(metadata).length ? { data: metadata } : undefined,
+      options: { data: metadata },
     });
     if (error) {
       log('signUp error:', error.message);
@@ -314,7 +358,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error ? new Error(error.message) : null };
   };
 
-  const signInWithProvider = async (provider: 'google' | 'apple' | 'facebook') => {
+  const signInWithProvider = async (provider: 'google' | 'apple') => {
     if (DEV_MODE) return { error: null };
     log('signInWithProvider:', provider);
     const { error } = await supabase.auth.signInWithOAuth({
@@ -363,6 +407,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextType = {
     user,
     profile,
+    business,
+    isBusinessApproved: business?.status === 'approved',
     session,
     isLoading,
     isAuthenticated: DEV_MODE || !!user,
@@ -376,6 +422,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updatePassword,
     signOut,
     refreshProfile,
+    refreshBusiness,
   };
 
   log('State:', { isLoading, auth: !!user, profile: !!profile, name: profile?.first_name || null });

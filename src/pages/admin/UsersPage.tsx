@@ -17,7 +17,7 @@ interface AdminUser {
   status: 'active' | 'suspended' | 'banned';
   tags: string[] | null;
   is_flagged: boolean;
-  is_business: boolean;
+  account_type: 'personal' | 'business';
   created_at: string;
 }
 
@@ -60,7 +60,7 @@ export default function AdminUsersPage() {
 
   const handleExport = async () => {
     const data = await exportUsersCSV();
-    const headers = ['id', 'email', 'first_name', 'gender', 'role', 'status', 'is_business', 'created_at'];
+    const headers = ['id', 'email', 'first_name', 'gender', 'role', 'status', 'account_type', 'created_at'];
     const csv = [
       headers.join(','),
       ...data.map((row: Record<string, unknown>) => headers.map((h) => `"${row[h] ?? ''}"`).join(',')),
@@ -116,7 +116,7 @@ export default function AdminUsersPage() {
     <div className="min-h-screen bg-background pb-8">
       <Header title="User Management" showBack />
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-3">
         <div className="flex gap-2">
           <div className="flex-1">
             <Input
@@ -196,7 +196,7 @@ export default function AdminUsersPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-text truncate">{user.first_name || 'No name'}</p>
                       {user.role === 'admin' && <Badge variant="primary" size="sm">Admin</Badge>}
-                      {user.is_business && <Badge variant="default" size="sm"><Store className="h-3 w-3 inline mr-0.5" />Business</Badge>}
+                      {user.account_type === 'business' && <Badge variant="default" size="sm"><Store className="h-3 w-3 inline mr-0.5" />Business</Badge>}
                       {user.is_flagged && <Badge variant="error" size="sm"><Flag className="h-3 w-3 inline mr-0.5" />Flagged</Badge>}
                     </div>
                     <p className="text-sm text-text-muted truncate">{user.email}</p>

@@ -50,6 +50,26 @@ export function ProtectedRoute({
     return <Navigate to="/onboarding" state={{ from: location }} replace />;
   }
 
+  // Pending business accounts can roam freely; the DB publish triggers and per-page
+  // CTAs in CreateEventPage / CreateVoucherPage stop them from publishing until
+  // they're approved. The /pending-approval page remains as an info hub they can
+  // open from a banner shown across the app.
+
+  // Personal accounts cannot reach business-only management routes.
+  if (
+    profile?.account_type === 'personal' &&
+    profile?.role !== 'admin' &&
+    location.pathname.startsWith('/business/')
+  ) {
+    // Allow viewing public business pages (`/business/:id`), block edit/dashboard.
+    const blocked = /^\/business\/(edit|new)/.test(location.pathname)
+      || /\/dashboard\/?$/.test(location.pathname);
+    if (blocked) {
+      logger.log(LOG_PREFIX, location.pathname, '→ redirect to / (personal account on biz route)');
+      return <Navigate to="/" replace />;
+    }
+  }
+
   logger.log(LOG_PREFIX, location.pathname, '→ allowed');
   return <>{children}</>;
 }

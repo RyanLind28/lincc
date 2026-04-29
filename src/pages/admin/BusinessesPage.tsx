@@ -20,7 +20,7 @@ interface AdminBusiness {
   owner: { first_name: string | null; email: string; avatar_url: string | null } | null;
 }
 
-type StatusFilter = 'all' | 'active' | 'suspended';
+type StatusFilter = 'all' | 'approved' | 'suspended' | 'inactive' | 'archived';
 
 export default function AdminBusinessesPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,9 +32,14 @@ export default function AdminBusinessesPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     const { data } = await fetchAdminBusinesses(searchQuery, {
+      // The pending/rejected queue lives at /admin/business-applications
       status: statusFilter === 'all' ? undefined : statusFilter,
     });
-    setBusinesses(data as unknown as AdminBusiness[]);
+    // When showing 'all', exclude pending/rejected so they aren't double-listed
+    const filtered = statusFilter === 'all'
+      ? (data as unknown as AdminBusiness[]).filter((b) => b.status !== 'pending_approval' && b.status !== 'rejected')
+      : (data as unknown as AdminBusiness[]);
+    setBusinesses(filtered);
     setIsLoading(false);
   }, [searchQuery, statusFilter]);
 
@@ -62,8 +67,9 @@ export default function AdminBusinessesPage() {
 
   const statusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
     switch (status) {
-      case 'active': return 'success';
+      case 'approved': return 'success';
       case 'suspended': return 'warning';
+      case 'rejected': return 'error';
       default: return 'default';
     }
   };
@@ -84,7 +90,7 @@ export default function AdminBusinessesPage() {
     <div className="min-h-screen bg-background pb-8">
       <Header title="Business Management" showBack />
 
-      <div className="p-4 space-y-3">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-3">
         <div className="flex gap-2">
           <div className="flex-1">
             <Input
@@ -106,9 +112,17 @@ export default function AdminBusinessesPage() {
         <div className="flex gap-1.5 flex-wrap">
           <span className="text-[11px] text-text-muted self-center mr-1">Status:</span>
           <Pill active={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>All</Pill>
-          <Pill active={statusFilter === 'active'} onClick={() => setStatusFilter('active')}>Active</Pill>
+          <Pill active={statusFilter === 'approved'} onClick={() => setStatusFilter('approved')}>Approved</Pill>
           <Pill active={statusFilter === 'suspended'} onClick={() => setStatusFilter('suspended')}>Suspended</Pill>
+          <Pill active={statusFilter === 'inactive'} onClick={() => setStatusFilter('inactive')}>Inactive</Pill>
+          <Pill active={statusFilter === 'archived'} onClick={() => setStatusFilter('archived')}>Archived</Pill>
         </div>
+        <Link
+          to="/admin/business-applications"
+          className="text-sm font-medium text-coral hover:text-coral/80"
+        >
+          → Applications queue
+        </Link>
 
         {isLoading ? (
           <ChatListSkeleton count={6} />

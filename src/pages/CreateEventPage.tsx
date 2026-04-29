@@ -1,7 +1,7 @@
 import { logger } from '../lib/utils';
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles, HelpCircle, Camera, X, MessageCircle } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Sparkles, HelpCircle, Camera, X, MessageCircle, ShieldCheck } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
@@ -12,9 +12,9 @@ import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { compressImage, validateImage, MAX_DIMENSION_COVER } from '../lib/imageCompression';
 import { useUserLocation } from '../hooks/useUserLocation';
-import { getBusinessById, getLocationsByBusiness } from '../services/businessService';
+import { getLocationsByBusiness } from '../services/businessService';
 import { getPlacePhotoUrl, type PlaceDetails } from '../services/placesService';
-import type { JoinMode, Audience, Business, BusinessLocation } from '../types';
+import type { JoinMode, Audience, BusinessLocation } from '../types';
 
 type Step = 'category' | 'subcategory' | 'details' | 'when' | 'guests';
 
@@ -39,25 +39,18 @@ function clearDraft() {
 
 export default function CreateEventPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
-  const { user, profile } = useAuth();
+  const { user, profile, business } = useAuth();
   const { location: userLocation } = useUserLocation();
 
-  // Business context (when creating event for a business)
-  const [business, setBusiness] = useState<Business | null>(null);
+  // Business accounts always post under their own business; personal accounts never.
   const [businessLocations, setBusinessLocations] = useState<BusinessLocation[]>([]);
 
   useEffect(() => {
-    const bizId = searchParams.get('business');
-    if (!bizId) return;
-    getBusinessById(bizId).then((biz) => {
-      if (biz) {
-        setBusiness(biz);
-        getLocationsByBusiness(biz.id).then(setBusinessLocations);
-      }
-    });
-  }, [searchParams]);
+    if (profile?.account_type === 'business' && business) {
+      getLocationsByBusiness(business.id).then(setBusinessLocations);
+    }
+  }, [profile?.account_type, business]);
 
   // Restore draft from sessionStorage (survives file-picker remount)
   const draft = useRef(loadDraft());
@@ -363,6 +356,35 @@ export default function CreateEventPage() {
     if (selectedSubcategory) return selectedSubcategory.label;
     return '';
   };
+
+  // Block business accounts from filling out the form until they're approved.
+  // Personal accounts always pass through.
+  if (profile?.account_type === 'business' && business && business.status !== 'approved') {
+    return (
+      <div className="min-h-screen bg-background max-w-2xl mx-auto">
+        <Header showBack showLogo />
+        <div className="p-4 mt-8 bg-surface rounded-2xl border border-border text-center">
+          <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ShieldCheck className="h-8 w-8 text-warning" />
+          </div>
+          <h1 className="text-xl font-bold text-text mb-2">Verification needed</h1>
+          <p className="text-sm text-text-muted mb-4">
+            You can publish events once your business is approved. Submit your verification documents to speed it up.
+          </p>
+          <div className="flex gap-2 justify-center">
+            <Link to="/business/verify">
+              <GradientButton size="md">Verify business</GradientButton>
+            </Link>
+            <Link to="/business/dashboard">
+              <button className="h-10 px-4 rounded-xl border border-border text-text hover:border-coral text-sm font-medium">
+                Open dashboard
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background max-w-3xl mx-auto">
@@ -849,7 +871,7 @@ export default function CreateEventPage() {
                 </div>
                 <div className={cn(
                   'w-12 h-7 rounded-full transition-colors relative',
-                  allowDms ? 'bg-coral' : 'bg-gray-300'
+                  allowDms ? 'bg-coral' : 'bg-muted'
                 )}>
                   <div className={cn(
                     'absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform',

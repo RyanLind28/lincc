@@ -7,7 +7,12 @@
     <!-- App Meta -->
     <title>Lincc - Everything Local</title>
     <meta name="description" content="Everything happening around you, in one place" />
-    <meta name="theme-color" content="#845EF7" />
+
+    <!-- theme-color drives the colour of mobile browser chrome (Safari address bar, Android status bar).
+         Two values served via media queries so light/dark modes match the page background and don't render
+         as visible "bars" around the app. -->
+    <meta name="theme-color" content="#FAFAFA" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F0F1A" media="(prefers-color-scheme: dark)" />
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
@@ -29,13 +34,23 @@
 
     <!-- iOS PWA -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- black-translucent makes content extend behind the status bar; combined with safe-area-inset-* in CSS
+         this gets rid of the visible top bar in standalone PWA mode. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Lincc" />
+
+    <!-- Match initial body bg to system colour-scheme so the inline shell doesn't flash light on a dark device -->
+    <style>
+      html, body { background: #FAFAFA; }
+      @media (prefers-color-scheme: dark) {
+        html, body { background: #0F0F1A; }
+      }
+    </style>
   </head>
   <body>
     <div id="root">
       <!-- Inline shell for instant FCP while React boots -->
-      <div style="min-height:100vh;background:#FAFAFA;display:flex;flex-direction:column;align-items:center;justify-content:center">
+      <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
         <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#FF6B6B,#845EF7);animation:pulse 1.5s ease-in-out infinite"></div>
       </div>
       <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}</style>

@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { Header } from '../../components/layout';
 import { Card, CardContent, Skeleton } from '../../components/ui';
 import {
-  Users, Calendar, Flag, Tag, ChevronRight, Shield, Megaphone, Zap,
+  Users, Calendar, Flag, Tag, Shield, Megaphone, Zap,
   UserPlus, Handshake, MessageSquare, Ticket, Building2, Gift, Store,
 } from 'lucide-react';
 import {
-  getAdminStats, getDashboardMetrics,
+  getAdminStats, getDashboardMetrics, getAdminActionCounts,
   getTopHosts, getTopCategories, getTopBusinesses,
 } from '../../services/adminService';
 import { ActivityChart } from '../../components/admin/ActivityChart';
@@ -16,11 +16,20 @@ import { ActivityFeed } from '../../components/admin/ActivityFeed';
 import { DateRangePicker } from '../../components/admin/DateRangePicker';
 import { TopList } from '../../components/admin/TopList';
 
-const menuItems = [
-  { to: '/admin/users', label: 'User Management', icon: Users, description: 'View and manage users' },
-  { to: '/admin/events', label: 'Event Management', icon: Calendar, description: 'View and manage events' },
+type CountKey = 'flaggedUsers' | 'flaggedEvents' | 'pendingApplications' | 'pendingVerifications' | 'pendingReports';
+
+const menuItems: Array<{
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+  countKey?: CountKey;
+}> = [
+  { to: '/admin/users', label: 'User Management', icon: Users, description: 'View and manage users', countKey: 'flaggedUsers' },
+  { to: '/admin/events', label: 'Event Management', icon: Calendar, description: 'View and manage events', countKey: 'flaggedEvents' },
   { to: '/admin/businesses', label: 'Business Management', icon: Store, description: 'View and manage businesses' },
-  { to: '/admin/reports', label: 'Report Queue', icon: Flag, description: 'Review user reports' },
+  { to: '/admin/business-applications', label: 'Business Applications', icon: Store, description: 'Approve or reject pending business signups', countKey: 'pendingApplications' },
+  { to: '/admin/reports', label: 'Report Queue', icon: Flag, description: 'Review user reports', countKey: 'pendingReports' },
   { to: '/admin/categories', label: 'Categories', icon: Tag, description: 'Manage event categories' },
   { to: '/admin/announcements', label: 'Announcements', icon: Megaphone, description: 'Broadcast to all users' },
   { to: '/admin/feature-flags', label: 'Feature Flags', icon: Zap, description: 'Toggle features on/off' },
@@ -39,6 +48,9 @@ export default function AdminDashboard() {
   const [topHosts, setTopHosts] = useState<TopItem[]>([]);
   const [topCategories, setTopCategories] = useState<TopItem[]>([]);
   const [topBusinesses, setTopBusinesses] = useState<TopItem[]>([]);
+  const [actionCounts, setActionCounts] = useState<Record<CountKey, number>>({
+    flaggedUsers: 0, flaggedEvents: 0, pendingApplications: 0, pendingVerifications: 0, pendingReports: 0,
+  });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
   const [isLoadingTops, setIsLoadingTops] = useState(true);
@@ -49,6 +61,7 @@ export default function AdminDashboard() {
       setStats(data);
       setIsLoadingStats(false);
     });
+    getAdminActionCounts().then(setActionCounts);
   }, []);
 
   // Range-dependent metrics + top lists — reload on range change
@@ -95,11 +108,51 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background pb-8">
       <Header title="Admin Dashboard" showBack />
 
-      <div className="p-4 space-y-6">
-        {/* Totals (all-time) */}
+      <div className="p-4 lg:p-6 space-y-6 max-w-7xl mx-auto">
+        {/* Quick manage — front and centre */}
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Manage</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {menuItems.map((item) => {
+              const count = item.countKey ? actionCounts[item.countKey] : 0;
+              const showBadge = count > 0;
+              // Surface verifications-waiting on the Business Applications tile too
+              const extraBadge = item.to === '/admin/business-applications' && actionCounts.pendingVerifications > 0
+                ? actionCounts.pendingVerifications
+                : 0;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="group relative bg-surface rounded-2xl border border-border p-4 hover:border-coral/40 hover:shadow-md transition-all flex flex-col gap-2"
+                >
+                  {showBadge && (
+                    <span className="absolute top-3 right-3 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-coral rounded-full">
+                      {count > 99 ? '99+' : count}
+                    </span>
+                  )}
+                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-white">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-text text-sm group-hover:text-coral transition-colors">{item.label}</h3>
+                    <p className="text-xs text-text-muted line-clamp-2 mt-0.5">{item.description}</p>
+                    {extraBadge > 0 && (
+                      <p className="text-[11px] font-medium text-warning mt-1">
+                        +{extraBadge} verification{extraBadge === 1 ? '' : 's'} to review
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Totals (all-time) — 4 columns on desktop */}
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">All Time</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {totalCards.map((stat) => (
               <Card key={stat.label} variant="outlined" padding="md">
                 <CardContent className="flex items-center gap-3">
@@ -120,13 +173,13 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        {/* Range picker + range-scoped metrics */}
+        {/* Range picker + range-scoped metrics — 4 columns on desktop */}
         <section>
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">Last {days} Days</h2>
             <DateRangePicker value={days} onChange={setDays} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {metricCards.map((stat) => (
               <Card key={stat.label} variant="outlined" padding="md">
                 <CardContent className="flex items-center gap-3">
@@ -147,14 +200,14 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        {/* Charts */}
-        <div className="space-y-4">
+        {/* Charts — side-by-side on desktop */}
+        <div className="grid lg:grid-cols-2 gap-4">
           <ActivityChart days={days} />
           <EngagementChart days={days} />
         </div>
 
-        {/* Top-N lists */}
-        <div className="space-y-4">
+        {/* Top lists + activity feed — three columns on desktop */}
+        <div className="grid lg:grid-cols-3 gap-4">
           <TopList
             title={`Top Hosts (last ${days} days)`}
             items={topHosts}
@@ -178,28 +231,8 @@ export default function AdminDashboard() {
           />
         </div>
 
-        {/* Recent activity feed */}
+        {/* Recent activity */}
         <ActivityFeed />
-
-        {/* Menu */}
-        <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
-          {menuItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="flex items-center gap-3 p-4 hover:bg-background transition-colors"
-            >
-              <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center">
-                <item.icon className="h-5 w-5 text-coral" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-text">{item.label}</h3>
-                <p className="text-sm text-text-muted">{item.description}</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-text-muted" />
-            </Link>
-          ))}
-        </div>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, CategoryIcon, Spinner, VoucherTile } from '../components/ui';
 import { ReportDialog } from '../components/social/ReportDialog';
+import { RatingBadges } from '../components/features/RatingBadges';
 import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, ShieldAlert, Ban, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -125,15 +126,12 @@ export default function UserProfilePage() {
         );
       }
 
-      // Fetch businesses owned by this user
-      const { getBusinessesByOwner } = await import('../services/businessService');
-      const userBusinesses = await getBusinessesByOwner(id);
-      // Fetch vouchers for each business
-      if (userBusinesses.length > 0) {
-        const allVouchers = await Promise.all(
-          userBusinesses.map((b) => getActiveVouchersByBusiness(b.id))
-        );
-        setUserVouchers(allVouchers.flat());
+      // Fetch the single business owned by this user (one-per-account model)
+      const { getBusinessForOwner } = await import('../services/businessService');
+      const userBusiness = await getBusinessForOwner(id);
+      if (userBusiness) {
+        const vouchers = await getActiveVouchersByBusiness(userBusiness.id);
+        setUserVouchers(vouchers);
       }
 
       setIsLoading(false);
@@ -300,6 +298,8 @@ export default function UserProfilePage() {
                   ))}
                 </div>
               )}
+
+              <RatingBadges userId={profile.id} />
             </div>
           </div>
 

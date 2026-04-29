@@ -1,13 +1,13 @@
 import { logger } from '../lib/utils';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
-import { Avatar, Button, Input, TextArea, ChipGroup } from '../components/ui';
-import { Camera, Mail, Lock, ChevronRight } from 'lucide-react';
-import { validateImageSize, compressImage } from '../lib/imageCompression';
+import { Avatar, Button, Input, TextArea, ChipGroup, AvatarCropper } from '../components/ui';
+import { Camera, Mail, Lock, ChevronRight, Loader2 } from 'lucide-react';
+import { validateImage } from '../lib/imageCompression';
 
 const INTEREST_TAGS = [
   { value: 'coffee', label: 'Coffee', icon: '☕' },
@@ -42,6 +42,11 @@ export default function EditProfilePage() {
   const [bio, setBio] = useState(profile?.bio || '');
   const [tags, setTags] = useState<string[]>(profile?.tags || []);
 
+  // Avatar cropper state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
   // Security section state
   const [showEmailChange, setShowEmailChange] = useState(false);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -50,66 +55,100 @@ export default function EditProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSecurityLoading, setIsSecurityLoading] = useState(false);
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    // Reset the input so re-selecting the same file fires onChange again
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
 
-    const sizeError = validateImageSize(file);
-    if (sizeError) {
-      showToast(sizeError, 'error');
+    // HEIC/HEIF won't decode in <img> in most browsers — catch this early
+    const lower = file.name.toLowerCase();
+    if (lower.endsWith('.heic') || lower.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif') {
+      showToast(
+        "iPhone HEIC photos aren't supported. In iOS Settings → Camera → Formats, switch to Most Compatible, or pick a JPEG/PNG.",
+        'error',
+      );
       return;
     }
 
-    setIsLoading(true);
+    const validationError = await validateImage(file);
+    if (validationError) {
+      showToast(validationError, 'error');
+      return;
+    }
+
+    // Open the cropper
+    const objectUrl = URL.createObjectURL(file);
+    setCropSrc(objectUrl);
+  };
+
+  const handleCropConfirm = async (croppedBlob: Blob) => {
+    if (!user) return;
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    setIsUploadingAvatar(true);
 
     try {
-      const compressed = await compressImage(file);
-
-      // Delete old avatar files before uploading new one
-      const { data: existingFiles } = await supabase.storage
-        .from('avatars')
-        .list(user.id);
-      if (existingFiles && existingFiles.length > 0) {
-        const filesToRemove = existingFiles.map((f) => `${user.id}/${f.name}`);
-        await supabase.storage.from('avatars').remove(filesToRemove);
-      }
-
       const filePath = `${user.id}/${Date.now()}.jpg`;
 
+      // Upload first; only delete the old avatar after the new one is committed
+      // so a failed upload doesn't leave the user with no avatar.
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, compressed, {
-          contentType: 'image/jpeg',
-        });
+        .upload(filePath, croppedBlob, { contentType: 'image/jpeg' });
 
       if (uploadError) {
         logger.error('Avatar upload error:', uploadError);
-        showToast('Failed to upload photo', 'error');
-      } else {
-        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-        const newUrl = data.publicUrl;
-        setAvatarUrl(newUrl);
-
-        // Save to DB immediately so it reflects across the site
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ avatar_url: newUrl })
-          .eq('id', user.id);
-
-        if (updateError) {
-          logger.error('Avatar DB update error:', updateError);
-          showToast('Photo uploaded but failed to save', 'error');
+        if (uploadError.message?.includes('exceeded')) {
+          showToast('File too large for the storage limits', 'error');
+        } else if (uploadError.message?.toLowerCase().includes('not authorized')
+          || uploadError.message?.toLowerCase().includes('permission')) {
+          showToast('Permission denied — please sign in again', 'error');
         } else {
-          await refreshProfile(user.id);
-          showToast('Photo updated', 'success');
+          showToast(`Upload failed: ${uploadError.message}`, 'error');
+        }
+        return;
+      }
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const newUrl = data.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: newUrl })
+        .eq('id', user.id);
+
+      if (updateError) {
+        logger.error('Avatar DB update error:', updateError);
+        showToast(`Saved photo, couldn't update profile: ${updateError.message}`, 'error');
+        return;
+      }
+
+      // Now safe to clean up the old avatar files
+      const { data: existingFiles } = await supabase.storage.from('avatars').list(user.id);
+      if (existingFiles?.length) {
+        const stale = existingFiles
+          .map((f) => `${user.id}/${f.name}`)
+          .filter((p) => p !== filePath);
+        if (stale.length > 0) {
+          await supabase.storage.from('avatars').remove(stale);
         }
       }
-    } catch (err) {
-      logger.error('Image processing error:', err);
-      showToast('Failed to process image', 'error');
-    }
 
-    setIsLoading(false);
+      setAvatarUrl(newUrl);
+      await refreshProfile(user.id);
+      showToast('Photo updated', 'success');
+    } catch (err) {
+      logger.error('Avatar flow error:', err);
+      showToast(err instanceof Error ? err.message : 'Failed to update photo', 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleCropCancel = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
   };
 
   const validateDob = (dobValue: string): boolean => {
@@ -226,21 +265,39 @@ export default function EditProfilePage() {
       <div className="p-4 space-y-6">
         {/* Photo */}
         <div className="flex justify-center">
-          <label className="cursor-pointer">
-            <div className="relative">
-              <Avatar src={avatarUrl} name={firstName} size="xl" />
-              <div className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-md">
-                <Camera className="h-4 w-4 text-white" />
-              </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingAvatar}
+            className="relative cursor-pointer disabled:opacity-70"
+            aria-label="Change profile photo"
+          >
+            <Avatar src={avatarUrl} name={firstName} size="xl" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-md">
+              {isUploadingAvatar
+                ? <Loader2 className="h-4 w-4 text-white animate-spin" />
+                : <Camera className="h-4 w-4 text-white" />}
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-          </label>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handlePhotoSelect}
+            className="hidden"
+          />
         </div>
+
+        {cropSrc && (
+          <AvatarCropper
+            src={cropSrc}
+            isOpen
+            onClose={handleCropCancel}
+            onConfirm={handleCropConfirm}
+            cropShape="round"
+            aspect={1}
+          />
+        )}
 
         {/* Name */}
         <Input

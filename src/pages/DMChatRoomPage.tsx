@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Avatar, GradientButton, Input, Spinner } from '../components/ui';
-import { Send, Ticket, Calendar, ChevronRight, Clock, MapPin, Users } from 'lucide-react';
+import { Send, Ticket, Calendar, ChevronRight, Clock, MapPin, Users, Flag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDMChat } from '../hooks/useDMChat';
+import { ReportMessageDialog } from '../components/social/ReportMessageDialog';
 import { supabase } from '../lib/supabase';
 import type { Profile, DirectMessageWithSender } from '../types';
 
@@ -18,6 +19,12 @@ export default function DMChatRoomPage() {
 
   const { messages, isLoading, isSending, error, sendMessage } =
     useDMChat(conversationId);
+  const [reportingMessage, setReportingMessage] = useState<{
+    id: string;
+    senderId: string;
+    senderName: string;
+    content: string;
+  } | null>(null);
 
   // Fetch conversation + other user details
   useEffect(() => {
@@ -89,7 +96,7 @@ export default function DMChatRoomPage() {
 
   if (isLoading || otherUserLoading) {
     return (
-      <div className="h-dvh flex flex-col overflow-hidden bg-background">
+      <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-3xl mx-auto">
         <Header showBack title="Chat" />
         <div className="flex-1 flex items-center justify-center">
           <Spinner size="lg" />
@@ -174,23 +181,40 @@ export default function DMChatRoomPage() {
                         {/* Message bubble */}
                         <div className={`max-w-[75%] ${isMe ? 'order-first' : ''}`}>
                           {/* Special rendering for share cards */}
-                          {msg.message_type === 'voucher_share' ? (
-                            <VoucherShareCard msg={msg} />
-                          ) : msg.message_type === 'event_share' ? (
-                            <EventShareCard msg={msg} />
-                          ) : (
-                            <div
-                              className={`px-4 py-2 rounded-2xl ${
-                                isMe
-                                  ? 'gradient-primary text-white rounded-tr-sm'
-                                  : 'bg-surface border border-border text-text rounded-tl-sm'
-                              }`}
-                            >
-                              <p className="whitespace-pre-wrap break-words">
-                                {msg.content}
-                              </p>
-                            </div>
-                          )}
+                          <div className="group relative">
+                            {msg.message_type === 'voucher_share' ? (
+                              <VoucherShareCard msg={msg} />
+                            ) : msg.message_type === 'event_share' ? (
+                              <EventShareCard msg={msg} />
+                            ) : (
+                              <div
+                                className={`px-4 py-2 rounded-2xl ${
+                                  isMe
+                                    ? 'gradient-primary text-white rounded-tr-sm'
+                                    : 'bg-surface border border-border text-text rounded-tl-sm'
+                                }`}
+                              >
+                                <p className="whitespace-pre-wrap break-words">
+                                  {msg.content}
+                                </p>
+                              </div>
+                            )}
+                            {!isMe && (
+                              <button
+                                type="button"
+                                onClick={() => setReportingMessage({
+                                  id: msg.id,
+                                  senderId: msg.sender_id,
+                                  senderName: msg.sender?.first_name || 'this user',
+                                  content: msg.content,
+                                })}
+                                aria-label="Report message"
+                                className="absolute -right-7 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface border border-border text-text-light hover:text-error hover:border-error/40 transition-colors flex items-center justify-center"
+                              >
+                                <Flag className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
                           <p
                             className={`text-[10px] text-text-light mt-1 ${
                               isMe ? 'text-right mr-1' : 'ml-1'
@@ -240,6 +264,15 @@ export default function DMChatRoomPage() {
         {/* Safe area spacer for iOS home indicator */}
         <div className="safe-bottom" />
       </div>
+
+      <ReportMessageDialog
+        isOpen={!!reportingMessage}
+        onClose={() => setReportingMessage(null)}
+        reportedUserId={reportingMessage?.senderId ?? ''}
+        reportedUserName={reportingMessage?.senderName ?? ''}
+        messagePreview={reportingMessage?.content ?? ''}
+        dmMessageId={reportingMessage?.id}
+      />
     </div>
   );
 }

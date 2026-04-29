@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Map, List, MessageCircle, Calendar, User, Plus, Bell } from 'lucide-react';
+import { Map, List, MessageCircle, Calendar, User, Plus, Bell, Ticket } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useViewMode } from '../../contexts/ViewModeContext';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
@@ -26,13 +26,14 @@ export function SideNav() {
   const navItems = [
     { to: '/chats', icon: MessageCircle, label: 'Chats', badge: 0, tourId: 'chats' },
     { to: '/my-events', icon: Calendar, label: 'Events', badge: 0, tourId: 'my-events' },
+    { to: '/vouchers', icon: Ticket, label: 'Vouchers', badge: 0, tourId: undefined },
     { to: '/notifications', icon: Bell, label: 'Alerts', badge: unreadCount, tourId: undefined },
     { to: '/profile', icon: User, label: 'Profile', badge: 0, tourId: undefined },
   ];
 
   return (
     <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:flex lg:flex-col lg:w-16 lg:z-30 hover:lg:w-48 bg-surface backdrop-blur-sm group/sidebar transition-all duration-200 lg:pt-14">
-      <nav className="flex-1 flex flex-col items-center justify-center gap-3 px-3">
+      <nav className="flex-1 flex flex-col items-stretch justify-center gap-3 px-3">
         {/* Discover / Toggle */}
         {isOnHomePage ? (
           <button onClick={toggleViewMode} data-tour="discover" className="relative">

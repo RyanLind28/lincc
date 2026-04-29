@@ -2,6 +2,7 @@
 export type Gender = 'female' | 'male';
 export type UserRole = 'user' | 'admin';
 export type UserStatus = 'active' | 'suspended' | 'banned';
+export type AccountType = 'personal' | 'business';
 
 export interface Profile {
   id: string;
@@ -18,16 +19,10 @@ export interface Profile {
   terms_accepted_at: string | null;
   role: UserRole;
   status: UserStatus;
+  account_type: AccountType;
   notification_preferences: NotificationPreferences | null;
   last_lat: number | null;
   last_lng: number | null;
-  is_business: boolean;
-  business_name: string | null;
-  business_logo_url: string | null;
-  business_category: string | null;
-  business_description: string | null;
-  business_address: string | null;
-  business_opening_hours: BusinessOpeningHours | null;
   welcomed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -42,14 +37,6 @@ export interface BusinessOpeningHours {
   friday?: { open: string; close: string } | null;
   saturday?: { open: string; close: string } | null;
   sunday?: { open: string; close: string } | null;
-}
-
-export interface BusinessOnboardingForm {
-  business_name: string;
-  business_category: string;
-  business_description?: string;
-  business_address?: string;
-  business_logo_url?: string;
 }
 
 export interface CreateVoucherForm {
@@ -67,10 +54,30 @@ export interface CreateVoucherForm {
   expires_at: string;
 }
 
-// Business Types (separate entity — one user can own multiple)
+export type BusinessStatus =
+  | 'pending_approval'
+  | 'approved'
+  | 'rejected'
+  | 'suspended'
+  | 'inactive'
+  | 'archived';
+
+export interface BusinessSocialLinks {
+  website?: string;
+  instagram?: string;
+  facebook?: string;
+  x?: string; // formerly Twitter
+  tiktok?: string;
+  linkedin?: string;
+  youtube?: string;
+  whatsapp?: string;
+  phone?: string;
+  email?: string;
+}
+
 export interface Business {
   id: string;
-  owner_id: string;
+  owner_id: string | null;
   name: string;
   slug: string | null;
   logo_url: string | null;
@@ -78,7 +85,32 @@ export interface Business {
   description: string | null;
   address: string | null;
   opening_hours: BusinessOpeningHours | null;
-  status: 'active' | 'inactive' | 'suspended';
+  social_links: BusinessSocialLinks | null;
+  status: BusinessStatus;
+  verified: boolean;
+  verified_at: string | null;
+  rejection_reason: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type VerificationStatus = 'draft' | 'submitted' | 'in_review' | 'approved' | 'rejected';
+
+export interface BusinessVerification {
+  id: string;
+  business_id: string;
+  operator_selfie_path: string | null;
+  id_document_path: string | null;
+  selfie_with_id_path: string | null;
+  registration_doc_path: string | null;
+  additional_doc_paths: string[] | null;
+  status: VerificationStatus;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  rejection_notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -98,14 +130,6 @@ export interface BusinessLocation {
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
-}
-
-export interface CreateBusinessForm {
-  name: string;
-  category: string;
-  description?: string;
-  address?: string;
-  logo_url?: string;
 }
 
 export const BUSINESS_CATEGORIES = [
@@ -235,7 +259,10 @@ export type NotificationType =
   | 'voucher_shared'
   | 'participant_removed'
   | 'participant_left'
-  | 'participant_rejoined';
+  | 'participant_rejoined'
+  | 'review_prompt'
+  | 'business_approved'
+  | 'business_rejected';
 
 // Notification preference keys (toggleable push types)
 export interface NotificationPreferences {

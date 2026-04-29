@@ -145,3 +145,40 @@ export function compressImage(file: File, maxDimension = MAX_DIMENSION_AVATAR): 
 
 // Export constants for use in upload flows
 export { MAX_DIMENSION_COVER, MAX_DIMENSION_AVATAR };
+
+/**
+ * Crop a region of an image to a square (or specified aspect) and return a JPEG blob.
+ * Used by the avatar cropper UI.
+ */
+export async function cropImageToBlob(
+  src: string,
+  pixelCrop: { x: number; y: number; width: number; height: number },
+  outputDimension = MAX_DIMENSION_AVATAR,
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = outputDimension;
+      canvas.height = outputDimension;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      ctx.drawImage(
+        img,
+        pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+        0, 0, outputDimension, outputDimension,
+      );
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('Failed to encode cropped image')),
+        'image/jpeg',
+        JPEG_QUALITY,
+      );
+    };
+    img.onerror = () => reject(new Error('Failed to load image for cropping'));
+    img.src = src;
+  });
+}

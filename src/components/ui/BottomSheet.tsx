@@ -82,7 +82,7 @@ function BottomSheet({
         {/* Handle */}
         {showHandle && (
           <div className="flex justify-center pt-3 pb-2">
-            <div className="w-10 h-1 rounded-full bg-gray-300" />
+            <div className="w-10 h-1 rounded-full bg-border-dark" />
           </div>
         )}
 

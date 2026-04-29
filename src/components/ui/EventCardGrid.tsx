@@ -67,7 +67,7 @@ function CapacityDots({ filled, total }: { filled: number; total: number }) {
             key={i}
             className={cn(
               'w-1.5 h-1.5 rounded-full',
-              i < filled ? 'bg-coral' : 'bg-gray-200'
+              i < filled ? 'bg-coral' : 'bg-muted'
             )}
           />
         ))}
@@ -87,7 +87,7 @@ function CapacityDots({ filled, total }: { filled: number; total: number }) {
             key={i}
             className={cn(
               'w-1.5 h-1.5 rounded-full',
-              i < filledDots ? 'bg-coral' : 'bg-gray-200'
+              i < filledDots ? 'bg-coral' : 'bg-muted'
             )}
           />
         ))}

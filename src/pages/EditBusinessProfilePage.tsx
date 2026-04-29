@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Header } from '../components/layout';
-import { Input, TextArea, GradientButton } from '../components/ui';
+import { Input, TextArea, GradientButton, PlacesAutocomplete } from '../components/ui';
+import type { PlaceDetails } from '../services/placesService';
+import { useUserLocation } from '../hooks/useUserLocation';
 import { Camera, X, Loader2, AlertTriangle } from 'lucide-react';
-import { getBusinessById, updateBusiness } from '../services/businessService';
+import { updateBusiness } from '../services/businessService';
 import { supabase } from '../lib/supabase';
 import { compressImage, validateImage } from '../lib/imageCompression';
 import { BUSINESS_CATEGORIES } from '../types';
 import { cn } from '../lib/utils';
-import type { BusinessOpeningHours, Business } from '../types';
+import type { BusinessOpeningHours } from '../types';
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 const DAY_LABELS: Record<string, string> = {
@@ -19,14 +21,12 @@ const DAY_LABELS: Record<string, string> = {
 };
 
 export default function EditBusinessProfilePage() {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { business, profile, refreshBusiness } = useAuth();
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { location: userLocation } = useUserLocation();
 
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [isLoadingBiz, setIsLoadingBiz] = useState(true);
   const [businessName, setBusinessName] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -36,33 +36,34 @@ export default function EditBusinessProfilePage() {
   const [hours, setHours] = useState<BusinessOpeningHours>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load business data
   useEffect(() => {
-    if (!id) return;
-    getBusinessById(id).then((biz) => {
-      if (biz) {
-        setBusiness(biz);
-        setBusinessName(biz.name);
-        setCategory(biz.category);
-        setDescription(biz.description || '');
-        setAddress(biz.address || '');
-        setLogoUrl(biz.logo_url);
-        setHours(biz.opening_hours || {});
-      }
-      setIsLoadingBiz(false);
-    });
-  }, [id]);
+    if (business) {
+      setBusinessName(business.name);
+      setCategory(business.category);
+      setDescription(business.description || '');
+      setAddress(business.address || '');
+      setLogoUrl(business.logo_url);
+      setHours(business.opening_hours || {});
+    }
+  }, [business]);
 
   // Access guard
-  if (!isLoadingBiz && (!business || business.owner_id !== user?.id)) {
+  if (profile && profile.account_type !== 'business') {
     return (
       <div className="min-h-screen bg-background">
         <Header showBack showLogo />
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <AlertTriangle className="h-8 w-8 text-error mb-4" />
-          <h2 className="text-xl font-semibold text-text mb-2">Access denied</h2>
-          <GradientButton onClick={() => navigate('/my-businesses')}>My Businesses</GradientButton>
+          <h2 className="text-xl font-semibold text-text mb-2">Business accounts only</h2>
+          <GradientButton onClick={() => navigate('/')}>Home</GradientButton>
         </div>
+      </div>
+    );
+  }
+  if (!business) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-6 w-6 text-coral animate-spin" />
       </div>
     );
   }
@@ -100,7 +101,7 @@ export default function EditBusinessProfilePage() {
   };
 
   const handleSave = async () => {
-    if (!id || !user?.id || !businessName.trim()) {
+    if (!business?.id || !businessName.trim()) {
       showToast('Business name is required', 'error');
       return;
     }
@@ -110,9 +111,9 @@ export default function EditBusinessProfilePage() {
     try {
       let uploadedLogoUrl: string | undefined;
 
-      if (logoFile) {
+      if (logoFile && business.owner_id) {
         const compressed = await compressImage(logoFile);
-        const fileName = `${user.id}/${Date.now()}.jpg`;
+        const fileName = `${business.owner_id}/${Date.now()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('business-logos')
           .upload(fileName, compressed, { contentType: 'image/jpeg' });
@@ -125,7 +126,7 @@ export default function EditBusinessProfilePage() {
         }
       }
 
-      const result = await updateBusiness(id, {
+      const result = await updateBusiness(business.id, {
         name: businessName.trim(),
         category,
         description: description.trim() || null,
@@ -136,7 +137,8 @@ export default function EditBusinessProfilePage() {
 
       if (result.success) {
         showToast('Business updated!', 'success');
-        navigate(`/business/${id}/dashboard`);
+        await refreshBusiness();
+        navigate('/business/dashboard');
       } else {
         showToast(result.error || 'Failed to update', 'error');
       }
@@ -146,19 +148,6 @@ export default function EditBusinessProfilePage() {
       setIsSaving(false);
     }
   };
-
-  if (isLoadingBiz) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header showBack showLogo />
-        <div className="p-4 space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-surface rounded-2xl border border-border animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -203,7 +192,18 @@ export default function EditBusinessProfilePage() {
 
         <TextArea label="Description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tell people about your business..." rows={3} maxLength={280} showCount />
 
-        <Input label="Address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g., 123 High Street, London" />
+        <div>
+          <label className="block text-sm font-medium text-text mb-1.5">Address</label>
+          <PlacesAutocomplete
+            defaultValue={address}
+            placeholder="Search for your address..."
+            userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
+            onSelect={(place: PlaceDetails) => setAddress(place.address)}
+          />
+          {address && (
+            <p className="text-xs text-text-muted mt-1">Selected: {address}</p>
+          )}
+        </div>
 
         {/* Opening Hours */}
         <div>

@@ -8,10 +8,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { ReportDialog } from '../components/social/ReportDialog';
 import { ShareEventSheet } from '../components/features/ShareEventSheet';
+import { VerifiedTick } from '../components/business/VerifiedTick';
 import { blockUser, isUserBlocked } from '../services/blockService';
 import { useEventParticipants } from '../hooks/useEventParticipants';
 import { hapticSuccess } from '../lib/haptics';
-import { EventReviews } from '../components/features/EventReviews';
+import { EventReviewsSection } from '../components/features/EventReviewsSection';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { updateEvent, deleteEvent } from '../services/events';
 import { getOrCreateConversation } from '../services/chat/dmService';
@@ -394,7 +395,7 @@ export default function EventDetailPage() {
         {/* Event card with cover image */}
         <div className="bg-surface rounded-2xl shadow-lg overflow-hidden mb-4">
           {/* Cover image */}
-          <div className="relative h-44 bg-gray-200 overflow-hidden">
+          <div className="relative h-44 bg-muted overflow-hidden">
             <img
               src={event.cover_image_url || CATEGORIES.find(c => c.label === event.category?.name)?.image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=450&fit=crop'}
               alt={event.category?.name || 'Event'}
@@ -521,7 +522,7 @@ export default function EventDetailPage() {
             {/* Host — inside card. When the event is posted by a business, show the business identity. */}
             {event.business ? (
               <Link
-                to={`/business/${event.business.id}`}
+                to={`/business/${event.business.slug || event.business.id}`}
                 className="flex items-center gap-3 mt-4 pt-4 border-t border-border group"
               >
                 <Avatar
@@ -531,8 +532,9 @@ export default function EventDetailPage() {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-text-muted">Hosted by</p>
-                  <p className="font-medium text-text group-hover:text-coral transition-colors truncate">
+                  <p className="font-medium text-text group-hover:text-coral transition-colors truncate inline-flex items-center gap-1">
                     {event.business.name}
+                    {event.business.verified && <VerifiedTick size="sm" />}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
@@ -736,10 +738,9 @@ export default function EventDetailPage() {
 
       {/* Reviews */}
       <div className="px-4">
-        <EventReviews
+        <EventReviewsSection
           eventId={event.id}
-          isExpired={event.status === 'expired'}
-          isParticipant={userStatus === 'approved'}
+          hostId={event.host_id}
         />
       </div>
 

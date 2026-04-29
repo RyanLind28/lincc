@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MapPin, ChevronRight } from 'lucide-react';
 import { Badge } from '../ui';
+import { businessHref } from '../../services/businessService';
 import type { Business } from '../../types';
 
 interface BusinessCardProps {
@@ -9,7 +10,7 @@ interface BusinessCardProps {
 }
 
 export function BusinessCard({ business, linkTo }: BusinessCardProps) {
-  const href = linkTo || `/business/${business.id}`;
+  const href = linkTo || businessHref(business);
 
   return (
     <Link

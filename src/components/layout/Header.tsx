@@ -3,7 +3,6 @@ import { ArrowLeft, Bell, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 import { OfflineBanner } from '../pwa/OfflineBanner';
-import { UpdateNotification } from '../pwa/UpdateNotification';
 
 // Lincc Logo — just the image. The Link wrapper lives in the Header so the whole
 // center column is a clickable home-link (bigger tap target than the image alone).
@@ -138,7 +137,6 @@ export function Header({
 
       {/* Banner shelf — renders below the header bar, inside the sticky container */}
       <OfflineBanner />
-      <UpdateNotification />
     </header>
   );
 }

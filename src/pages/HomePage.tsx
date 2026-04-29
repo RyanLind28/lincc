@@ -23,6 +23,9 @@ import { useLocationName } from '../hooks/useLocationName';
 import { useGeocode } from '../hooks/useGeocode';
 import { Header } from '../components/layout';
 import { AnnouncementBanner } from '../components/ui/AnnouncementBanner';
+import { ReviewPromptModal } from '../components/features/ReviewPromptModal';
+import { usePendingReviews } from '../hooks/usePendingReviews';
+import { dismissReviewForSession } from '../services/reviews';
 import { useRecommendedEvents } from '../hooks/useRecommendedEvents';
 import { useViewMode } from '../contexts/ViewModeContext';
 import { useBookmarks } from '../hooks/useBookmarks';
@@ -71,6 +74,8 @@ function isLocationQuery(term: string): boolean {
 
 export default function HomePage() {
   const { viewMode } = useViewMode();
+  const { items: pendingReviews, removeFromQueue, refresh: refreshPendingReviews } = usePendingReviews();
+  const [isReviewPromptOpen, setIsReviewPromptOpen] = useState(false);
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [distance, setDistance] = useState(10);
   const [debouncedDistance, setDebouncedDistance] = useState(10);
@@ -88,6 +93,26 @@ export default function HomePage() {
     distanceTimerRef.current = setTimeout(() => setDebouncedDistance(distance), 300);
     return () => { if (distanceTimerRef.current) clearTimeout(distanceTimerRef.current); };
   }, [distance]);
+
+  // Auto-open the review prompt modal once pending items are loaded
+  useEffect(() => {
+    if (pendingReviews.length > 0 && !isReviewPromptOpen) {
+      setIsReviewPromptOpen(true);
+    }
+  }, [pendingReviews.length, isReviewPromptOpen]);
+
+  // Honour /?reviewPrompt=1 deep link from a review_prompt notification
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reviewPrompt') === '1') {
+      refreshPendingReviews();
+      setIsReviewPromptOpen(true);
+      params.delete('reviewPrompt');
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [refreshPendingReviews]);
 
   // Use the recommendation hook with debounced distance
   const {
@@ -173,6 +198,16 @@ export default function HomePage() {
 
   return (
     <div className="h-screen flex flex-col bg-background max-w-6xl mx-auto">
+      {isReviewPromptOpen && pendingReviews.length > 0 && (
+        <ReviewPromptModal
+          items={pendingReviews}
+          onClose={() => {
+            pendingReviews.forEach(dismissReviewForSession);
+            setIsReviewPromptOpen(false);
+          }}
+          onItemHandled={removeFromQueue}
+        />
+      )}
       {/* Header - Instagram style */}
       <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
@@ -401,7 +436,7 @@ export default function HomePage() {
           /* Map View */
           <div className="h-full relative">
             {!hasLocation ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
                 <div className="text-center p-8">
                   <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
                     <MapPin className="h-8 w-8 text-white" />

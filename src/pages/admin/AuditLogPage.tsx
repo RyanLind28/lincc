@@ -37,7 +37,7 @@ export default function AuditLogPage() {
     <div className="min-h-screen bg-background pb-8">
       <Header title="Audit Log" showBack />
 
-      <div className="p-4">
+      <div className="p-4 lg:p-6 max-w-5xl mx-auto">
         {isLoading ? (
           <ChatListSkeleton count={8} />
         ) : entries.length === 0 ? (

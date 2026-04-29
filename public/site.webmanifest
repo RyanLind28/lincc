@@ -4,8 +4,8 @@
   "description": "Everything happening around you, in one place",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#845EF7",
+  "background_color": "#FAFAFA",
+  "theme_color": "#FAFAFA",
   "orientation": "portrait",
   "scope": "/",
   "icons": [

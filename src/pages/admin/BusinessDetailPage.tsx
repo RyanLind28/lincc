@@ -75,7 +75,7 @@ export default function AdminBusinessDetailPage() {
     <div className="min-h-screen bg-background pb-8">
       <Header title="Business Details" showBack />
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-6">
         {/* Business card */}
         <div className="bg-surface rounded-2xl border border-border p-4">
           <div className="flex items-start gap-4">

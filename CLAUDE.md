@@ -175,7 +175,7 @@ cd landing && npm run build  # Landing build
 - **Vercel URL**: `https://lincc-six.vercel.app`
 - **Auto-deploy**: From `main` branch
 - **SPA routing**: `vercel.json` rewrites all non-asset routes to `index.html`
-- **Vercel env vars**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MAPBOX_TOKEN`
+- **Vercel env vars**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MAPBOX_TOKEN`, `VITE_GA_MEASUREMENT_ID` (optional — Google Analytics 4 measurement id, e.g. `G-XXXXXXXXXX`. When unset analytics is a no-op.)
 
 ---
 
