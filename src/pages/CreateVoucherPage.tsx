@@ -1,5 +1,5 @@
 import { logger } from '../lib/utils';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, MapPin, Camera, X, Tag, Store, Loader2 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';

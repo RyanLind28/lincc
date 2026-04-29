@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  MapPin, AlertTriangle, Calendar, Star, Ticket, Share2, Building2,
+  MapPin, AlertTriangle, Star, Ticket, Share2, Building2,
   Clock, ChevronRight, Globe, ChevronLeft, Sparkles, Phone, Mail,
   Instagram, Facebook, Youtube, Linkedin, MessageCircle, AtSign,
 } from 'lucide-react';

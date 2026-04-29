@@ -1,1 +1,2617 @@
-{"types":"export type Json =\n  | string\n  | number\n  | boolean\n  | null\n  | { [key: string]: Json | undefined }\n  | Json[]\n\nexport type Database = {\n  // Allows to automatically instantiate createClient with right options\n  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)\n  __InternalSupabase: {\n    PostgrestVersion: \"14.1\"\n  }\n  public: {\n    Tables: {\n      admin_audit_log: {\n        Row: {\n          action: string\n          admin_id: string\n          created_at: string | null\n          details: Json | null\n          id: string\n          target_id: string | null\n          target_type: string\n        }\n        Insert: {\n          action: string\n          admin_id: string\n          created_at?: string | null\n          details?: Json | null\n          id?: string\n          target_id?: string | null\n          target_type: string\n        }\n        Update: {\n          action?: string\n          admin_id?: string\n          created_at?: string | null\n          details?: Json | null\n          id?: string\n          target_id?: string | null\n          target_type?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"admin_audit_log_admin_id_fkey\"\n            columns: [\"admin_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      announcements: {\n        Row: {\n          body: string\n          created_at: string | null\n          created_by: string | null\n          expires_at: string | null\n          id: string\n          is_active: boolean | null\n          title: string\n          type: string\n        }\n        Insert: {\n          body: string\n          created_at?: string | null\n          created_by?: string | null\n          expires_at?: string | null\n          id?: string\n          is_active?: boolean | null\n          title: string\n          type?: string\n        }\n        Update: {\n          body?: string\n          created_at?: string | null\n          created_by?: string | null\n          expires_at?: string | null\n          id?: string\n          is_active?: boolean | null\n          title?: string\n          type?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"announcements_created_by_fkey\"\n            columns: [\"created_by\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      blocks: {\n        Row: {\n          blocked_id: string\n          blocker_id: string\n          created_at: string | null\n          id: string\n        }\n        Insert: {\n          blocked_id: string\n          blocker_id: string\n          created_at?: string | null\n          id?: string\n        }\n        Update: {\n          blocked_id?: string\n          blocker_id?: string\n          created_at?: string | null\n          id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"blocks_blocked_id_fkey\"\n            columns: [\"blocked_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"blocks_blocker_id_fkey\"\n            columns: [\"blocker_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      business_locations: {\n        Row: {\n          address: string\n          business_id: string\n          created_at: string\n          id: string\n          is_primary: boolean\n          lat: number\n          lng: number\n          name: string\n          status: string\n          updated_at: string\n        }\n        Insert: {\n          address: string\n          business_id: string\n          created_at?: string\n          id?: string\n          is_primary?: boolean\n          lat?: number\n          lng?: number\n          name?: string\n          status?: string\n          updated_at?: string\n        }\n        Update: {\n          address?: string\n          business_id?: string\n          created_at?: string\n          id?: string\n          is_primary?: boolean\n          lat?: number\n          lng?: number\n          name?: string\n          status?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"business_locations_business_id_fkey\"\n            columns: [\"business_id\"]\n            isOneToOne: false\n            referencedRelation: \"businesses\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      business_verifications: {\n        Row: {\n          additional_doc_paths: string[] | null\n          business_id: string\n          created_at: string\n          id: string\n          id_document_path: string | null\n          operator_selfie_path: string | null\n          registration_doc_path: string | null\n          rejection_notes: string | null\n          reviewed_at: string | null\n          reviewed_by: string | null\n          selfie_with_id_path: string | null\n          status: string\n          submitted_at: string | null\n          updated_at: string\n        }\n        Insert: {\n          additional_doc_paths?: string[] | null\n          business_id: string\n          created_at?: string\n          id?: string\n          id_document_path?: string | null\n          operator_selfie_path?: string | null\n          registration_doc_path?: string | null\n          rejection_notes?: string | null\n          reviewed_at?: string | null\n          reviewed_by?: string | null\n          selfie_with_id_path?: string | null\n          status?: string\n          submitted_at?: string | null\n          updated_at?: string\n        }\n        Update: {\n          additional_doc_paths?: string[] | null\n          business_id?: string\n          created_at?: string\n          id?: string\n          id_document_path?: string | null\n          operator_selfie_path?: string | null\n          registration_doc_path?: string | null\n          rejection_notes?: string | null\n          reviewed_at?: string | null\n          reviewed_by?: string | null\n          selfie_with_id_path?: string | null\n          status?: string\n          submitted_at?: string | null\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"business_verifications_business_id_fkey\"\n            columns: [\"business_id\"]\n            isOneToOne: true\n            referencedRelation: \"businesses\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"business_verifications_reviewed_by_fkey\"\n            columns: [\"reviewed_by\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      business_waitlist: {\n        Row: {\n          business_name: string\n          business_type: string\n          contact_name: string\n          created_at: string\n          email: string\n          id: string\n          message: string | null\n        }\n        Insert: {\n          business_name: string\n          business_type: string\n          contact_name: string\n          created_at?: string\n          email: string\n          id?: string\n          message?: string | null\n        }\n        Update: {\n          business_name?: string\n          business_type?: string\n          contact_name?: string\n          created_at?: string\n          email?: string\n          id?: string\n          message?: string | null\n        }\n        Relationships: []\n      }\n      businesses: {\n        Row: {\n          address: string | null\n          category: string\n          created_at: string\n          description: string | null\n          id: string\n          logo_url: string | null\n          name: string\n          opening_hours: Json | null\n          owner_id: string | null\n          rejection_reason: string | null\n          reviewed_at: string | null\n          reviewed_by: string | null\n          slug: string | null\n          social_links: Json | null\n          status: string\n          updated_at: string\n          verified: boolean\n          verified_at: string | null\n        }\n        Insert: {\n          address?: string | null\n          category?: string\n          created_at?: string\n          description?: string | null\n          id?: string\n          logo_url?: string | null\n          name: string\n          opening_hours?: Json | null\n          owner_id?: string | null\n          rejection_reason?: string | null\n          reviewed_at?: string | null\n          reviewed_by?: string | null\n          slug?: string | null\n          social_links?: Json | null\n          status?: string\n          updated_at?: string\n          verified?: boolean\n          verified_at?: string | null\n        }\n        Update: {\n          address?: string | null\n          category?: string\n          created_at?: string\n          description?: string | null\n          id?: string\n          logo_url?: string | null\n          name?: string\n          opening_hours?: Json | null\n          owner_id?: string | null\n          rejection_reason?: string | null\n          reviewed_at?: string | null\n          reviewed_by?: string | null\n          slug?: string | null\n          social_links?: Json | null\n          status?: string\n          updated_at?: string\n          verified?: boolean\n          verified_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"businesses_owner_id_fkey\"\n            columns: [\"owner_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"businesses_reviewed_by_fkey\"\n            columns: [\"reviewed_by\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      categories: {\n        Row: {\n          created_at: string | null\n          icon: string\n          id: string\n          image: string | null\n          is_active: boolean | null\n          name: string\n          parent_id: string | null\n          sort_order: number | null\n          value: string | null\n        }\n        Insert: {\n          created_at?: string | null\n          icon: string\n          id?: string\n          image?: string | null\n          is_active?: boolean | null\n          name: string\n          parent_id?: string | null\n          sort_order?: number | null\n          value?: string | null\n        }\n        Update: {\n          created_at?: string | null\n          icon?: string\n          id?: string\n          image?: string | null\n          is_active?: boolean | null\n          name?: string\n          parent_id?: string | null\n          sort_order?: number | null\n          value?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"categories_parent_id_fkey\"\n            columns: [\"parent_id\"]\n            isOneToOne: false\n            referencedRelation: \"categories\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      conversations: {\n        Row: {\n          created_at: string | null\n          id: string\n          last_message_at: string | null\n          participant_one: string\n          participant_two: string\n        }\n        Insert: {\n          created_at?: string | null\n          id?: string\n          last_message_at?: string | null\n          participant_one: string\n          participant_two: string\n        }\n        Update: {\n          created_at?: string | null\n          id?: string\n          last_message_at?: string | null\n          participant_one?: string\n          participant_two?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"conversations_participant_one_fkey\"\n            columns: [\"participant_one\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"conversations_participant_two_fkey\"\n            columns: [\"participant_two\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      direct_messages: {\n        Row: {\n          content: string\n          conversation_id: string\n          created_at: string | null\n          id: string\n          message_type: string\n          metadata: Json | null\n          sender_id: string\n        }\n        Insert: {\n          content: string\n          conversation_id: string\n          created_at?: string | null\n          id?: string\n          message_type?: string\n          metadata?: Json | null\n          sender_id: string\n        }\n        Update: {\n          content?: string\n          conversation_id?: string\n          created_at?: string | null\n          id?: string\n          message_type?: string\n          metadata?: Json | null\n          sender_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"direct_messages_conversation_id_fkey\"\n            columns: [\"conversation_id\"]\n            isOneToOne: false\n            referencedRelation: \"conversations\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"direct_messages_sender_id_fkey\"\n            columns: [\"sender_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      event_participants: {\n        Row: {\n          created_at: string | null\n          event_id: string\n          id: string\n          status: Database[\"public\"][\"Enums\"][\"participant_status\"]\n          updated_at: string | null\n          user_id: string\n        }\n        Insert: {\n          created_at?: string | null\n          event_id: string\n          id?: string\n          status?: Database[\"public\"][\"Enums\"][\"participant_status\"]\n          updated_at?: string | null\n          user_id: string\n        }\n        Update: {\n          created_at?: string | null\n          event_id?: string\n          id?: string\n          status?: Database[\"public\"][\"Enums\"][\"participant_status\"]\n          updated_at?: string | null\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"event_participants_event_id_fkey\"\n            columns: [\"event_id\"]\n            isOneToOne: false\n            referencedRelation: \"events\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"event_participants_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      events: {\n        Row: {\n          allow_dms: boolean | null\n          audience: Database[\"public\"][\"Enums\"][\"audience_type\"]\n          business_id: string | null\n          capacity: number\n          category_id: string\n          cover_image_url: string | null\n          created_at: string | null\n          custom_category: string | null\n          description: string | null\n          expires_at: string | null\n          flag_reason: string | null\n          host_id: string\n          id: string\n          is_flagged: boolean | null\n          join_mode: Database[\"public\"][\"Enums\"][\"join_mode\"]\n          location: unknown\n          participant_count: number | null\n          recurrence_rule: string | null\n          search_vector: unknown\n          start_time: string\n          status: Database[\"public\"][\"Enums\"][\"event_status\"] | null\n          title: string\n          venue_address: string\n          venue_lat: number\n          venue_lng: number\n          venue_name: string\n          venue_place_id: string | null\n        }\n        Insert: {\n          allow_dms?: boolean | null\n          audience?: Database[\"public\"][\"Enums\"][\"audience_type\"]\n          business_id?: string | null\n          capacity: number\n          category_id: string\n          cover_image_url?: string | null\n          created_at?: string | null\n          custom_category?: string | null\n          description?: string | null\n          expires_at?: string | null\n          flag_reason?: string | null\n          host_id: string\n          id?: string\n          is_flagged?: boolean | null\n          join_mode?: Database[\"public\"][\"Enums\"][\"join_mode\"]\n          location?: unknown\n          participant_count?: number | null\n          recurrence_rule?: string | null\n          search_vector?: unknown\n          start_time: string\n          status?: Database[\"public\"][\"Enums\"][\"event_status\"] | null\n          title: string\n          venue_address: string\n          venue_lat: number\n          venue_lng: number\n          venue_name: string\n          venue_place_id?: string | null\n        }\n        Update: {\n          allow_dms?: boolean | null\n          audience?: Database[\"public\"][\"Enums\"][\"audience_type\"]\n          business_id?: string | null\n          capacity?: number\n          category_id?: string\n          cover_image_url?: string | null\n          created_at?: string | null\n          custom_category?: string | null\n          description?: string | null\n          expires_at?: string | null\n          flag_reason?: string | null\n          host_id?: string\n          id?: string\n          is_flagged?: boolean | null\n          join_mode?: Database[\"public\"][\"Enums\"][\"join_mode\"]\n          location?: unknown\n          participant_count?: number | null\n          recurrence_rule?: string | null\n          search_vector?: unknown\n          start_time?: string\n          status?: Database[\"public\"][\"Enums\"][\"event_status\"] | null\n          title?: string\n          venue_address?: string\n          venue_lat?: number\n          venue_lng?: number\n          venue_name?: string\n          venue_place_id?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"events_business_id_fkey\"\n            columns: [\"business_id\"]\n            isOneToOne: false\n            referencedRelation: \"businesses\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"events_category_id_fkey\"\n            columns: [\"category_id\"]\n            isOneToOne: false\n            referencedRelation: \"categories\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"events_host_id_fkey\"\n            columns: [\"host_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      feature_flags: {\n        Row: {\n          description: string | null\n          id: string\n          is_enabled: boolean | null\n          key: string\n          updated_at: string | null\n          updated_by: string | null\n        }\n        Insert: {\n          description?: string | null\n          id?: string\n          is_enabled?: boolean | null\n          key: string\n          updated_at?: string | null\n          updated_by?: string | null\n        }\n        Update: {\n          description?: string | null\n          id?: string\n          is_enabled?: boolean | null\n          key?: string\n          updated_at?: string | null\n          updated_by?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"feature_flags_updated_by_fkey\"\n            columns: [\"updated_by\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      feedback: {\n        Row: {\n          admin_notes: string | null\n          body: string\n          created_at: string | null\n          id: string\n          status: string\n          subject: string\n          type: string\n          user_id: string\n        }\n        Insert: {\n          admin_notes?: string | null\n          body: string\n          created_at?: string | null\n          id?: string\n          status?: string\n          subject: string\n          type?: string\n          user_id: string\n        }\n        Update: {\n          admin_notes?: string | null\n          body?: string\n          created_at?: string | null\n          id?: string\n          status?: string\n          subject?: string\n          type?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"feedback_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      follows: {\n        Row: {\n          created_at: string | null\n          followed_id: string\n          follower_id: string\n          id: string\n        }\n        Insert: {\n          created_at?: string | null\n          followed_id: string\n          follower_id: string\n          id?: string\n        }\n        Update: {\n          created_at?: string | null\n          followed_id?: string\n          follower_id?: string\n          id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"follows_followed_id_fkey\"\n            columns: [\"followed_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"follows_follower_id_fkey\"\n            columns: [\"follower_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      guest_reviews: {\n        Row: {\n          comment: string | null\n          created_at: string | null\n          dispute_reason: string | null\n          disputed_at: string | null\n          disputed_by: string | null\n          event_id: string\n          guest_id: string\n          guest_rating: number\n          guest_replied_at: string | null\n          guest_reply: string | null\n          host_id: string\n          id: string\n          is_disputed: boolean\n        }\n        Insert: {\n          comment?: string | null\n          created_at?: string | null\n          dispute_reason?: string | null\n          disputed_at?: string | null\n          disputed_by?: string | null\n          event_id: string\n          guest_id: string\n          guest_rating: number\n          guest_replied_at?: string | null\n          guest_reply?: string | null\n          host_id: string\n          id?: string\n          is_disputed?: boolean\n        }\n        Update: {\n          comment?: string | null\n          created_at?: string | null\n          dispute_reason?: string | null\n          disputed_at?: string | null\n          disputed_by?: string | null\n          event_id?: string\n          guest_id?: string\n          guest_rating?: number\n          guest_replied_at?: string | null\n          guest_reply?: string | null\n          host_id?: string\n          id?: string\n          is_disputed?: boolean\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"guest_reviews_disputed_by_fkey\"\n            columns: [\"disputed_by\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"guest_reviews_event_id_fkey\"\n            columns: [\"event_id\"]\n            isOneToOne: false\n            referencedRelation: \"events\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"guest_reviews_guest_id_fkey\"\n            columns: [\"guest_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"guest_reviews_host_id_fkey\"\n            columns: [\"host_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      host_reviews: {\n        Row: {\n          comment: string | null\n          created_at: string | null\n          dispute_reason: string | null\n          disputed_at: string | null\n          disputed_by: string | null\n          event_id: string\n          event_rating: number\n          guest_id: string\n          host_rating: number\n          host_replied_at: string | null\n          host_reply: string | null\n          id: string\n          is_disputed: boolean\n        }\n        Insert: {\n          comment?: string | null\n          created_at?: string | null\n          dispute_reason?: string | null\n          disputed_at?: string | null\n          disputed_by?: string | null\n          event_id: string\n          event_rating: number\n          guest_id: string\n          host_rating: number\n          host_replied_at?: string | null\n          host_reply?: string | null\n          id?: string\n          is_disputed?: boolean\n        }\n        Update: {\n          comment?: string | null\n          created_at?: string | null\n          dispute_reason?: string | null\n          disputed_at?: string | null\n          disputed_by?: string | null\n          event_id?: string\n          event_rating?: number\n          guest_id?: string\n          host_rating?: number\n          host_replied_at?: string | null\n          host_reply?: string | null\n          id?: string\n          is_disputed?: boolean\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"host_reviews_disputed_by_fkey\"\n            columns: [\"disputed_by\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"host_reviews_event_id_fkey\"\n            columns: [\"event_id\"]\n            isOneToOne: false\n            referencedRelation: \"events\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"host_reviews_guest_id_fkey\"\n            columns: [\"guest_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      messages: {\n        Row: {\n          content: string\n          created_at: string | null\n          event_id: string\n          id: string\n          sender_id: string\n        }\n        Insert: {\n          content: string\n          created_at?: string | null\n          event_id: string\n          id?: string\n          sender_id: string\n        }\n        Update: {\n          content?: string\n          created_at?: string | null\n          event_id?: string\n          id?: string\n          sender_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"messages_event_id_fkey\"\n            columns: [\"event_id\"]\n            isOneToOne: false\n            referencedRelation: \"events\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"messages_sender_id_fkey\"\n            columns: [\"sender_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      notifications: {\n        Row: {\n          body: string\n          created_at: string | null\n          data: Json | null\n          id: string\n          is_read: boolean | null\n          title: string\n          type: string\n          user_id: string\n        }\n        Insert: {\n          body: string\n          created_at?: string | null\n          data?: Json | null\n          id?: string\n          is_read?: boolean | null\n          title: string\n          type: string\n          user_id: string\n        }\n        Update: {\n          body?: string\n          created_at?: string | null\n          data?: Json | null\n          id?: string\n          is_read?: boolean | null\n          title?: string\n          type?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"notifications_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      profiles: {\n        Row: {\n          account_type: string\n          avatar_url: string | null\n          bio: string | null\n          created_at: string | null\n          dob: string\n          email: string\n          first_name: string\n          flag_reason: string | null\n          gender: Database[\"public\"][\"Enums\"][\"user_gender\"]\n          id: string\n          is_flagged: boolean | null\n          is_ghost_mode: boolean | null\n          is_women_only_mode: boolean | null\n          last_lat: number | null\n          last_lng: number | null\n          notification_preferences: Json | null\n          role: Database[\"public\"][\"Enums\"][\"user_role\"] | null\n          settings_radius: number | null\n          status: Database[\"public\"][\"Enums\"][\"user_status\"] | null\n          suspended_until: string | null\n          suspension_reason: string | null\n          tags: string[] | null\n          terms_accepted_at: string | null\n          updated_at: string | null\n          welcomed_at: string | null\n        }\n        Insert: {\n          account_type?: string\n          avatar_url?: string | null\n          bio?: string | null\n          created_at?: string | null\n          dob?: string\n          email: string\n          first_name?: string\n          flag_reason?: string | null\n          gender?: Database[\"public\"][\"Enums\"][\"user_gender\"]\n          id: string\n          is_flagged?: boolean | null\n          is_ghost_mode?: boolean | null\n          is_women_only_mode?: boolean | null\n          last_lat?: number | null\n          last_lng?: number | null\n          notification_preferences?: Json | null\n          role?: Database[\"public\"][\"Enums\"][\"user_role\"] | null\n          settings_radius?: number | null\n          status?: Database[\"public\"][\"Enums\"][\"user_status\"] | null\n          suspended_until?: string | null\n          suspension_reason?: string | null\n          tags?: string[] | null\n          terms_accepted_at?: string | null\n          updated_at?: string | null\n          welcomed_at?: string | null\n        }\n        Update: {\n          account_type?: string\n          avatar_url?: string | null\n          bio?: string | null\n          created_at?: string | null\n          dob?: string\n          email?: string\n          first_name?: string\n          flag_reason?: string | null\n          gender?: Database[\"public\"][\"Enums\"][\"user_gender\"]\n          id?: string\n          is_flagged?: boolean | null\n          is_ghost_mode?: boolean | null\n          is_women_only_mode?: boolean | null\n          last_lat?: number | null\n          last_lng?: number | null\n          notification_preferences?: Json | null\n          role?: Database[\"public\"][\"Enums\"][\"user_role\"] | null\n          settings_radius?: number | null\n          status?: Database[\"public\"][\"Enums\"][\"user_status\"] | null\n          suspended_until?: string | null\n          suspension_reason?: string | null\n          tags?: string[] | null\n          terms_accepted_at?: string | null\n          updated_at?: string | null\n          welcomed_at?: string | null\n        }\n        Relationships: []\n      }\n      push_subscriptions: {\n        Row: {\n          auth: string\n          created_at: string | null\n          endpoint: string\n          id: string\n          p256dh: string\n          user_id: string\n        }\n        Insert: {\n          auth: string\n          created_at?: string | null\n          endpoint: string\n          id?: string\n          p256dh: string\n          user_id: string\n        }\n        Update: {\n          auth?: string\n          created_at?: string | null\n          endpoint?: string\n          id?: string\n          p256dh?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"push_subscriptions_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      reports: {\n        Row: {\n          admin_notes: string | null\n          created_at: string | null\n          details: string | null\n          dm_message_id: string | null\n          event_id: string | null\n          guest_review_id: string | null\n          host_review_id: string | null\n          id: string\n          message_id: string | null\n          reason: string\n          reported_user_id: string\n          reporter_id: string\n          reviewed_at: string | null\n          reviewed_by: string | null\n          status: Database[\"public\"][\"Enums\"][\"report_status\"] | null\n        }\n        Insert: {\n          admin_notes?: string | null\n          created_at?: string | null\n          details?: string | null\n          dm_message_id?: string | null\n          event_id?: string | null\n          guest_review_id?: string | null\n          host_review_id?: string | null\n          id?: string\n          message_id?: string | null\n          reason: string\n          reported_user_id: string\n          reporter_id: string\n          reviewed_at?: string | null\n          reviewed_by?: string | null\n          status?: Database[\"public\"][\"Enums\"][\"report_status\"] | null\n        }\n        Update: {\n          admin_notes?: string | null\n          created_at?: string | null\n          details?: string | null\n          dm_message_id?: string | null\n          event_id?: string | null\n          guest_review_id?: string | null\n          host_review_id?: string | null\n          id?: string\n          message_id?: string | null\n          reason?: string\n          reported_user_id?: string\n          reporter_id?: string\n          reviewed_at?: string | null\n          reviewed_by?: string | null\n          status?: Database[\"public\"][\"Enums\"][\"report_status\"] | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"reports_dm_message_id_fkey\"\n            columns: [\"dm_message_id\"]\n            isOneToOne: false\n            referencedRelation: \"direct_messages\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"reports_event_id_fkey\"\n            columns: [\"event_id\"]\n            isOneToOne: false\n            referencedRelation: \"events\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"reports_guest_review_id_fkey\"\n            columns: [\"guest_review_id\"]\n            isOneToOne: false\n            referencedRelation: \"guest_reviews\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"reports_host_review_id_fkey\"\n            columns: [\"host_review_id\"]\n            isOneToOne: false\n            referencedRelation: \"host_reviews\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"reports_message_id_fkey\"\n            columns: [\"message_id\"]\n            isOneToOne: false\n            referencedRelation: \"messages\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"reports_reported_user_id_fkey\"\n            columns: [\"reported_user_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"reports_reporter_id_fkey\"\n            columns: [\"reporter_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"reports_reviewed_by_fkey\"\n            columns: [\"reviewed_by\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      saved_events: {\n        Row: {\n          created_at: string | null\n          event_id: string\n          id: string\n          user_id: string\n        }\n        Insert: {\n          created_at?: string | null\n          event_id: string\n          id?: string\n          user_id: string\n        }\n        Update: {\n          created_at?: string | null\n          event_id?: string\n          id?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"saved_events_event_id_fkey\"\n            columns: [\"event_id\"]\n            isOneToOne: false\n            referencedRelation: \"events\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"saved_events_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      spatial_ref_sys: {\n        Row: {\n          auth_name: string | null\n          auth_srid: number | null\n          proj4text: string | null\n          srid: number\n          srtext: string | null\n        }\n        Insert: {\n          auth_name?: string | null\n          auth_srid?: number | null\n          proj4text?: string | null\n          srid: number\n          srtext?: string | null\n        }\n        Update: {\n          auth_name?: string | null\n          auth_srid?: number | null\n          proj4text?: string | null\n          srid?: number\n          srtext?: string | null\n        }\n        Relationships: []\n      }\n      voucher_redemptions: {\n        Row: {\n          id: string\n          redeemed_at: string\n          user_id: string\n          voucher_id: string\n        }\n        Insert: {\n          id?: string\n          redeemed_at?: string\n          user_id: string\n          voucher_id: string\n        }\n        Update: {\n          id?: string\n          redeemed_at?: string\n          user_id?: string\n          voucher_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"voucher_redemptions_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"profiles\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"voucher_redemptions_voucher_id_fkey\"\n            columns: [\"voucher_id\"]\n            isOneToOne: false\n            referencedRelation: \"vouchers\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      vouchers: {\n        Row: {\n          business_id: string | null\n          category_id: string | null\n          cover_image_url: string | null\n          created_at: string\n          description: string | null\n          discount_text: string\n          discounted_price: number | null\n          expires_at: string\n          id: string\n          location_id: string | null\n          original_price: number | null\n          redemption_code: string | null\n          redemption_count: number\n          redemption_limit: number | null\n          status: string\n          terms: string | null\n          title: string\n          venue_address: string\n          venue_lat: number\n          venue_lng: number\n          venue_name: string\n        }\n        Insert: {\n          business_id?: string | null\n          category_id?: string | null\n          cover_image_url?: string | null\n          created_at?: string\n          description?: string | null\n          discount_text: string\n          discounted_price?: number | null\n          expires_at: string\n          id?: string\n          location_id?: string | null\n          original_price?: number | null\n          redemption_code?: string | null\n          redemption_count?: number\n          redemption_limit?: number | null\n          status?: string\n          terms?: string | null\n          title: string\n          venue_address: string\n          venue_lat: number\n          venue_lng: number\n          venue_name: string\n        }\n        Update: {\n          business_id?: string | null\n          category_id?: string | null\n          cover_image_url?: string | null\n          created_at?: string\n          description?: string | null\n          discount_text?: string\n          discounted_price?: number | null\n          expires_at?: string\n          id?: string\n          location_id?: string | null\n          original_price?: number | null\n          redemption_code?: string | null\n          redemption_count?: number\n          redemption_limit?: number | null\n          status?: string\n          terms?: string | null\n          title?: string\n          venue_address?: string\n          venue_lat?: number\n          venue_lng?: number\n          venue_name?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"vouchers_category_id_fkey\"\n            columns: [\"category_id\"]\n            isOneToOne: false\n            referencedRelation: \"categories\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"vouchers_location_id_fkey\"\n            columns: [\"location_id\"]\n            isOneToOne: false\n            referencedRelation: \"business_locations\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"vouchers_new_business_id_fkey\"\n            columns: [\"business_id\"]\n            isOneToOne: false\n            referencedRelation: \"businesses\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      waitlist: {\n        Row: {\n          created_at: string | null\n          email: string\n          id: string\n          name: string\n        }\n        Insert: {\n          created_at?: string | null\n          email: string\n          id?: string\n          name: string\n        }\n        Update: {\n          created_at?: string | null\n          email?: string\n          id?: string\n          name?: string\n        }\n        Relationships: []\n      }\n    }\n    Views: {\n      geography_columns: {\n        Row: {\n          coord_dimension: number | null\n          f_geography_column: unknown\n          f_table_catalog: unknown\n          f_table_name: unknown\n          f_table_schema: unknown\n          srid: number | null\n          type: string | null\n        }\n        Relationships: []\n      }\n      geometry_columns: {\n        Row: {\n          coord_dimension: number | null\n          f_geometry_column: unknown\n          f_table_catalog: string | null\n          f_table_name: unknown\n          f_table_schema: unknown\n          srid: number | null\n          type: string | null\n        }\n        Insert: {\n          coord_dimension?: number | null\n          f_geometry_column?: unknown\n          f_table_catalog?: string | null\n          f_table_name?: unknown\n          f_table_schema?: unknown\n          srid?: number | null\n          type?: string | null\n        }\n        Update: {\n          coord_dimension?: number | null\n          f_geometry_column?: unknown\n          f_table_catalog?: string | null\n          f_table_name?: unknown\n          f_table_schema?: unknown\n          srid?: number | null\n          type?: string | null\n        }\n        Relationships: []\n      }\n    }\n    Functions: {\n      _postgis_deprecate: {\n        Args: { newname: string; oldname: string; version: string }\n        Returns: undefined\n      }\n      _postgis_index_extent: {\n        Args: { col: string; tbl: unknown }\n        Returns: unknown\n      }\n      _postgis_pgsql_version: { Args: never; Returns: string }\n      _postgis_scripts_pgsql_version: { Args: never; Returns: string }\n      _postgis_selectivity: {\n        Args: { att_name: string; geom: unknown; mode?: string; tbl: unknown }\n        Returns: number\n      }\n      _postgis_stats: {\n        Args: { \"\"?: string; att_name: string; tbl: unknown }\n        Returns: string\n      }\n      _st_3dintersects: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_contains: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_containsproperly: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_coveredby:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      _st_covers:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      _st_crosses: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_dwithin: {\n        Args: {\n          geog1: unknown\n          geog2: unknown\n          tolerance: number\n          use_spheroid?: boolean\n        }\n        Returns: boolean\n      }\n      _st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      _st_intersects: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_linecrossingdirection: {\n        Args: { line1: unknown; line2: unknown }\n        Returns: number\n      }\n      _st_longestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      _st_maxdistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      _st_orderingequals: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_overlaps: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_sortablehash: { Args: { geom: unknown }; Returns: number }\n      _st_touches: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      _st_voronoi: {\n        Args: {\n          clip?: unknown\n          g1: unknown\n          return_polygons?: boolean\n          tolerance?: number\n        }\n        Returns: unknown\n      }\n      _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      addauth: { Args: { \"\": string }; Returns: boolean }\n      addgeometrycolumn:\n        | {\n            Args: {\n              catalog_name: string\n              column_name: string\n              new_dim: number\n              new_srid_in: number\n              new_type: string\n              schema_name: string\n              table_name: string\n              use_typmod?: boolean\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              column_name: string\n              new_dim: number\n              new_srid: number\n              new_type: string\n              schema_name: string\n              table_name: string\n              use_typmod?: boolean\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              column_name: string\n              new_dim: number\n              new_srid: number\n              new_type: string\n              table_name: string\n              use_typmod?: boolean\n            }\n            Returns: string\n          }\n      calculate_age: { Args: { birth_date: string }; Returns: number }\n      create_notification: {\n        Args: {\n          p_body: string\n          p_data?: Json\n          p_title: string\n          p_type: string\n          p_user_id: string\n        }\n        Returns: {\n          body: string\n          created_at: string | null\n          data: Json | null\n          id: string\n          is_read: boolean | null\n          title: string\n          type: string\n          user_id: string\n        }\n        SetofOptions: {\n          from: \"*\"\n          to: \"notifications\"\n          isOneToOne: true\n          isSetofReturn: false\n        }\n      }\n      delete_user_account: {\n        Args: { target_user_id: string }\n        Returns: undefined\n      }\n      disablelongtransactions: { Args: never; Returns: string }\n      dropgeometrycolumn:\n        | {\n            Args: {\n              catalog_name: string\n              column_name: string\n              schema_name: string\n              table_name: string\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              column_name: string\n              schema_name: string\n              table_name: string\n            }\n            Returns: string\n          }\n        | { Args: { column_name: string; table_name: string }; Returns: string }\n      dropgeometrytable:\n        | {\n            Args: {\n              catalog_name: string\n              schema_name: string\n              table_name: string\n            }\n            Returns: string\n          }\n        | { Args: { schema_name: string; table_name: string }; Returns: string }\n        | { Args: { table_name: string }; Returns: string }\n      enablelongtransactions: { Args: never; Returns: string }\n      equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      expire_past_events: { Args: never; Returns: number }\n      geometry: { Args: { \"\": string }; Returns: unknown }\n      geometry_above: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_below: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_cmp: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      geometry_contained_3d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_contains: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_contains_3d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_distance_box: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      geometry_distance_centroid: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      geometry_eq: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_ge: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_gt: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_le: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_left: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_lt: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overabove: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overbelow: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overlaps: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overlaps_3d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overleft: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_overright: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_right: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_same: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_same_3d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geometry_within: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      geomfromewkt: { Args: { \"\": string }; Returns: unknown }\n      gettransactionid: { Args: never; Returns: unknown }\n      is_admin: { Args: never; Returns: boolean }\n      is_blocked: { Args: { check_user_id: string }; Returns: boolean }\n      longtransactionsenabled: { Args: never; Returns: boolean }\n      my_upcoming_events: {\n        Args: never\n        Returns: {\n          id: string\n          is_host: boolean\n          participant_status: Database[\"public\"][\"Enums\"][\"participant_status\"]\n          start_time: string\n          title: string\n          venue_name: string\n        }[]\n      }\n      nearby_events: {\n        Args: {\n          limit_count?: number\n          radius_km?: number\n          user_lat: number\n          user_lng: number\n        }\n        Returns: {\n          audience: Database[\"public\"][\"Enums\"][\"audience_type\"]\n          capacity: number\n          category_id: string\n          description: string\n          distance_km: number\n          host_id: string\n          id: string\n          join_mode: Database[\"public\"][\"Enums\"][\"join_mode\"]\n          participant_count: number\n          start_time: string\n          status: Database[\"public\"][\"Enums\"][\"event_status\"]\n          title: string\n          venue_address: string\n          venue_lat: number\n          venue_lng: number\n          venue_name: string\n        }[]\n      }\n      populate_geometry_columns:\n        | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }\n        | { Args: { use_typmod?: boolean }; Returns: string }\n      postgis_constraint_dims: {\n        Args: { geomcolumn: string; geomschema: string; geomtable: string }\n        Returns: number\n      }\n      postgis_constraint_srid: {\n        Args: { geomcolumn: string; geomschema: string; geomtable: string }\n        Returns: number\n      }\n      postgis_constraint_type: {\n        Args: { geomcolumn: string; geomschema: string; geomtable: string }\n        Returns: string\n      }\n      postgis_extensions_upgrade: { Args: never; Returns: string }\n      postgis_full_version: { Args: never; Returns: string }\n      postgis_geos_version: { Args: never; Returns: string }\n      postgis_lib_build_date: { Args: never; Returns: string }\n      postgis_lib_revision: { Args: never; Returns: string }\n      postgis_lib_version: { Args: never; Returns: string }\n      postgis_libjson_version: { Args: never; Returns: string }\n      postgis_liblwgeom_version: { Args: never; Returns: string }\n      postgis_libprotobuf_version: { Args: never; Returns: string }\n      postgis_libxml_version: { Args: never; Returns: string }\n      postgis_proj_version: { Args: never; Returns: string }\n      postgis_scripts_build_date: { Args: never; Returns: string }\n      postgis_scripts_installed: { Args: never; Returns: string }\n      postgis_scripts_released: { Args: never; Returns: string }\n      postgis_svn_version: { Args: never; Returns: string }\n      postgis_type_name: {\n        Args: {\n          coord_dimension: number\n          geomname: string\n          use_new_name?: boolean\n        }\n        Returns: string\n      }\n      postgis_version: { Args: never; Returns: string }\n      postgis_wagyu_version: { Args: never; Returns: string }\n      search_events: {\n        Args: { max_results?: number; search_query: string }\n        Returns: {\n          category_name: string\n          event_id: string\n          rank: number\n          title: string\n          venue_name: string\n        }[]\n      }\n      send_event_reminders: { Args: never; Returns: number }\n      st_3dclosestpoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_3ddistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_3dintersects: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_3dlongestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_3dmakebox: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_3dmaxdistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_3dshortestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_addpoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_angle:\n        | { Args: { line1: unknown; line2: unknown }; Returns: number }\n        | {\n            Args: { pt1: unknown; pt2: unknown; pt3: unknown; pt4?: unknown }\n            Returns: number\n          }\n      st_area:\n        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }\n        | { Args: { \"\": string }; Returns: number }\n      st_asencodedpolyline: {\n        Args: { geom: unknown; nprecision?: number }\n        Returns: string\n      }\n      st_asewkt: { Args: { \"\": string }; Returns: string }\n      st_asgeojson:\n        | {\n            Args: { geog: unknown; maxdecimaldigits?: number; options?: number }\n            Returns: string\n          }\n        | {\n            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }\n            Returns: string\n          }\n        | {\n            Args: {\n              geom_column?: string\n              maxdecimaldigits?: number\n              pretty_bool?: boolean\n              r: Record<string, unknown>\n            }\n            Returns: string\n          }\n        | { Args: { \"\": string }; Returns: string }\n      st_asgml:\n        | {\n            Args: {\n              geog: unknown\n              id?: string\n              maxdecimaldigits?: number\n              nprefix?: string\n              options?: number\n            }\n            Returns: string\n          }\n        | {\n            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }\n            Returns: string\n          }\n        | { Args: { \"\": string }; Returns: string }\n        | {\n            Args: {\n              geog: unknown\n              id?: string\n              maxdecimaldigits?: number\n              nprefix?: string\n              options?: number\n              version: number\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              geom: unknown\n              id?: string\n              maxdecimaldigits?: number\n              nprefix?: string\n              options?: number\n              version: number\n            }\n            Returns: string\n          }\n      st_askml:\n        | {\n            Args: { geog: unknown; maxdecimaldigits?: number; nprefix?: string }\n            Returns: string\n          }\n        | {\n            Args: { geom: unknown; maxdecimaldigits?: number; nprefix?: string }\n            Returns: string\n          }\n        | { Args: { \"\": string }; Returns: string }\n      st_aslatlontext: {\n        Args: { geom: unknown; tmpl?: string }\n        Returns: string\n      }\n      st_asmarc21: { Args: { format?: string; geom: unknown }; Returns: string }\n      st_asmvtgeom: {\n        Args: {\n          bounds: unknown\n          buffer?: number\n          clip_geom?: boolean\n          extent?: number\n          geom: unknown\n        }\n        Returns: unknown\n      }\n      st_assvg:\n        | {\n            Args: { geog: unknown; maxdecimaldigits?: number; rel?: number }\n            Returns: string\n          }\n        | {\n            Args: { geom: unknown; maxdecimaldigits?: number; rel?: number }\n            Returns: string\n          }\n        | { Args: { \"\": string }; Returns: string }\n      st_astext: { Args: { \"\": string }; Returns: string }\n      st_astwkb:\n        | {\n            Args: {\n              geom: unknown\n              prec?: number\n              prec_m?: number\n              prec_z?: number\n              with_boxes?: boolean\n              with_sizes?: boolean\n            }\n            Returns: string\n          }\n        | {\n            Args: {\n              geom: unknown[]\n              ids: number[]\n              prec?: number\n              prec_m?: number\n              prec_z?: number\n              with_boxes?: boolean\n              with_sizes?: boolean\n            }\n            Returns: string\n          }\n      st_asx3d: {\n        Args: { geom: unknown; maxdecimaldigits?: number; options?: number }\n        Returns: string\n      }\n      st_azimuth:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: number }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }\n      st_boundingdiagonal: {\n        Args: { fits?: boolean; geom: unknown }\n        Returns: unknown\n      }\n      st_buffer:\n        | {\n            Args: { geom: unknown; options?: string; radius: number }\n            Returns: unknown\n          }\n        | {\n            Args: { geom: unknown; quadsegs: number; radius: number }\n            Returns: unknown\n          }\n      st_centroid: { Args: { \"\": string }; Returns: unknown }\n      st_clipbybox2d: {\n        Args: { box: unknown; geom: unknown }\n        Returns: unknown\n      }\n      st_closestpoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_collect: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }\n      st_concavehull: {\n        Args: {\n          param_allow_holes?: boolean\n          param_geom: unknown\n          param_pctconvex: number\n        }\n        Returns: unknown\n      }\n      st_contains: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_containsproperly: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_coorddim: { Args: { geometry: unknown }; Returns: number }\n      st_coveredby:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_covers:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_crosses: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_curvetoline: {\n        Args: { flags?: number; geom: unknown; tol?: number; toltype?: number }\n        Returns: unknown\n      }\n      st_delaunaytriangles: {\n        Args: { flags?: number; g1: unknown; tolerance?: number }\n        Returns: unknown\n      }\n      st_difference: {\n        Args: { geom1: unknown; geom2: unknown; gridsize?: number }\n        Returns: unknown\n      }\n      st_disjoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_distance:\n        | {\n            Args: { geog1: unknown; geog2: unknown; use_spheroid?: boolean }\n            Returns: number\n          }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }\n      st_distancesphere:\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }\n        | {\n            Args: { geom1: unknown; geom2: unknown; radius: number }\n            Returns: number\n          }\n      st_distancespheroid: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_dwithin: {\n        Args: {\n          geog1: unknown\n          geog2: unknown\n          tolerance: number\n          use_spheroid?: boolean\n        }\n        Returns: boolean\n      }\n      st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_expand:\n        | { Args: { box: unknown; dx: number; dy: number }; Returns: unknown }\n        | {\n            Args: { box: unknown; dx: number; dy: number; dz?: number }\n            Returns: unknown\n          }\n        | {\n            Args: {\n              dm?: number\n              dx: number\n              dy: number\n              dz?: number\n              geom: unknown\n            }\n            Returns: unknown\n          }\n      st_force3d: { Args: { geom: unknown; zvalue?: number }; Returns: unknown }\n      st_force3dm: {\n        Args: { geom: unknown; mvalue?: number }\n        Returns: unknown\n      }\n      st_force3dz: {\n        Args: { geom: unknown; zvalue?: number }\n        Returns: unknown\n      }\n      st_force4d: {\n        Args: { geom: unknown; mvalue?: number; zvalue?: number }\n        Returns: unknown\n      }\n      st_generatepoints:\n        | { Args: { area: unknown; npoints: number }; Returns: unknown }\n        | {\n            Args: { area: unknown; npoints: number; seed: number }\n            Returns: unknown\n          }\n      st_geogfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_geographyfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_geohash:\n        | { Args: { geog: unknown; maxchars?: number }; Returns: string }\n        | { Args: { geom: unknown; maxchars?: number }; Returns: string }\n      st_geomcollfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_geometricmedian: {\n        Args: {\n          fail_if_not_converged?: boolean\n          g: unknown\n          max_iter?: number\n          tolerance?: number\n        }\n        Returns: unknown\n      }\n      st_geometryfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_geomfromewkt: { Args: { \"\": string }; Returns: unknown }\n      st_geomfromgeojson:\n        | { Args: { \"\": Json }; Returns: unknown }\n        | { Args: { \"\": Json }; Returns: unknown }\n        | { Args: { \"\": string }; Returns: unknown }\n      st_geomfromgml: { Args: { \"\": string }; Returns: unknown }\n      st_geomfromkml: { Args: { \"\": string }; Returns: unknown }\n      st_geomfrommarc21: { Args: { marc21xml: string }; Returns: unknown }\n      st_geomfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_gmltosql: { Args: { \"\": string }; Returns: unknown }\n      st_hasarc: { Args: { geometry: unknown }; Returns: boolean }\n      st_hausdorffdistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_hexagon: {\n        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }\n        Returns: unknown\n      }\n      st_hexagongrid: {\n        Args: { bounds: unknown; size: number }\n        Returns: Record<string, unknown>[]\n      }\n      st_interpolatepoint: {\n        Args: { line: unknown; point: unknown }\n        Returns: number\n      }\n      st_intersection: {\n        Args: { geom1: unknown; geom2: unknown; gridsize?: number }\n        Returns: unknown\n      }\n      st_intersects:\n        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_isvaliddetail: {\n        Args: { flags?: number; geom: unknown }\n        Returns: Database[\"public\"][\"CompositeTypes\"][\"valid_detail\"]\n        SetofOptions: {\n          from: \"*\"\n          to: \"valid_detail\"\n          isOneToOne: true\n          isSetofReturn: false\n        }\n      }\n      st_length:\n        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }\n        | { Args: { \"\": string }; Returns: number }\n      st_letters: { Args: { font?: Json; letters: string }; Returns: unknown }\n      st_linecrossingdirection: {\n        Args: { line1: unknown; line2: unknown }\n        Returns: number\n      }\n      st_linefromencodedpolyline: {\n        Args: { nprecision?: number; txtin: string }\n        Returns: unknown\n      }\n      st_linefromtext: { Args: { \"\": string }; Returns: unknown }\n      st_linelocatepoint: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_linetocurve: { Args: { geometry: unknown }; Returns: unknown }\n      st_locatealong: {\n        Args: { geometry: unknown; leftrightoffset?: number; measure: number }\n        Returns: unknown\n      }\n      st_locatebetween: {\n        Args: {\n          frommeasure: number\n          geometry: unknown\n          leftrightoffset?: number\n          tomeasure: number\n        }\n        Returns: unknown\n      }\n      st_locatebetweenelevations: {\n        Args: { fromelevation: number; geometry: unknown; toelevation: number }\n        Returns: unknown\n      }\n      st_longestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_makebox2d: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_makeline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_makevalid: {\n        Args: { geom: unknown; params: string }\n        Returns: unknown\n      }\n      st_maxdistance: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: number\n      }\n      st_minimumboundingcircle: {\n        Args: { inputgeom: unknown; segs_per_quarter?: number }\n        Returns: unknown\n      }\n      st_mlinefromtext: { Args: { \"\": string }; Returns: unknown }\n      st_mpointfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_mpolyfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_multilinestringfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_multipointfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_multipolygonfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_node: { Args: { g: unknown }; Returns: unknown }\n      st_normalize: { Args: { geom: unknown }; Returns: unknown }\n      st_offsetcurve: {\n        Args: { distance: number; line: unknown; params?: string }\n        Returns: unknown\n      }\n      st_orderingequals: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_overlaps: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: boolean\n      }\n      st_perimeter: {\n        Args: { geog: unknown; use_spheroid?: boolean }\n        Returns: number\n      }\n      st_pointfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_pointm: {\n        Args: {\n          mcoordinate: number\n          srid?: number\n          xcoordinate: number\n          ycoordinate: number\n        }\n        Returns: unknown\n      }\n      st_pointz: {\n        Args: {\n          srid?: number\n          xcoordinate: number\n          ycoordinate: number\n          zcoordinate: number\n        }\n        Returns: unknown\n      }\n      st_pointzm: {\n        Args: {\n          mcoordinate: number\n          srid?: number\n          xcoordinate: number\n          ycoordinate: number\n          zcoordinate: number\n        }\n        Returns: unknown\n      }\n      st_polyfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_polygonfromtext: { Args: { \"\": string }; Returns: unknown }\n      st_project: {\n        Args: { azimuth: number; distance: number; geog: unknown }\n        Returns: unknown\n      }\n      st_quantizecoordinates: {\n        Args: {\n          g: unknown\n          prec_m?: number\n          prec_x: number\n          prec_y?: number\n          prec_z?: number\n        }\n        Returns: unknown\n      }\n      st_reduceprecision: {\n        Args: { geom: unknown; gridsize: number }\n        Returns: unknown\n      }\n      st_relate: { Args: { geom1: unknown; geom2: unknown }; Returns: string }\n      st_removerepeatedpoints: {\n        Args: { geom: unknown; tolerance?: number }\n        Returns: unknown\n      }\n      st_segmentize: {\n        Args: { geog: unknown; max_segment_length: number }\n        Returns: unknown\n      }\n      st_setsrid:\n        | { Args: { geog: unknown; srid: number }; Returns: unknown }\n        | { Args: { geom: unknown; srid: number }; Returns: unknown }\n      st_sharedpaths: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_shortestline: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_simplifypolygonhull: {\n        Args: { geom: unknown; is_outer?: boolean; vertex_fraction: number }\n        Returns: unknown\n      }\n      st_split: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }\n      st_square: {\n        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }\n        Returns: unknown\n      }\n      st_squaregrid: {\n        Args: { bounds: unknown; size: number }\n        Returns: Record<string, unknown>[]\n      }\n      st_srid:\n        | { Args: { geog: unknown }; Returns: number }\n        | { Args: { geom: unknown }; Returns: number }\n      st_subdivide: {\n        Args: { geom: unknown; gridsize?: number; maxvertices?: number }\n        Returns: unknown[]\n      }\n      st_swapordinates: {\n        Args: { geom: unknown; ords: unknown }\n        Returns: unknown\n      }\n      st_symdifference: {\n        Args: { geom1: unknown; geom2: unknown; gridsize?: number }\n        Returns: unknown\n      }\n      st_symmetricdifference: {\n        Args: { geom1: unknown; geom2: unknown }\n        Returns: unknown\n      }\n      st_tileenvelope: {\n        Args: {\n          bounds?: unknown\n          margin?: number\n          x: number\n          y: number\n          zoom: number\n        }\n        Returns: unknown\n      }\n      st_touches: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_transform:\n        | {\n            Args: { from_proj: string; geom: unknown; to_proj: string }\n            Returns: unknown\n          }\n        | {\n            Args: { from_proj: string; geom: unknown; to_srid: number }\n            Returns: unknown\n          }\n        | { Args: { geom: unknown; to_proj: string }; Returns: unknown }\n      st_triangulatepolygon: { Args: { g1: unknown }; Returns: unknown }\n      st_union:\n        | { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }\n        | {\n            Args: { geom1: unknown; geom2: unknown; gridsize: number }\n            Returns: unknown\n          }\n      st_voronoilines: {\n        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }\n        Returns: unknown\n      }\n      st_voronoipolygons: {\n        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }\n        Returns: unknown\n      }\n      st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }\n      st_wkbtosql: { Args: { wkb: string }; Returns: unknown }\n      st_wkttosql: { Args: { \"\": string }; Returns: unknown }\n      st_wrapx: {\n        Args: { geom: unknown; move: number; wrap: number }\n        Returns: unknown\n      }\n      suggest_users: {\n        Args: { p_limit?: number; p_user_id: string }\n        Returns: {\n          avatar_url: string\n          bio: string\n          first_name: string\n          id: string\n          mutual_count: number\n          tags: string[]\n        }[]\n      }\n      unlockrows: { Args: { \"\": string }; Returns: number }\n      updategeometrysrid: {\n        Args: {\n          catalogn_name: string\n          column_name: string\n          new_srid_in: number\n          schema_name: string\n          table_name: string\n        }\n        Returns: string\n      }\n      user_is_event_participant: {\n        Args: { event_uuid: string }\n        Returns: boolean\n      }\n    }\n    Enums: {\n      audience_type: \"everyone\" | \"women\" | \"men\"\n      event_status:\n        | \"draft\"\n        | \"active\"\n        | \"full\"\n        | \"expired\"\n        | \"cancelled\"\n        | \"deleted\"\n      join_mode: \"request\" | \"auto\"\n      participant_status: \"pending\" | \"approved\" | \"rejected\" | \"left\"\n      report_status: \"pending\" | \"reviewed\" | \"dismissed\" | \"actioned\"\n      user_gender: \"female\" | \"male\"\n      user_role: \"user\" | \"admin\" | \"moderator\" | \"support\"\n      user_status: \"active\" | \"suspended\" | \"banned\"\n    }\n    CompositeTypes: {\n      geometry_dump: {\n        path: number[] | null\n        geom: unknown\n      }\n      valid_detail: {\n        valid: boolean | null\n        reason: string | null\n        location: unknown\n      }\n    }\n  }\n}\n\ntype DatabaseWithoutInternals = Omit<Database, \"__InternalSupabase\">\n\ntype DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, \"public\">]\n\nexport type Tables<\n  DefaultSchemaTableNameOrOptions extends\n    | keyof (DefaultSchema[\"Tables\"] & DefaultSchema[\"Views\"])\n    | { schema: keyof DatabaseWithoutInternals },\n  TableName extends DefaultSchemaTableNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"] &\n        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Views\"])\n    : never = never,\n> = DefaultSchemaTableNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"] &\n      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Views\"])[TableName] extends {\n      Row: infer R\n    }\n    ? R\n    : never\n  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema[\"Tables\"] &\n        DefaultSchema[\"Views\"])\n    ? (DefaultSchema[\"Tables\"] &\n        DefaultSchema[\"Views\"])[DefaultSchemaTableNameOrOptions] extends {\n        Row: infer R\n      }\n      ? R\n      : never\n    : never\n\nexport type TablesInsert<\n  DefaultSchemaTableNameOrOptions extends\n    | keyof DefaultSchema[\"Tables\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  TableName extends DefaultSchemaTableNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"]\n    : never = never,\n> = DefaultSchemaTableNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"][TableName] extends {\n      Insert: infer I\n    }\n    ? I\n    : never\n  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema[\"Tables\"]\n    ? DefaultSchema[\"Tables\"][DefaultSchemaTableNameOrOptions] extends {\n        Insert: infer I\n      }\n      ? I\n      : never\n    : never\n\nexport type TablesUpdate<\n  DefaultSchemaTableNameOrOptions extends\n    | keyof DefaultSchema[\"Tables\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  TableName extends DefaultSchemaTableNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"]\n    : never = never,\n> = DefaultSchemaTableNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"][TableName] extends {\n      Update: infer U\n    }\n    ? U\n    : never\n  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema[\"Tables\"]\n    ? DefaultSchema[\"Tables\"][DefaultSchemaTableNameOrOptions] extends {\n        Update: infer U\n      }\n      ? U\n      : never\n    : never\n\nexport type Enums<\n  DefaultSchemaEnumNameOrOptions extends\n    | keyof DefaultSchema[\"Enums\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  EnumName extends DefaultSchemaEnumNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions[\"schema\"]][\"Enums\"]\n    : never = never,\n> = DefaultSchemaEnumNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions[\"schema\"]][\"Enums\"][EnumName]\n  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema[\"Enums\"]\n    ? DefaultSchema[\"Enums\"][DefaultSchemaEnumNameOrOptions]\n    : never\n\nexport type CompositeTypes<\n  PublicCompositeTypeNameOrOptions extends\n    | keyof DefaultSchema[\"CompositeTypes\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions[\"schema\"]][\"CompositeTypes\"]\n    : never = never,\n> = PublicCompositeTypeNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions[\"schema\"]][\"CompositeTypes\"][CompositeTypeName]\n  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema[\"CompositeTypes\"]\n    ? DefaultSchema[\"CompositeTypes\"][PublicCompositeTypeNameOrOptions]\n    : never\n\nexport const Constants = {\n  public: {\n    Enums: {\n      audience_type: [\"everyone\", \"women\", \"men\"],\n      event_status: [\n        \"draft\",\n        \"active\",\n        \"full\",\n        \"expired\",\n        \"cancelled\",\n        \"deleted\",\n      ],\n      join_mode: [\"request\", \"auto\"],\n      participant_status: [\"pending\", \"approved\", \"rejected\", \"left\"],\n      report_status: [\"pending\", \"reviewed\", \"dismissed\", \"actioned\"],\n      user_gender: [\"female\", \"male\"],\n      user_role: [\"user\", \"admin\", \"moderator\", \"support\"],\n      user_status: [\"active\", \"suspended\", \"banned\"],\n    },\n  },\n} as const\n"}
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
+  public: {
+    Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          body: string
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          title: string
+          type: string
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          title: string
+          type?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_locations: {
+        Row: {
+          address: string
+          business_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          lat: number
+          lng: number
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          business_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          lat?: number
+          lng?: number
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          lat?: number
+          lng?: number
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_locations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_verifications: {
+        Row: {
+          additional_doc_paths: string[] | null
+          business_id: string
+          created_at: string
+          id: string
+          id_document_path: string | null
+          operator_selfie_path: string | null
+          registration_doc_path: string | null
+          rejection_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          selfie_with_id_path: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          additional_doc_paths?: string[] | null
+          business_id: string
+          created_at?: string
+          id?: string
+          id_document_path?: string | null
+          operator_selfie_path?: string | null
+          registration_doc_path?: string | null
+          rejection_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_with_id_path?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          additional_doc_paths?: string[] | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          id_document_path?: string | null
+          operator_selfie_path?: string | null
+          registration_doc_path?: string | null
+          rejection_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_with_id_path?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_verifications_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_verifications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_waitlist: {
+        Row: {
+          business_name: string
+          business_type: string
+          contact_name: string
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+        }
+        Insert: {
+          business_name: string
+          business_type: string
+          contact_name: string
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+        }
+        Update: {
+          business_name?: string
+          business_type?: string
+          contact_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+        }
+        Relationships: []
+      }
+      businesses: {
+        Row: {
+          address: string | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          opening_hours: Json | null
+          owner_id: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          slug: string | null
+          social_links: Json | null
+          status: string
+          updated_at: string
+          verified: boolean
+          verified_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          opening_hours?: Json | null
+          owner_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          slug?: string | null
+          social_links?: Json | null
+          status?: string
+          updated_at?: string
+          verified?: boolean
+          verified_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          opening_hours?: Json | null
+          owner_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          slug?: string | null
+          social_links?: Json | null
+          status?: string
+          updated_at?: string
+          verified?: boolean
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "businesses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "businesses_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          icon: string
+          id: string
+          image: string | null
+          is_active: boolean | null
+          name: string
+          parent_id: string | null
+          sort_order: number | null
+          value: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          icon: string
+          id?: string
+          image?: string | null
+          is_active?: boolean | null
+          name: string
+          parent_id?: string | null
+          sort_order?: number | null
+          value?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          icon?: string
+          id?: string
+          image?: string | null
+          is_active?: boolean | null
+          name?: string
+          parent_id?: string | null
+          sort_order?: number | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          participant_one: string
+          participant_two: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant_one: string
+          participant_two: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant_one?: string
+          participant_two?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_participant_one_fkey"
+            columns: ["participant_one"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_participant_two_fkey"
+            columns: ["participant_two"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      direct_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          message_type: string
+          metadata: Json | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_participants: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          status: Database["public"]["Enums"]["participant_status"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["participant_status"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["participant_status"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          allow_dms: boolean | null
+          audience: Database["public"]["Enums"]["audience_type"]
+          business_id: string | null
+          capacity: number
+          category_id: string
+          cover_image_url: string | null
+          created_at: string | null
+          custom_category: string | null
+          description: string | null
+          expires_at: string | null
+          flag_reason: string | null
+          host_id: string
+          id: string
+          is_flagged: boolean | null
+          join_mode: Database["public"]["Enums"]["join_mode"]
+          location: unknown
+          participant_count: number | null
+          recurrence_rule: string | null
+          search_vector: unknown
+          start_time: string
+          status: Database["public"]["Enums"]["event_status"] | null
+          title: string
+          venue_address: string
+          venue_lat: number
+          venue_lng: number
+          venue_name: string
+          venue_place_id: string | null
+        }
+        Insert: {
+          allow_dms?: boolean | null
+          audience?: Database["public"]["Enums"]["audience_type"]
+          business_id?: string | null
+          capacity: number
+          category_id: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          custom_category?: string | null
+          description?: string | null
+          expires_at?: string | null
+          flag_reason?: string | null
+          host_id: string
+          id?: string
+          is_flagged?: boolean | null
+          join_mode?: Database["public"]["Enums"]["join_mode"]
+          location?: unknown
+          participant_count?: number | null
+          recurrence_rule?: string | null
+          search_vector?: unknown
+          start_time: string
+          status?: Database["public"]["Enums"]["event_status"] | null
+          title: string
+          venue_address: string
+          venue_lat: number
+          venue_lng: number
+          venue_name: string
+          venue_place_id?: string | null
+        }
+        Update: {
+          allow_dms?: boolean | null
+          audience?: Database["public"]["Enums"]["audience_type"]
+          business_id?: string | null
+          capacity?: number
+          category_id?: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          custom_category?: string | null
+          description?: string | null
+          expires_at?: string | null
+          flag_reason?: string | null
+          host_id?: string
+          id?: string
+          is_flagged?: boolean | null
+          join_mode?: Database["public"]["Enums"]["join_mode"]
+          location?: unknown
+          participant_count?: number | null
+          recurrence_rule?: string | null
+          search_vector?: unknown
+          start_time?: string
+          status?: Database["public"]["Enums"]["event_status"] | null
+          title?: string
+          venue_address?: string
+          venue_lat?: number
+          venue_lng?: number
+          venue_name?: string
+          venue_place_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_flags: {
+        Row: {
+          description: string | null
+          id: string
+          is_enabled: boolean | null
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flags_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback: {
+        Row: {
+          admin_notes: string | null
+          body: string
+          created_at: string | null
+          id: string
+          status: string
+          subject: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          body: string
+          created_at?: string | null
+          id?: string
+          status?: string
+          subject: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          body?: string
+          created_at?: string | null
+          id?: string
+          status?: string
+          subject?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          created_at: string | null
+          followed_id: string
+          follower_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          followed_id: string
+          follower_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          followed_id?: string
+          follower_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_followed_id_fkey"
+            columns: ["followed_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          dispute_reason: string | null
+          disputed_at: string | null
+          disputed_by: string | null
+          event_id: string
+          guest_id: string
+          guest_rating: number
+          guest_replied_at: string | null
+          guest_reply: string | null
+          host_id: string
+          id: string
+          is_disputed: boolean
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          dispute_reason?: string | null
+          disputed_at?: string | null
+          disputed_by?: string | null
+          event_id: string
+          guest_id: string
+          guest_rating: number
+          guest_replied_at?: string | null
+          guest_reply?: string | null
+          host_id: string
+          id?: string
+          is_disputed?: boolean
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          dispute_reason?: string | null
+          disputed_at?: string | null
+          disputed_by?: string | null
+          event_id?: string
+          guest_id?: string
+          guest_rating?: number
+          guest_replied_at?: string | null
+          guest_reply?: string | null
+          host_id?: string
+          id?: string
+          is_disputed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_reviews_disputed_by_fkey"
+            columns: ["disputed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_reviews_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_reviews_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      host_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          dispute_reason: string | null
+          disputed_at: string | null
+          disputed_by: string | null
+          event_id: string
+          event_rating: number
+          guest_id: string
+          host_rating: number
+          host_replied_at: string | null
+          host_reply: string | null
+          id: string
+          is_disputed: boolean
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          dispute_reason?: string | null
+          disputed_at?: string | null
+          disputed_by?: string | null
+          event_id: string
+          event_rating: number
+          guest_id: string
+          host_rating: number
+          host_replied_at?: string | null
+          host_reply?: string | null
+          id?: string
+          is_disputed?: boolean
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          dispute_reason?: string | null
+          disputed_at?: string | null
+          disputed_by?: string | null
+          event_id?: string
+          event_rating?: number
+          guest_id?: string
+          host_rating?: number
+          host_replied_at?: string | null
+          host_reply?: string | null
+          id?: string
+          is_disputed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_reviews_disputed_by_fkey"
+            columns: ["disputed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_reviews_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          event_id: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          event_id: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string | null
+          data: Json | null
+          id: string
+          is_read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          account_type: string
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          dob: string
+          email: string
+          first_name: string
+          flag_reason: string | null
+          gender: Database["public"]["Enums"]["user_gender"]
+          id: string
+          is_flagged: boolean | null
+          is_ghost_mode: boolean | null
+          is_women_only_mode: boolean | null
+          last_lat: number | null
+          last_lng: number | null
+          notification_preferences: Json | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          settings_radius: number | null
+          status: Database["public"]["Enums"]["user_status"] | null
+          suspended_until: string | null
+          suspension_reason: string | null
+          tags: string[] | null
+          terms_accepted_at: string | null
+          updated_at: string | null
+          welcomed_at: string | null
+        }
+        Insert: {
+          account_type?: string
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          dob?: string
+          email: string
+          first_name?: string
+          flag_reason?: string | null
+          gender?: Database["public"]["Enums"]["user_gender"]
+          id: string
+          is_flagged?: boolean | null
+          is_ghost_mode?: boolean | null
+          is_women_only_mode?: boolean | null
+          last_lat?: number | null
+          last_lng?: number | null
+          notification_preferences?: Json | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          settings_radius?: number | null
+          status?: Database["public"]["Enums"]["user_status"] | null
+          suspended_until?: string | null
+          suspension_reason?: string | null
+          tags?: string[] | null
+          terms_accepted_at?: string | null
+          updated_at?: string | null
+          welcomed_at?: string | null
+        }
+        Update: {
+          account_type?: string
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          dob?: string
+          email?: string
+          first_name?: string
+          flag_reason?: string | null
+          gender?: Database["public"]["Enums"]["user_gender"]
+          id?: string
+          is_flagged?: boolean | null
+          is_ghost_mode?: boolean | null
+          is_women_only_mode?: boolean | null
+          last_lat?: number | null
+          last_lng?: number | null
+          notification_preferences?: Json | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          settings_radius?: number | null
+          status?: Database["public"]["Enums"]["user_status"] | null
+          suspended_until?: string | null
+          suspension_reason?: string | null
+          tags?: string[] | null
+          terms_accepted_at?: string | null
+          updated_at?: string | null
+          welcomed_at?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string | null
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string | null
+          details: string | null
+          dm_message_id: string | null
+          event_id: string | null
+          guest_review_id: string | null
+          host_review_id: string | null
+          id: string
+          message_id: string | null
+          reason: string
+          reported_user_id: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["report_status"] | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string | null
+          details?: string | null
+          dm_message_id?: string | null
+          event_id?: string | null
+          guest_review_id?: string | null
+          host_review_id?: string | null
+          id?: string
+          message_id?: string | null
+          reason: string
+          reported_user_id: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"] | null
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string | null
+          details?: string | null
+          dm_message_id?: string | null
+          event_id?: string | null
+          guest_review_id?: string | null
+          host_review_id?: string | null
+          id?: string
+          message_id?: string | null
+          reason?: string
+          reported_user_id?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_dm_message_id_fkey"
+            columns: ["dm_message_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_guest_review_id_fkey"
+            columns: ["guest_review_id"]
+            isOneToOne: false
+            referencedRelation: "guest_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_host_review_id_fkey"
+            columns: ["host_review_id"]
+            isOneToOne: false
+            referencedRelation: "host_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reported_user_id_fkey"
+            columns: ["reported_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_events: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spatial_ref_sys: {
+        Row: {
+          auth_name: string | null
+          auth_srid: number | null
+          proj4text: string | null
+          srid: number
+          srtext: string | null
+        }
+        Insert: {
+          auth_name?: string | null
+          auth_srid?: number | null
+          proj4text?: string | null
+          srid: number
+          srtext?: string | null
+        }
+        Update: {
+          auth_name?: string | null
+          auth_srid?: number | null
+          proj4text?: string | null
+          srid?: number
+          srtext?: string | null
+        }
+        Relationships: []
+      }
+      voucher_redemptions: {
+        Row: {
+          id: string
+          redeemed_at: string
+          user_id: string
+          voucher_id: string
+        }
+        Insert: {
+          id?: string
+          redeemed_at?: string
+          user_id: string
+          voucher_id: string
+        }
+        Update: {
+          id?: string
+          redeemed_at?: string
+          user_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voucher_redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vouchers: {
+        Row: {
+          business_id: string | null
+          category_id: string | null
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          discount_text: string
+          discounted_price: number | null
+          expires_at: string
+          id: string
+          location_id: string | null
+          original_price: number | null
+          redemption_code: string | null
+          redemption_count: number
+          redemption_limit: number | null
+          status: string
+          terms: string | null
+          title: string
+          venue_address: string
+          venue_lat: number
+          venue_lng: number
+          venue_name: string
+        }
+        Insert: {
+          business_id?: string | null
+          category_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          discount_text: string
+          discounted_price?: number | null
+          expires_at: string
+          id?: string
+          location_id?: string | null
+          original_price?: number | null
+          redemption_code?: string | null
+          redemption_count?: number
+          redemption_limit?: number | null
+          status?: string
+          terms?: string | null
+          title: string
+          venue_address: string
+          venue_lat: number
+          venue_lng: number
+          venue_name: string
+        }
+        Update: {
+          business_id?: string | null
+          category_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          discount_text?: string
+          discounted_price?: number | null
+          expires_at?: string
+          id?: string
+          location_id?: string | null
+          original_price?: number | null
+          redemption_code?: string | null
+          redemption_count?: number
+          redemption_limit?: number | null
+          status?: string
+          terms?: string | null
+          title?: string
+          venue_address?: string
+          venue_lat?: number
+          venue_lng?: number
+          venue_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vouchers_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "business_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vouchers_new_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waitlist: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      geography_columns: {
+        Row: {
+          coord_dimension: number | null
+          f_geography_column: unknown
+          f_table_catalog: unknown
+          f_table_name: unknown
+          f_table_schema: unknown
+          srid: number | null
+          type: string | null
+        }
+        Relationships: []
+      }
+      geometry_columns: {
+        Row: {
+          coord_dimension: number | null
+          f_geometry_column: unknown
+          f_table_catalog: string | null
+          f_table_name: unknown
+          f_table_schema: unknown
+          srid: number | null
+          type: string | null
+        }
+        Insert: {
+          coord_dimension?: number | null
+          f_geometry_column?: unknown
+          f_table_catalog?: string | null
+          f_table_name?: unknown
+          f_table_schema?: unknown
+          srid?: number | null
+          type?: string | null
+        }
+        Update: {
+          coord_dimension?: number | null
+          f_geometry_column?: unknown
+          f_table_catalog?: string | null
+          f_table_name?: unknown
+          f_table_schema?: unknown
+          srid?: number | null
+          type?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Functions: {
+      _postgis_deprecate: {
+        Args: { newname: string; oldname: string; version: string }
+        Returns: undefined
+      }
+      _postgis_index_extent: {
+        Args: { col: string; tbl: unknown }
+        Returns: unknown
+      }
+      _postgis_pgsql_version: { Args: never; Returns: string }
+      _postgis_scripts_pgsql_version: { Args: never; Returns: string }
+      _postgis_selectivity: {
+        Args: { att_name: string; geom: unknown; mode?: string; tbl: unknown }
+        Returns: number
+      }
+      _postgis_stats: {
+        Args: { ""?: string; att_name: string; tbl: unknown }
+        Returns: string
+      }
+      _st_3dintersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_containsproperly: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_coveredby:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _st_covers:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _st_crosses: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_dwithin: {
+        Args: {
+          geog1: unknown
+          geog2: unknown
+          tolerance: number
+          use_spheroid?: boolean
+        }
+        Returns: boolean
+      }
+      _st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _st_intersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_linecrossingdirection: {
+        Args: { line1: unknown; line2: unknown }
+        Returns: number
+      }
+      _st_longestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      _st_maxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      _st_orderingequals: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_sortablehash: { Args: { geom: unknown }; Returns: number }
+      _st_touches: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      _st_voronoi: {
+        Args: {
+          clip?: unknown
+          g1: unknown
+          return_polygons?: boolean
+          tolerance?: number
+        }
+        Returns: unknown
+      }
+      _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      addauth: { Args: { "": string }; Returns: boolean }
+      addgeometrycolumn:
+        | {
+            Args: {
+              catalog_name: string
+              column_name: string
+              new_dim: number
+              new_srid_in: number
+              new_type: string
+              schema_name: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: string
+              new_dim: number
+              new_srid: number
+              new_type: string
+              schema_name: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: string
+              new_dim: number
+              new_srid: number
+              new_type: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
+          }
+      calculate_age: { Args: { birth_date: string }; Returns: number }
+      create_notification: {
+        Args: {
+          p_body: string
+          p_data?: Json
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: {
+          body: string
+          created_at: string | null
+          data: Json | null
+          id: string
+          is_read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      delete_user_account: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
+      disablelongtransactions: { Args: never; Returns: string }
+      dropgeometrycolumn:
+        | {
+            Args: {
+              catalog_name: string
+              column_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | { Args: { column_name: string; table_name: string }; Returns: string }
+      dropgeometrytable:
+        | {
+            Args: {
+              catalog_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | { Args: { schema_name: string; table_name: string }; Returns: string }
+        | { Args: { table_name: string }; Returns: string }
+      enablelongtransactions: { Args: never; Returns: string }
+      equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      expire_past_events: { Args: never; Returns: number }
+      geometry: { Args: { "": string }; Returns: unknown }
+      geometry_above: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_below: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_cmp: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_contained_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_contains_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_distance_box: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_distance_centroid: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_eq: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_ge: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_gt: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_le: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_left: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_lt: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overabove: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overbelow: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overlaps_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overleft: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overright: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_right: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_same: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_same_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_within: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geomfromewkt: { Args: { "": string }; Returns: unknown }
+      gettransactionid: { Args: never; Returns: unknown }
+      is_admin: { Args: never; Returns: boolean }
+      is_blocked: { Args: { check_user_id: string }; Returns: boolean }
+      longtransactionsenabled: { Args: never; Returns: boolean }
+      my_upcoming_events: {
+        Args: never
+        Returns: {
+          id: string
+          is_host: boolean
+          participant_status: Database["public"]["Enums"]["participant_status"]
+          start_time: string
+          title: string
+          venue_name: string
+        }[]
+      }
+      nearby_events: {
+        Args: {
+          limit_count?: number
+          radius_km?: number
+          user_lat: number
+          user_lng: number
+        }
+        Returns: {
+          audience: Database["public"]["Enums"]["audience_type"]
+          capacity: number
+          category_id: string
+          description: string
+          distance_km: number
+          host_id: string
+          id: string
+          join_mode: Database["public"]["Enums"]["join_mode"]
+          participant_count: number
+          start_time: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+          venue_address: string
+          venue_lat: number
+          venue_lng: number
+          venue_name: string
+        }[]
+      }
+      populate_geometry_columns:
+        | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
+        | { Args: { use_typmod?: boolean }; Returns: string }
+      postgis_constraint_dims: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: number
+      }
+      postgis_constraint_srid: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: number
+      }
+      postgis_constraint_type: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: string
+      }
+      postgis_extensions_upgrade: { Args: never; Returns: string }
+      postgis_full_version: { Args: never; Returns: string }
+      postgis_geos_version: { Args: never; Returns: string }
+      postgis_lib_build_date: { Args: never; Returns: string }
+      postgis_lib_revision: { Args: never; Returns: string }
+      postgis_lib_version: { Args: never; Returns: string }
+      postgis_libjson_version: { Args: never; Returns: string }
+      postgis_liblwgeom_version: { Args: never; Returns: string }
+      postgis_libprotobuf_version: { Args: never; Returns: string }
+      postgis_libxml_version: { Args: never; Returns: string }
+      postgis_proj_version: { Args: never; Returns: string }
+      postgis_scripts_build_date: { Args: never; Returns: string }
+      postgis_scripts_installed: { Args: never; Returns: string }
+      postgis_scripts_released: { Args: never; Returns: string }
+      postgis_svn_version: { Args: never; Returns: string }
+      postgis_type_name: {
+        Args: {
+          coord_dimension: number
+          geomname: string
+          use_new_name?: boolean
+        }
+        Returns: string
+      }
+      postgis_version: { Args: never; Returns: string }
+      postgis_wagyu_version: { Args: never; Returns: string }
+      search_events: {
+        Args: { max_results?: number; search_query: string }
+        Returns: {
+          category_name: string
+          event_id: string
+          rank: number
+          title: string
+          venue_name: string
+        }[]
+      }
+      send_event_reminders: { Args: never; Returns: number }
+      st_3dclosestpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3ddistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_3dintersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_3dlongestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3dmakebox: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3dmaxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_3dshortestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_addpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_angle:
+        | { Args: { line1: unknown; line2: unknown }; Returns: number }
+        | {
+            Args: { pt1: unknown; pt2: unknown; pt3: unknown; pt4?: unknown }
+            Returns: number
+          }
+      st_area:
+        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
+        | { Args: { "": string }; Returns: number }
+      st_asencodedpolyline: {
+        Args: { geom: unknown; nprecision?: number }
+        Returns: string
+      }
+      st_asewkt: { Args: { "": string }; Returns: string }
+      st_asgeojson:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom_column?: string
+              maxdecimaldigits?: number
+              pretty_bool?: boolean
+              r: Record<string, unknown>
+            }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_asgml:
+        | {
+            Args: {
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+            }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+        | {
+            Args: {
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
+            Returns: string
+          }
+      st_askml:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_aslatlontext: {
+        Args: { geom: unknown; tmpl?: string }
+        Returns: string
+      }
+      st_asmarc21: { Args: { format?: string; geom: unknown }; Returns: string }
+      st_asmvtgeom: {
+        Args: {
+          bounds: unknown
+          buffer?: number
+          clip_geom?: boolean
+          extent?: number
+          geom: unknown
+        }
+        Returns: unknown
+      }
+      st_assvg:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; rel?: number }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; rel?: number }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_astext: { Args: { "": string }; Returns: string }
+      st_astwkb:
+        | {
+            Args: {
+              geom: unknown
+              prec?: number
+              prec_m?: number
+              prec_z?: number
+              with_boxes?: boolean
+              with_sizes?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom: unknown[]
+              ids: number[]
+              prec?: number
+              prec_m?: number
+              prec_z?: number
+              with_boxes?: boolean
+              with_sizes?: boolean
+            }
+            Returns: string
+          }
+      st_asx3d: {
+        Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+        Returns: string
+      }
+      st_azimuth:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: number }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+      st_boundingdiagonal: {
+        Args: { fits?: boolean; geom: unknown }
+        Returns: unknown
+      }
+      st_buffer:
+        | {
+            Args: { geom: unknown; options?: string; radius: number }
+            Returns: unknown
+          }
+        | {
+            Args: { geom: unknown; quadsegs: number; radius: number }
+            Returns: unknown
+          }
+      st_centroid: { Args: { "": string }; Returns: unknown }
+      st_clipbybox2d: {
+        Args: { box: unknown; geom: unknown }
+        Returns: unknown
+      }
+      st_closestpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_collect: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
+      st_concavehull: {
+        Args: {
+          param_allow_holes?: boolean
+          param_geom: unknown
+          param_pctconvex: number
+        }
+        Returns: unknown
+      }
+      st_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_containsproperly: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_coorddim: { Args: { geometry: unknown }; Returns: number }
+      st_coveredby:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_covers:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_crosses: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_curvetoline: {
+        Args: { flags?: number; geom: unknown; tol?: number; toltype?: number }
+        Returns: unknown
+      }
+      st_delaunaytriangles: {
+        Args: { flags?: number; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_difference: {
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_disjoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_distance:
+        | {
+            Args: { geog1: unknown; geog2: unknown; use_spheroid?: boolean }
+            Returns: number
+          }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+      st_distancesphere:
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+        | {
+            Args: { geom1: unknown; geom2: unknown; radius: number }
+            Returns: number
+          }
+      st_distancespheroid: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_dwithin: {
+        Args: {
+          geog1: unknown
+          geog2: unknown
+          tolerance: number
+          use_spheroid?: boolean
+        }
+        Returns: boolean
+      }
+      st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_expand:
+        | { Args: { box: unknown; dx: number; dy: number }; Returns: unknown }
+        | {
+            Args: { box: unknown; dx: number; dy: number; dz?: number }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              dm?: number
+              dx: number
+              dy: number
+              dz?: number
+              geom: unknown
+            }
+            Returns: unknown
+          }
+      st_force3d: { Args: { geom: unknown; zvalue?: number }; Returns: unknown }
+      st_force3dm: {
+        Args: { geom: unknown; mvalue?: number }
+        Returns: unknown
+      }
+      st_force3dz: {
+        Args: { geom: unknown; zvalue?: number }
+        Returns: unknown
+      }
+      st_force4d: {
+        Args: { geom: unknown; mvalue?: number; zvalue?: number }
+        Returns: unknown
+      }
+      st_generatepoints:
+        | { Args: { area: unknown; npoints: number }; Returns: unknown }
+        | {
+            Args: { area: unknown; npoints: number; seed: number }
+            Returns: unknown
+          }
+      st_geogfromtext: { Args: { "": string }; Returns: unknown }
+      st_geographyfromtext: { Args: { "": string }; Returns: unknown }
+      st_geohash:
+        | { Args: { geog: unknown; maxchars?: number }; Returns: string }
+        | { Args: { geom: unknown; maxchars?: number }; Returns: string }
+      st_geomcollfromtext: { Args: { "": string }; Returns: unknown }
+      st_geometricmedian: {
+        Args: {
+          fail_if_not_converged?: boolean
+          g: unknown
+          max_iter?: number
+          tolerance?: number
+        }
+        Returns: unknown
+      }
+      st_geometryfromtext: { Args: { "": string }; Returns: unknown }
+      st_geomfromewkt: { Args: { "": string }; Returns: unknown }
+      st_geomfromgeojson:
+        | { Args: { "": Json }; Returns: unknown }
+        | { Args: { "": Json }; Returns: unknown }
+        | { Args: { "": string }; Returns: unknown }
+      st_geomfromgml: { Args: { "": string }; Returns: unknown }
+      st_geomfromkml: { Args: { "": string }; Returns: unknown }
+      st_geomfrommarc21: { Args: { marc21xml: string }; Returns: unknown }
+      st_geomfromtext: { Args: { "": string }; Returns: unknown }
+      st_gmltosql: { Args: { "": string }; Returns: unknown }
+      st_hasarc: { Args: { geometry: unknown }; Returns: boolean }
+      st_hausdorffdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_hexagon: {
+        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }
+        Returns: unknown
+      }
+      st_hexagongrid: {
+        Args: { bounds: unknown; size: number }
+        Returns: Record<string, unknown>[]
+      }
+      st_interpolatepoint: {
+        Args: { line: unknown; point: unknown }
+        Returns: number
+      }
+      st_intersection: {
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_intersects:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_isvaliddetail: {
+        Args: { flags?: number; geom: unknown }
+        Returns: Database["public"]["CompositeTypes"]["valid_detail"]
+        SetofOptions: {
+          from: "*"
+          to: "valid_detail"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      st_length:
+        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
+        | { Args: { "": string }; Returns: number }
+      st_letters: { Args: { font?: Json; letters: string }; Returns: unknown }
+      st_linecrossingdirection: {
+        Args: { line1: unknown; line2: unknown }
+        Returns: number
+      }
+      st_linefromencodedpolyline: {
+        Args: { nprecision?: number; txtin: string }
+        Returns: unknown
+      }
+      st_linefromtext: { Args: { "": string }; Returns: unknown }
+      st_linelocatepoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_linetocurve: { Args: { geometry: unknown }; Returns: unknown }
+      st_locatealong: {
+        Args: { geometry: unknown; leftrightoffset?: number; measure: number }
+        Returns: unknown
+      }
+      st_locatebetween: {
+        Args: {
+          frommeasure: number
+          geometry: unknown
+          leftrightoffset?: number
+          tomeasure: number
+        }
+        Returns: unknown
+      }
+      st_locatebetweenelevations: {
+        Args: { fromelevation: number; geometry: unknown; toelevation: number }
+        Returns: unknown
+      }
+      st_longestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makebox2d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makeline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makevalid: {
+        Args: { geom: unknown; params: string }
+        Returns: unknown
+      }
+      st_maxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_minimumboundingcircle: {
+        Args: { inputgeom: unknown; segs_per_quarter?: number }
+        Returns: unknown
+      }
+      st_mlinefromtext: { Args: { "": string }; Returns: unknown }
+      st_mpointfromtext: { Args: { "": string }; Returns: unknown }
+      st_mpolyfromtext: { Args: { "": string }; Returns: unknown }
+      st_multilinestringfromtext: { Args: { "": string }; Returns: unknown }
+      st_multipointfromtext: { Args: { "": string }; Returns: unknown }
+      st_multipolygonfromtext: { Args: { "": string }; Returns: unknown }
+      st_node: { Args: { g: unknown }; Returns: unknown }
+      st_normalize: { Args: { geom: unknown }; Returns: unknown }
+      st_offsetcurve: {
+        Args: { distance: number; line: unknown; params?: string }
+        Returns: unknown
+      }
+      st_orderingequals: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_perimeter: {
+        Args: { geog: unknown; use_spheroid?: boolean }
+        Returns: number
+      }
+      st_pointfromtext: { Args: { "": string }; Returns: unknown }
+      st_pointm: {
+        Args: {
+          mcoordinate: number
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+        }
+        Returns: unknown
+      }
+      st_pointz: {
+        Args: {
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+          zcoordinate: number
+        }
+        Returns: unknown
+      }
+      st_pointzm: {
+        Args: {
+          mcoordinate: number
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+          zcoordinate: number
+        }
+        Returns: unknown
+      }
+      st_polyfromtext: { Args: { "": string }; Returns: unknown }
+      st_polygonfromtext: { Args: { "": string }; Returns: unknown }
+      st_project: {
+        Args: { azimuth: number; distance: number; geog: unknown }
+        Returns: unknown
+      }
+      st_quantizecoordinates: {
+        Args: {
+          g: unknown
+          prec_m?: number
+          prec_x: number
+          prec_y?: number
+          prec_z?: number
+        }
+        Returns: unknown
+      }
+      st_reduceprecision: {
+        Args: { geom: unknown; gridsize: number }
+        Returns: unknown
+      }
+      st_relate: { Args: { geom1: unknown; geom2: unknown }; Returns: string }
+      st_removerepeatedpoints: {
+        Args: { geom: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_segmentize: {
+        Args: { geog: unknown; max_segment_length: number }
+        Returns: unknown
+      }
+      st_setsrid:
+        | { Args: { geog: unknown; srid: number }; Returns: unknown }
+        | { Args: { geom: unknown; srid: number }; Returns: unknown }
+      st_sharedpaths: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_shortestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_simplifypolygonhull: {
+        Args: { geom: unknown; is_outer?: boolean; vertex_fraction: number }
+        Returns: unknown
+      }
+      st_split: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
+      st_square: {
+        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }
+        Returns: unknown
+      }
+      st_squaregrid: {
+        Args: { bounds: unknown; size: number }
+        Returns: Record<string, unknown>[]
+      }
+      st_srid:
+        | { Args: { geog: unknown }; Returns: number }
+        | { Args: { geom: unknown }; Returns: number }
+      st_subdivide: {
+        Args: { geom: unknown; gridsize?: number; maxvertices?: number }
+        Returns: unknown[]
+      }
+      st_swapordinates: {
+        Args: { geom: unknown; ords: unknown }
+        Returns: unknown
+      }
+      st_symdifference: {
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_symmetricdifference: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_tileenvelope: {
+        Args: {
+          bounds?: unknown
+          margin?: number
+          x: number
+          y: number
+          zoom: number
+        }
+        Returns: unknown
+      }
+      st_touches: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_transform:
+        | {
+            Args: { from_proj: string; geom: unknown; to_proj: string }
+            Returns: unknown
+          }
+        | {
+            Args: { from_proj: string; geom: unknown; to_srid: number }
+            Returns: unknown
+          }
+        | { Args: { geom: unknown; to_proj: string }; Returns: unknown }
+      st_triangulatepolygon: { Args: { g1: unknown }; Returns: unknown }
+      st_union:
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
+        | {
+            Args: { geom1: unknown; geom2: unknown; gridsize: number }
+            Returns: unknown
+          }
+      st_voronoilines: {
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_voronoipolygons: {
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_wkbtosql: { Args: { wkb: string }; Returns: unknown }
+      st_wkttosql: { Args: { "": string }; Returns: unknown }
+      st_wrapx: {
+        Args: { geom: unknown; move: number; wrap: number }
+        Returns: unknown
+      }
+      suggest_users: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          first_name: string
+          id: string
+          mutual_count: number
+          tags: string[]
+        }[]
+      }
+      unlockrows: { Args: { "": string }; Returns: number }
+      updategeometrysrid: {
+        Args: {
+          catalogn_name: string
+          column_name: string
+          new_srid_in: number
+          schema_name: string
+          table_name: string
+        }
+        Returns: string
+      }
+      user_is_event_participant: {
+        Args: { event_uuid: string }
+        Returns: boolean
+      }
+    }
+    Enums: {
+      audience_type: "everyone" | "women" | "men"
+      event_status:
+        | "draft"
+        | "active"
+        | "full"
+        | "expired"
+        | "cancelled"
+        | "deleted"
+      join_mode: "request" | "auto"
+      participant_status: "pending" | "approved" | "rejected" | "left"
+      report_status: "pending" | "reviewed" | "dismissed" | "actioned"
+      user_gender: "female" | "male"
+      user_role: "user" | "admin" | "moderator" | "support"
+      user_status: "active" | "suspended" | "banned"
+    }
+    CompositeTypes: {
+      geometry_dump: {
+        path: number[] | null
+        geom: unknown
+      }
+      valid_detail: {
+        valid: boolean | null
+        reason: string | null
+        location: unknown
+      }
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      audience_type: ["everyone", "women", "men"],
+      event_status: [
+        "draft",
+        "active",
+        "full",
+        "expired",
+        "cancelled",
+        "deleted",
+      ],
+      join_mode: ["request", "auto"],
+      participant_status: ["pending", "approved", "rejected", "left"],
+      report_status: ["pending", "reviewed", "dismissed", "actioned"],
+      user_gender: ["female", "male"],
+      user_role: ["user", "admin", "moderator", "support"],
+      user_status: ["active", "suspended", "banned"],
+    },
+  },
+} as const

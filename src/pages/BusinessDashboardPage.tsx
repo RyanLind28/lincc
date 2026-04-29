@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import {
-  Plus, Pencil, Ticket, Eye, AlertTriangle, MapPin, X, Calendar,
+  Pencil, Ticket, Eye, AlertTriangle, MapPin, X, Calendar,
   Star, Users, TrendingUp, Clock, Activity as ActivityIcon, Building2,
   Globe, ExternalLink,
 } from 'lucide-react';

@@ -1,6 +1,122 @@
 # LINCC TODO
 
-Last updated: 2026-04-20
+Last updated: 2026-04-29
+
+---
+
+## Session Changelog — 2026-04-29
+
+Massive day. Architecture-level shifts plus polish. ~50 items closed, 5 migrations applied (043 → 049). All TypeScript clean.
+
+### Account model rewrite — Personal vs Business
+- **Account types as a first-class concept** (migration 045) — `profiles.account_type` (`'personal' | 'business'`), drop deprecated `is_business` + `business_*` columns from profiles, businesses now a sibling entity (one per owner), pre-existing live businesses auto-approved
+- **Business approval workflow** — `businesses.status` enum extended to `pending_approval | approved | rejected | suspended | inactive | archived`; `rejection_reason`, `reviewed_at`, `reviewed_by` columns
+- **Signup chooser** — two-card Personal / Business picker on `SignupPage`. Business path collects contact name, business name, category. `handle_new_user` trigger now creates the linked `businesses` row with auto-generated unique slug
+- **PendingApprovalPage** with re-submit on rejection
+- **Soft-gate**: pending business accounts roam the app freely (no redirect lock-in) with a persistent `BusinessApprovalBanner`. Publishing is blocked at the DB level via `events_publish_gate` and `vouchers_publish_gate` BEFORE INSERT triggers
+- **Friendly Create Event / Create Voucher gates** when business is unapproved (CTA → `/business/verify`)
+- **Admin business applications page** (`/admin/business-applications`) with reason filter, audit log, owner notifications
+
+### Business verification (blue tick)
+- **Migration 047** adds `business_verifications` table (4 doc paths + status + reviewer notes) and `businesses.verified` + `verified_at`
+- **Private storage bucket** `business-verification-docs` with RLS (owner read+write own folder; admin read all)
+- **`/business/verify` page** with 4 doc upload slots (operator selfie, ID document, selfie with ID, business registration), live preview via signed URLs, status banner, re-submit on rejection
+- **Admin doc review** — thumbnails of submitted docs in the applications queue (signed URLs); "Approve & verify" auto-flips `verified=true` when verification submitted
+- **`<VerifiedTick />`** badge rendered next to business name on BusinessPage, BusinessDashboard, EventCard, EventDetailPage, VoucherDetailPage
+
+### Bidirectional reviews + dispute flow
+- **Migration 044** — renamed `event_reviews` → `host_reviews`; new columns `host_rating` + `event_rating` + `host_reply` + `is_disputed`; new `guest_reviews` table for host-rates-guest; reports gain `host_review_id` + `guest_review_id`
+- **`review_prompt` notification type** — fires on event expiry (cron + trigger) for each approved guest and the host
+- **Uber-style auto-prompt modal** on HomePage walks the user through pending reviews; "Skip for now" (sessionStorage) and "Don't ask again" (localStorage)
+- **EventReviewsSection** on detail pages — split into `HostReviewsList` + `GuestReviewsList`, each with reply + dispute flows
+- **`<RatingBadges />`** on UserProfilePage shows host avg + guest avg with counts
+- Dispute → admin reports queue with full review context + Approve/Reject (with reason)
+
+### Chat reporting + admin moderation toolkit
+- **Migration 049** — `reports.message_id` + `reports.dm_message_id` FKs (cascade)
+- **Flag pill on every non-own message** in event chat + DMs → opens `<ReportMessageDialog />` with chat-tailored reasons (harassment / inappropriate / spam / hate / safety / other) + message preview
+- **Admin reports modal** now surfaces chat context with deep links (Open thread →, Open conversation →)
+- **Real moderation actions** in the admin Reports modal: **Warn** (notification), **Suspend** (with duration), **Ban**, **Delete message**, **Remove from event**, **Cancel event** — every action writes to `admin_audit_log` and notifies the user
+
+### Subcategories + categories
+- **Subcategory schema seeded** — `categories.parent_id` self-reference + 69 subcategories backfilled from the static frontend list
+- **Admin Categories page rewritten** as expandable parent → child tree, add-subcategory inline button per parent, parent dropdown in the modal, cascade delete
+- **Subcategory unique constraint** — partial unique on `(parent_id, name)` so siblings under different parents can share names
+- Fixed render bug where icon **name** displayed next to category name (looked like duplicates)
+
+### Admin panel polish
+- **Dashboard tile-grid** for Manage moved front and centre with count badges (pending applications, pending verifications, pending reports, flagged users, flagged events)
+- **Activity feed** — paginated (8/page from a 60-pool) with click-through to the right detail page (user / event / report)
+- **Desktop-friendly layout**: 4-col stat cards, side-by-side charts, 3-col top-lists
+- **All admin sub-pages** capped to sensible widths (`max-w-7xl` for lists, smaller for detail/forms)
+- **Admin link** added to Settings → Developer
+- **Admin SELECT policy on businesses** — pending applications now actually appear in the queue (was hidden by RLS)
+- **Notifications**: `business_approved` / `business_rejected` types added with icons + path
+
+### Public business profile + dashboard
+- **BusinessPage redesigned** — cover hero (blurred logo + gradient), floating logo card, name + verified tick + ★ rating + open-now status, stats strip (Events / Vouchers / Locations / Reviews), grids for what's-on + deals, locations + hours grid, **socials block** (website / IG / FB / X / TikTok / LinkedIn / YouTube / WhatsApp / phone / email), public reviews carousel, past events
+- **BusinessDashboardPage** rewritten with hero, performance stats (active events, vouchers, redemptions, avg rating), quick actions, tabbed sections (Overview, Events, Vouchers, Locations, Reviews, Profile)
+- **Business slug URLs** — `/business/dannys-maths-hub` works alongside `/business/<uuid>` (UUID-or-slug fetcher)
+- **Calendar-style EventTile** + fluid voucher cards (image-left, progress bar)
+- **Operator-by attribution removed** from public business pages (businesses are self-contained)
+- **Edit business page** uses `PlacesAutocomplete` for the address now
+- Migration adds `businesses.social_links jsonb`
+
+### Voucher detail
+- **Hero with discount badge + category chip overlay**, title + description
+- **Status chips** — expiring soon / almost gone / 1-per-customer / business offer
+- **"Offered by" business card** with verified tick + category
+- **"You save" card** computed from original/discounted prices with % off
+- **Stock availability bar** (claimed / limit + "X still available")
+- **Quick facts grid**, **Where to redeem** (primary venue + every business location, all open Google Maps)
+- **More from <Business>** carousel of other live vouchers
+
+### Personal profile redesign
+- **Cover band + floating avatar + identity row** mirrors the business page exactly
+- **Stats strip** — Followers / Following / Hosted / Joined
+- **Status chips** for Early access, Ghost mode, Women-only
+- **Share button** in the header (native share / clipboard fallback)
+- Personal-page-only — business accounts redirected to their dashboard
+- **`<InstallAppCard />`** mounted on profile — uses `BeforeInstallPrompt` on Android/Chrome/Edge, falls back to manual "Add to Home Screen" instructions on iOS Safari, dismissable per-device
+
+### Profile photo upload
+- **Avatar cropper** (round + square crops via `react-easy-crop`) with drag-to-position + zoom slider
+- **HEIC detection** with explicit error message ("iPhone HEIC photos aren't supported, switch to Most Compatible…")
+- **Magic-byte validation** (was only size before)
+- **Specific Supabase error messages** surfaced (was always generic "Failed to upload")
+- **Upload-then-delete** instead of delete-then-upload — no more lost avatars on failed uploads
+
+### Theme + Safari chrome
+- **Dark mode bug fixed app-wide** — `--color-muted` token added; swept ~30 hardcoded `bg-gray-200/300` across skeletons, avatars, toggles, dots, drag handles, etc. → `bg-muted`
+- **Dark class applied at app boot** (`main.tsx`) instead of only when SettingsPage mounted
+- **`color-scheme: dark`** on `html.dark` so native form controls + scrollbars match
+- **Safari "big bars" fixed** — `theme-color` now matches the page bg (`#FAFAFA` light, `#0F0F1A` dark) via media-query meta tags; `apple-mobile-web-app-status-bar-style: black-translucent`; manifest theme/background colors aligned; in-app dark mode toggle re-paints theme-color at runtime
+
+### Plumbing
+- **Google Analytics 4** integrated — measurement id `G-8NHZY93N9K`, env-gated (no-op without var), SPA route tracking, `user_id` stitching after sign-in
+- **Cookie consent banner** — bottom-of-screen Accept / Decline; GA only loads after Accept; localStorage-persisted decision
+- **Update prompt redesigned** — full-screen non-dismissable overlay (was a toast). Mounted at App root so it covers chats, landing, etc.
+- **Persistent SideNav across full-screen routes** — chat, create event, create voucher, business dashboard, etc., now keep the desktop sidebar (was disappearing). MainLayout split `showSideNav` from `showBottomNav`
+- **Vouchers tab** in desktop side nav (was missing); side nav icons left-aligned when expanded
+
+### Misc UI
+- **Em-dashes removed** from PendingApprovalPage UI strings (per memory)
+- **App-wide full-width desktop layouts** — list pages drop `max-w-5xl` caps so content fills the room next to the sidebar
+- **Larger event grids on `xl`** — MyEvents, Vouchers, Saved
+- **Profile page** drops "My Businesses" link, redirects business accounts to dashboard
+
+### Data fixes
+- Spread Danny's Maths-Hub demo data: 3 locations, 4 vouchers (incl. "30-min free intro lesson"), 3 events + reviews + redemptions
+- Reset Ryan's account back to personal; deleted +1/+2/lindustries test users; deleted orphan Ryan's Cafe business
+- All 22 active events spread across `now → +13 days` so the home feed is populated within the 14-day visibility window
+
+### Migrations applied today
+- `043_host_reviews_and_disputes` — host reviews + dispute trigger + reports.review_id
+- `044_bidirectional_reviews` — host_reviews / guest_reviews split + review_prompt notifications
+- `045_account_types_and_approval` — profiles.account_type, business approval workflow, publish gates
+- `047_business_verifications` — verifications table + private storage bucket + RLS
+- `049_chat_reports` — reports.message_id + dm_message_id (FKs cascade)
+- Plus several smaller policy / index / seed migrations (admin RLS on businesses; `business_categories`; subcategories backfill; cascade on `categories.parent_id`; `businesses.social_links`; `businesses.verified` + `verified_at`; `categories.kind` plus seeded business categories)
 
 ---
 
@@ -78,18 +194,21 @@ Big push day. ~25 items closed end-to-end. Details inline below — this is the 
 
 ## Current Status
 
-- **App**: Live on Vercel (`lincc-six.vercel.app`), production-ready
-- **Database**: Live Supabase, 26 categories, events populated by real users
-- **Auth**: Email/password + magic link + OAuth Google live. Two-checkbox signup consent (T&C + 18+) active. Facebook login on backlog.
+- **App**: Live on Vercel (`lincc-six.vercel.app`) and `lincc.live`, production-ready
+- **Database**: Live Supabase. 26 parent categories + 69 subcategories. Bidirectional review system. Personal vs Business account types with verification flow.
+- **Auth**: Email/password + magic link + OAuth Google live. Personal/Business chooser at signup. Two-checkbox consent. Facebook login removed.
 - **DEV_MODE**: OFF in all files
-- **Migrations**: Local files up to `042_fix_participant_count_trigger.sql`
-- **Email**: Custom SMTP via Resend live (`noreply@system.lincc.live`). 14 Lincc-branded HTML templates.
+- **Migrations**: Up to `049_chat_reports` (50+ files in `supabase/migrations/`)
+- **Email**: Custom SMTP via Resend live (`noreply@system.lincc.live`). 15 Lincc-branded HTML templates.
 - **Push Notifications**: Edge function deployed + secrets configured.
+- **Analytics**: GA4 live (`G-8NHZY93N9K`), consent-gated cookie banner.
 - **Landing**: Live with waitlist form.
-- **PWA**: Configured with install prompt, offline banner, update notification, service worker
+- **PWA**: Install prompt, offline banner, full-screen non-dismissable update notification, service worker, theme-color matched to page.
 - **Tests**: 42 unit tests (Vitest), Playwright E2E
 - **CI/CD**: GitHub Actions — type check + tests + build on push/PR
 - **MVP Phases 1–7**: All complete
+- **Business platform**: Approval workflow, document verification (blue tick), business dashboards + public profiles, vouchers + locations + socials. Multi-location chains supported.
+- **Moderation**: Chat reporting, full admin action toolkit (warn / suspend / ban / delete message / remove from event / cancel event), all logged to `admin_audit_log`.
 
 ---
 
@@ -227,7 +346,8 @@ Big push day. ~25 items closed end-to-end. Details inline below — this is the 
 
 ## Post-MVP / Future Ideas
 
-- [ ] Recurring events — weekly/monthly repeat
+- [~] Recurring events — schema in place (`events.recurrence_rule`); cron generation deferred
+- [ ] Ticket sales — schema doesn't preclude; integration TBD (Stripe Connect for businesses)
 - [ ] AI event descriptions — generate with AI
 - [ ] Smart scheduling — suggest optimal event times
 - [ ] Group events — events for friend groups
@@ -237,9 +357,10 @@ Big push day. ~25 items closed end-to-end. Details inline below — this is the 
 - [ ] Calendar integration — Google/Apple Calendar sync
 - [ ] App store listings — PWA store submissions
 - [ ] Event data sourcing — external event APIs, scrapers, partnerships
-- [x] Postcode / location search — search by postcode or place name (not just GPS) _(moved to Backlog)_
+- [x] Postcode / location search — search by postcode or place name (not just GPS)
 - [ ] Feature request form — in-app form logged to DB
 - [ ] Contact us form — in-app support form
+- [ ] Manage cookies / revoke consent UI in Settings (currently first-prompt only)
 
 ---
 
@@ -296,10 +417,10 @@ _(Nothing currently blocked)_
 - [x] Search by postcode — **Fixed**: Typing a UK postcode or place name in the search bar geocodes via Mapbox and filters events around that location. Coral pill shows custom location with X to clear back to GPS.
 - [ ] Header logo resolution — replace current @4x webp with higher-res source file and scale down for crisp rendering
 - [x] Dark mode colour audit — **Fixed**: Replaced hardcoded grays (`bg-gray-50/100`, `hover:bg-gray-50`, `border-gray-200`) with semantic tokens (`bg-background`, `border-border`) across 38 files
-- [ ] OAuth login — Facebook login button (Google already live, Apple removed from scope)
-- [ ] Analytics — integrate Mixpanel/Amplitude/PostHog for user analytics, event tracking, funnel analysis
-- [ ] Desktop UI/UX improvements — better use of horizontal space, layout polish, responsive enhancements
-- [ ] Business events posted under business identity — when a business account creates an event, it should be attributed to the business name (and logo) rather than the personal account. Likely needs a schema change (e.g. `events.posted_as` enum of `'user' | 'business'`, or always resolve host→business when `business_id` is set at create time). Note: display layer already joins `business:businesses!business_id(*)` on event queries, so this is mainly about the create-event flow and making the attribution explicit/selectable.
+- [x] OAuth login — Facebook removed permanently (per product call); Google live, Apple out of scope
+- [x] Analytics — Google Analytics 4 (`G-8NHZY93N9K`) live with consent-gated cookie banner, SPA route tracking, signed-in user_id stitching
+- [x] Desktop UI/UX improvements — full-width consumer pages, persistent SideNav across full-screen routes, business / profile / voucher hero redesigns, larger grids on `xl`
+- [x] Business events posted under business identity — handled by the new account-type model: business accounts always post under `business_id`, BEFORE INSERT trigger blocks personal accounts from setting business_id, EventCard / EventDetailPage / VoucherDetailPage all show business name + logo + verified tick when `business_id` is set
 - [x] Main filter — single category select only. **Fixed**: Changed to radio-style single-select on HomePage FilterPills and BottomSheet category grid. Tapping selected category deselects (shows all).
 - [x] Removed / left event notifications — **Fixed**: Added `participant_removed`, `participant_left`, `participant_rejoined` notification types. Triggers fire in participantService on reject/leave/rejoin.
 - [x] Guest list visibility rules — **Fixed**: Host sees full list (names + avatars + profile links). Participants see avatar stack + count only. Non-participants see count text only.

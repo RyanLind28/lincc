@@ -210,7 +210,7 @@ export default function AdminCategoriesPage() {
                       {parent.children.map((child) => (
                         <div key={child.id} className="flex items-center gap-3 p-3 pl-12">
                           <div className="w-7 h-7 rounded-lg bg-surface border border-border flex items-center justify-center flex-shrink-0">
-                            <CategoryIcon icon={child.icon} className="text-text-muted" size="xs" />
+                            <CategoryIcon icon={child.icon} className="text-text-muted" size="sm" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-text truncate">{child.name}</p>

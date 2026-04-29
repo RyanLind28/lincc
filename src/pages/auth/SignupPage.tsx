@@ -18,7 +18,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [contactName, setContactName] = useState('');
   const [businessName, setBusinessName] = useState('');
-  const [businessCategory, setBusinessCategory] = useState(BUSINESS_CATEGORIES[0]);
+  const [businessCategory, setBusinessCategory] = useState<string>(BUSINESS_CATEGORIES[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [showVerificationSent, setShowVerificationSent] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);

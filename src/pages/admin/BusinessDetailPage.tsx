@@ -46,13 +46,13 @@ export default function AdminBusinessDetailPage() {
 
   const statusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
     switch (status) {
-      case 'active': return 'success';
+      case 'approved': return 'success';
       case 'suspended': return 'warning';
       default: return 'default';
     }
   };
 
-  const handleStatus = async (status: 'active' | 'suspended') => {
+  const handleStatus = async (status: 'approved' | 'suspended') => {
     setIsActing(true);
     const res = await updateBusinessStatus(b.id, status);
     if (res.success) {
@@ -149,8 +149,8 @@ export default function AdminBusinessDetailPage() {
         <div className="bg-surface rounded-2xl border border-border p-4">
           <h3 className="font-semibold text-text text-sm mb-3">Admin actions</h3>
           <div className="flex gap-2 flex-wrap">
-            <Button size="sm" variant={b.status === 'active' ? 'primary' : 'ghost'} onClick={() => handleStatus('active')} disabled={isActing || b.status === 'active'}>
-              <UserCheck className="h-3.5 w-3.5 mr-1" /> Activate
+            <Button size="sm" variant={b.status === 'approved' ? 'primary' : 'ghost'} onClick={() => handleStatus('approved')} disabled={isActing || b.status === 'approved'}>
+              <UserCheck className="h-3.5 w-3.5 mr-1" /> Approve
             </Button>
             <Button size="sm" variant="danger" onClick={() => handleStatus('suspended')} disabled={isActing || b.status === 'suspended'}>
               <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Suspend

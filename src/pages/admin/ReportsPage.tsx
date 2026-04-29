@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Header } from '../../components/layout';
 import { Avatar, Badge, Modal, Button, TextArea, ChatListSkeleton, Input } from '../../components/ui';
-import { Flag, CheckCircle, XCircle, AlertTriangle, Download, Star, MessageSquareWarning, UserX, Ban, UserMinus, CalendarX, ShieldOff, Trash2 } from 'lucide-react';
+import { Flag, CheckCircle, XCircle, AlertTriangle, Download, Star, MessageSquareWarning, UserX, Ban, UserMinus, CalendarX, Trash2 } from 'lucide-react';
 import { fetchAdminReports, updateReportStatus, exportReportsCSV } from '../../services/adminService';
 import {
   warnUser, suspendUser, banUser,

@@ -216,7 +216,17 @@ export async function getBusinessPublicData(businessId: string): Promise<{
     .order('start_time', { ascending: false })
     .limit(20);
 
-  const eventList = (events ?? []).map((e: { participant_count?: { count: number }[] | { count: number } } & BusinessPublicEvent) => ({
+  type PublicEventRow = {
+    id: string;
+    title: string;
+    start_time: string;
+    capacity: number;
+    cover_image_url: string | null;
+    venue_name: string;
+    status: string;
+    participant_count?: { count: number }[] | { count: number } | null;
+  };
+  const eventList: BusinessPublicEvent[] = ((events ?? []) as unknown as PublicEventRow[]).map((e) => ({
     id: e.id,
     title: e.title,
     start_time: e.start_time,
@@ -227,7 +237,7 @@ export async function getBusinessPublicData(businessId: string): Promise<{
     participant_count: Array.isArray(e.participant_count)
       ? (e.participant_count[0]?.count ?? 0)
       : (e.participant_count?.count ?? 0),
-  })) as BusinessPublicEvent[];
+  }));
 
   const eventIds = eventList.map((e) => e.id);
   const { data: reviews } = eventIds.length
@@ -333,7 +343,16 @@ export async function getBusinessDashboardData(businessId: string): Promise<Busi
       .order('created_at', { ascending: false }),
   ]);
 
-  const events = (eventsRes.data ?? []).map((e: { participant_count?: { count: number }[] | { count: number } } & BusinessDashboardEvent) => ({
+  type DashboardEventRow = {
+    id: string;
+    title: string;
+    status: string;
+    start_time: string;
+    capacity: number;
+    cover_image_url: string | null;
+    participant_count?: { count: number }[] | { count: number } | null;
+  };
+  const events: BusinessDashboardEvent[] = ((eventsRes.data ?? []) as unknown as DashboardEventRow[]).map((e) => ({
     id: e.id,
     title: e.title,
     status: e.status,
@@ -343,7 +362,7 @@ export async function getBusinessDashboardData(businessId: string): Promise<Busi
     participant_count: Array.isArray(e.participant_count)
       ? (e.participant_count[0]?.count ?? 0)
       : (e.participant_count?.count ?? 0),
-  })) as BusinessDashboardEvent[];
+  }));
 
   const vouchers = vouchersRes.data ?? [];
 
