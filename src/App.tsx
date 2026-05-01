@@ -11,6 +11,7 @@ import { ScrollToTop } from './components/layout/ScrollToTop';
 import { AnalyticsTracker } from './components/AnalyticsTracker';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { UpdateNotification } from './components/pwa/UpdateNotification';
+import { PrivateBrowsingBanner } from './components/pwa/PrivateBrowsingBanner';
 import { FullPageSpinner } from './components/ui';
 
 // Auth pages (small, loaded eagerly for fast first paint)
@@ -91,6 +92,7 @@ function App() {
         <ScrollToTop />
         <AnalyticsTracker />
         <CookieConsentBanner />
+        <PrivateBrowsingBanner />
         <UpdateNotification />
         <Suspense fallback={<FullPageSpinner />}>
         <Routes>

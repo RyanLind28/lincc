@@ -9,7 +9,8 @@ import { Camera, ArrowLeft, ArrowRight, Download, Bell, Share, ChevronRight, Map
 import { usePWA } from '../../hooks/usePWA';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
-import { validateImageSize, compressImage } from '../../lib/imageCompression';
+import { validateImageDetailed, convertHeicIfNeeded, compressImage } from '../../lib/imageCompression';
+import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
 
 const LOCATION_VIBES = [
@@ -133,33 +134,79 @@ export default function OnboardingPage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    const sizeError = validateImageSize(file);
-    if (sizeError) {
-      showToast(sizeError, 'error');
+    const validation = await validateImageDetailed(file);
+    if (!validation.ok) {
+      Sentry.captureMessage('onboarding-avatar: validation rejected file', {
+        level: 'info',
+        extra: { reason: validation.error, fileType: file.type, fileSize: file.size, fileName: file.name },
+      });
+      showToast(validation.error, 'error');
       return;
     }
 
     setIsLoading(true);
 
-    try {
-      const compressed = await compressImage(file);
-      const filePath = `${user.id}/${Date.now()}.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, compressed, { contentType: 'image/jpeg' });
-
-      if (uploadError) {
-        showToast('Failed to upload photo', 'error');
-        logger.error(uploadError);
-      } else {
-        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-        setAvatarUrl(data.publicUrl);
+    let workingFile: File = file;
+    if (validation.format === 'heic') {
+      try {
+        workingFile = await convertHeicIfNeeded(file, 'heic');
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { feature: 'onboarding-avatar', stage: 'heic-convert' },
+          extra: { fileType: file.type, fileSize: file.size, fileName: file.name },
+        });
+        showToast(
+          "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",
+          'error',
+        );
+        setIsLoading(false);
+        return;
       }
-    } catch {
-      showToast('Failed to process image', 'error');
     }
 
+    let compressed: Blob;
+    try {
+      compressed = await compressImage(workingFile);
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: { feature: 'onboarding-avatar', stage: 'compress' },
+        extra: {
+          fileType: workingFile.type,
+          fileSize: workingFile.size,
+          fileName: workingFile.name,
+          userAgent: navigator.userAgent,
+        },
+      });
+      showToast(
+        "Couldn't process that image. Try a smaller photo or a different format (JPG/PNG).",
+        'error',
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    const filePath = `${user.id}/${Date.now()}.jpg`;
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, compressed, { contentType: 'image/jpeg' });
+
+    if (uploadError) {
+      Sentry.captureException(uploadError, {
+        tags: { feature: 'onboarding-avatar', stage: 'upload' },
+        extra: { filePath, compressedSize: compressed.size, userAgent: navigator.userAgent },
+      });
+      showToast(
+        uploadError.message
+          ? `Photo upload failed: ${uploadError.message}`
+          : "Photo upload failed. Check your connection and try again.",
+        'error',
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    setAvatarUrl(data.publicUrl);
     setIsLoading(false);
   };
 
@@ -317,7 +364,7 @@ export default function OnboardingPage() {
                   </div>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.heic,.heif"
                     onChange={handlePhotoUpload}
                     className="hidden"
                   />

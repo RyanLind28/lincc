@@ -3,7 +3,6 @@ const MAX_DIMENSION_COVER = 1200; // px — for event/voucher cover images
 const JPEG_QUALITY = 0.8;
 const MAX_INPUT_SIZE = 10 * 1024 * 1024; // 10MB
 
-// Allowed image MIME types
 const ALLOWED_TYPES = new Set([
   'image/jpeg',
   'image/png',
@@ -13,60 +12,77 @@ const ALLOWED_TYPES = new Set([
   'image/heif',
 ]);
 
-// Magic bytes for common image formats
-const IMAGE_SIGNATURES: [number[], string][] = [
-  [[0xFF, 0xD8, 0xFF], 'JPEG'],
-  [[0x89, 0x50, 0x4E, 0x47], 'PNG'],
-  [[0x47, 0x49, 0x46], 'GIF'],
-  [[0x52, 0x49, 0x46, 0x46], 'WEBP/RIFF'],
-  [[0x00, 0x00, 0x00], 'HEIC/HEIF/MP4'], // ftyp containers
-];
+// Some Android pickers / camera apps return blank or generic MIMEs even for valid
+// photos. Treat these as "unknown — fall through to magic-byte check" rather than
+// rejecting the file outright.
+const UNKNOWN_MIME_TYPES = new Set(['', 'application/octet-stream']);
+
+// HEIC/HEIF brands that may appear in the ftyp box (offset 4..8 in the file).
+const HEIC_BRANDS = new Set(['heic', 'heix', 'hevc', 'heim', 'heis', 'hevm', 'hevs', 'mif1', 'msf1']);
+
+type DetectedFormat = 'jpeg' | 'png' | 'gif' | 'webp' | 'heic' | null;
 
 /**
- * Reads the first bytes of a file to verify it's actually an image.
- * Checks magic bytes (file signature) rather than trusting the MIME type.
+ * Reads the first bytes of a file to detect its real format from magic bytes.
+ * The previous implementation used a too-loose `[0x00, 0x00, 0x00]` HEIC signature
+ * that passed for many non-images. This version checks the proper ftyp box brand.
  */
-async function verifyImageMagicBytes(file: File): Promise<boolean> {
-  const buffer = await file.slice(0, 12).arrayBuffer();
+async function detectImageFormat(file: File): Promise<DetectedFormat> {
+  const buffer = await file.slice(0, 16).arrayBuffer();
   const bytes = new Uint8Array(buffer);
 
-  for (const [signature] of IMAGE_SIGNATURES) {
-    if (signature.every((byte, i) => bytes[i] === byte)) {
-      return true;
-    }
-  }
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return 'jpeg';
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return 'png';
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'gif';
 
-  return false;
-}
+  // RIFF....WEBP — bytes 0..3 = "RIFF", bytes 8..11 = "WEBP"
+  if (
+    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+    bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+  ) return 'webp';
 
-/**
- * Validates an image file before processing.
- * Checks: file size, MIME type, and magic bytes.
- * Returns an error message if invalid, null if OK.
- */
-export async function validateImage(file: File): Promise<string | null> {
-  // Size check
-  if (file.size > MAX_INPUT_SIZE) {
-    return 'Image must be less than 10MB';
-  }
-
-  // MIME type check
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return 'Unsupported image format. Use JPEG, PNG, WebP, or GIF.';
-  }
-
-  // Magic byte verification — ensures the file content matches an image format
-  const isRealImage = await verifyImageMagicBytes(file);
-  if (!isRealImage) {
-    return 'File does not appear to be a valid image';
+  // HEIC/HEIF: ISO BMFF box — bytes 4..7 = "ftyp", bytes 8..11 = brand (4 chars)
+  if (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) {
+    const brand = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
+    if (HEIC_BRANDS.has(brand)) return 'heic';
   }
 
   return null;
 }
 
+export type ImageValidationResult = { ok: true; format: DetectedFormat } | { ok: false; error: string };
+
 /**
- * Synchronous size-only check (backwards compatible).
+ * Returns a structured result so callers can branch on format (e.g. trigger HEIC
+ * conversion) without re-detecting. Use `validateImage` for the simpler error-or-null API.
  */
+export async function validateImageDetailed(file: File): Promise<ImageValidationResult> {
+  if (file.size > MAX_INPUT_SIZE) {
+    return { ok: false, error: 'Image must be less than 10MB' };
+  }
+
+  // Reject obviously-non-image MIMEs early. Allow unknown/blank MIMEs (common on
+  // Android) to fall through to the magic-byte check.
+  if (file.type && !ALLOWED_TYPES.has(file.type) && !UNKNOWN_MIME_TYPES.has(file.type)) {
+    return { ok: false, error: 'Unsupported image format. Use JPEG, PNG, WebP, or HEIC.' };
+  }
+
+  const format = await detectImageFormat(file);
+  if (!format) {
+    return { ok: false, error: 'File does not appear to be a valid image' };
+  }
+
+  return { ok: true, format };
+}
+
+/**
+ * Backwards-compatible wrapper — returns error string or null.
+ */
+export async function validateImage(file: File): Promise<string | null> {
+  const result = await validateImageDetailed(file);
+  return result.ok ? null : result.error;
+}
+
 export function validateImageSize(file: File): string | null {
   if (file.size > MAX_INPUT_SIZE) {
     return 'Image must be less than 10MB';
@@ -75,14 +91,27 @@ export function validateImageSize(file: File): string | null {
 }
 
 /**
- * Compresses an image file client-side using Canvas.
- * The Canvas re-render strips any embedded scripts, EXIF exploits, or payloads —
- * the output is a clean JPEG with only pixel data.
- *
- * @param file - The image file to compress
- * @param maxDimension - Max width/height (default 800 for avatars)
+ * Converts HEIC/HEIF to JPEG client-side via heic2any. Other formats pass through
+ * unchanged. heic2any is loaded lazily so the ~700KB libheif WASM only ships when
+ * a user actually picks an iPhone photo.
  */
-export function compressImage(file: File, maxDimension = MAX_DIMENSION_AVATAR): Promise<Blob> {
+export async function convertHeicIfNeeded(file: File, format: DetectedFormat): Promise<File> {
+  if (format !== 'heic') return file;
+
+  // Lazy-load — keeps the libheif blob out of the main bundle.
+  const { default: heic2any } = await import('heic2any');
+  const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+  // heic2any may return Blob | Blob[] (multi-image HEIC). Take the first frame.
+  const blob = Array.isArray(converted) ? converted[0] : converted;
+  return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+}
+
+/**
+ * Compresses an image file client-side using Canvas. The Canvas re-render strips
+ * any embedded scripts, EXIF exploits, or payloads — output is clean pixel JPEG.
+ * Caller is responsible for converting HEIC first via convertHeicIfNeeded.
+ */
+export function compressImage(file: File | Blob, maxDimension = MAX_DIMENSION_AVATAR): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -92,13 +121,11 @@ export function compressImage(file: File, maxDimension = MAX_DIMENSION_AVATAR): 
 
       let { width, height } = img;
 
-      // Reject absurdly large images that could crash the browser
       if (width > 10000 || height > 10000) {
         reject(new Error('Image dimensions too large (max 10000x10000)'));
         return;
       }
 
-      // Scale down if either dimension exceeds max
       if (width > maxDimension || height > maxDimension) {
         if (width > height) {
           height = Math.round((height * maxDimension) / width);
@@ -136,14 +163,13 @@ export function compressImage(file: File, maxDimension = MAX_DIMENSION_AVATAR): 
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Failed to load image — file may be corrupt or not a valid image'));
+      reject(new Error('Failed to load image — file may be corrupt or in an unsupported format'));
     };
 
     img.src = url;
   });
 }
 
-// Export constants for use in upload flows
 export { MAX_DIMENSION_COVER, MAX_DIMENSION_AVATAR };
 
 /**

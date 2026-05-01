@@ -10,7 +10,8 @@ import { CATEGORIES, type Category, type SubCategory } from '../data/categories'
 import { createEvent } from '../services/events';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
-import { compressImage, validateImage, MAX_DIMENSION_COVER } from '../lib/imageCompression';
+import { compressImage, validateImageDetailed, convertHeicIfNeeded, MAX_DIMENSION_COVER } from '../lib/imageCompression';
+import * as Sentry from '@sentry/react';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { getLocationsByBusiness } from '../services/businessService';
 import { getPlacePhotoUrl, type PlaceDetails } from '../services/placesService';
@@ -155,20 +156,41 @@ export default function CreateEventPage() {
 
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
 
-    // Validate file type, size, and magic bytes
-    const error = await validateImage(file);
-    if (error) {
-      showToast(error, 'error');
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    const validation = await validateImageDetailed(file);
+    if (!validation.ok) {
+      Sentry.captureMessage('event-cover: validation rejected file', {
+        level: 'info',
+        extra: { reason: validation.error, fileType: file.type, fileSize: file.size, fileName: file.name },
+      });
+      showToast(validation.error, 'error');
       return;
     }
 
-    setCoverImageFile(file);
-    setCoverImageUrl(URL.createObjectURL(file));
-    // Reset input so same file can be re-selected
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    let workingFile = file;
+    if (validation.format === 'heic') {
+      setIsUploading(true);
+      try {
+        workingFile = await convertHeicIfNeeded(file, 'heic');
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { feature: 'event-cover', stage: 'heic-convert' },
+          extra: { fileType: file.type, fileSize: file.size, fileName: file.name },
+        });
+        showToast(
+          "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",
+          'error',
+        );
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
+    setCoverImageFile(workingFile);
+    setCoverImageUrl(URL.createObjectURL(workingFile));
   };
 
   const handleCoverImageReset = () => {
@@ -246,32 +268,60 @@ export default function CreateEventPage() {
       const [hours, minutes] = selectedTime.split(':').map(Number);
       eventDateTime.setHours(hours, minutes, 0, 0);
 
-      // Upload cover image if user selected a file
+      // Upload cover image if user selected a file. If the upload fails, abort
+      // the whole submit — silently falling back to a default image was confusing
+      // (users thought their picked photo had saved when it hadn't).
       let finalCoverImageUrl = coverImageUrl;
       if (coverImageFile) {
         setIsUploading(true);
+        let compressed: Blob;
         try {
-          const compressed = await compressImage(coverImageFile, MAX_DIMENSION_COVER);
-          const fileName = `${user.id}/${Date.now()}.jpg`;
-          const { error: uploadError } = await supabase.storage
-            .from('event-images')
-            .upload(fileName, compressed, { contentType: 'image/jpeg' });
-
-          if (uploadError) {
-            logger.error('Upload error:', uploadError);
-            showToast('Failed to upload image, using default', 'error');
-          } else {
-            const { data: urlData } = supabase.storage
-              .from('event-images')
-              .getPublicUrl(fileName);
-            finalCoverImageUrl = urlData.publicUrl;
-          }
-        } catch (uploadErr) {
-          logger.error('Image upload failed:', uploadErr);
-          showToast('Failed to upload image, using default', 'error');
-        } finally {
+          compressed = await compressImage(coverImageFile, MAX_DIMENSION_COVER);
+        } catch (err) {
+          Sentry.captureException(err, {
+            tags: { feature: 'event-cover', stage: 'compress' },
+            extra: {
+              fileType: coverImageFile.type,
+              fileSize: coverImageFile.size,
+              fileName: coverImageFile.name,
+              userAgent: navigator.userAgent,
+            },
+          });
+          showToast(
+            "Couldn't process that image. Try a smaller photo or a different format (JPG/PNG).",
+            'error',
+          );
           setIsUploading(false);
+          setIsLoading(false);
+          return;
         }
+
+        const fileName = `${user.id}/${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('event-images')
+          .upload(fileName, compressed, { contentType: 'image/jpeg' });
+
+        if (uploadError) {
+          Sentry.captureException(uploadError, {
+            tags: { feature: 'event-cover', stage: 'upload' },
+            extra: { fileName, compressedSize: compressed.size, userAgent: navigator.userAgent },
+          });
+          showToast(
+            uploadError.message
+              ? `Image upload failed: ${uploadError.message}`
+              : "Image upload failed. Check your connection and try again.",
+            'error',
+          );
+          setIsUploading(false);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('event-images')
+          .getPublicUrl(fileName);
+        finalCoverImageUrl = urlData.publicUrl;
+        setIsUploading(false);
       }
 
       const result = await createEvent(
@@ -607,7 +657,7 @@ export default function CreateEventPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif"
                   onChange={handleCoverImageUpload}
                   className="hidden"
                 />

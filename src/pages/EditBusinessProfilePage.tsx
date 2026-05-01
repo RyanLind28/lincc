@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Header } from '../components/layout';
@@ -9,10 +10,12 @@ import { useUserLocation } from '../hooks/useUserLocation';
 import { Camera, X, Loader2, AlertTriangle } from 'lucide-react';
 import { updateBusiness } from '../services/businessService';
 import { supabase } from '../lib/supabase';
-import { compressImage, validateImage } from '../lib/imageCompression';
+import { compressImage, validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
 import { BUSINESS_CATEGORIES } from '../types';
 import { cn } from '../lib/utils';
 import type { BusinessOpeningHours } from '../types';
+
+type LogoStatus = 'idle' | 'converting' | 'compressing' | 'uploading';
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 const DAY_LABELS: Record<string, string> = {
@@ -35,6 +38,7 @@ export default function EditBusinessProfilePage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [hours, setHours] = useState<BusinessOpeningHours>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [logoStatus, setLogoStatus] = useState<LogoStatus>('idle');
 
   useEffect(() => {
     if (business) {
@@ -70,12 +74,43 @@ export default function EditBusinessProfilePage() {
 
   const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const error = await validateImage(file);
-    if (error) { showToast(error, 'error'); return; }
-    setLogoFile(file);
-    setLogoUrl(URL.createObjectURL(file));
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+
+    const validation = await validateImageDetailed(file);
+    if (!validation.ok) {
+      Sentry.captureMessage('business-logo: validation rejected file', {
+        level: 'info',
+        extra: { reason: validation.error, fileType: file.type, fileSize: file.size, fileName: file.name },
+      });
+      showToast(validation.error, 'error');
+      return;
+    }
+
+    // HEIC photos (typical iPhone / WhatsApp share) need to be converted before
+    // anything else can decode them — Android Chrome can't render HEIC natively.
+    let workingFile = file;
+    if (validation.format === 'heic') {
+      setLogoStatus('converting');
+      try {
+        workingFile = await convertHeicIfNeeded(file, 'heic');
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { feature: 'business-logo', stage: 'heic-convert' },
+          extra: { fileType: file.type, fileSize: file.size, fileName: file.name },
+        });
+        showToast(
+          "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",
+          'error',
+        );
+        setLogoStatus('idle');
+        return;
+      }
+    }
+
+    setLogoFile(workingFile);
+    setLogoUrl(URL.createObjectURL(workingFile));
+    setLogoStatus('idle');
   };
 
   const handleRemoveLogo = () => {
@@ -112,18 +147,63 @@ export default function EditBusinessProfilePage() {
       let uploadedLogoUrl: string | undefined;
 
       if (logoFile && business.owner_id) {
-        const compressed = await compressImage(logoFile);
+        // Compress
+        let compressed: Blob;
+        setLogoStatus('compressing');
+        try {
+          compressed = await compressImage(logoFile);
+        } catch (err) {
+          Sentry.captureException(err, {
+            tags: { feature: 'business-logo', stage: 'compress' },
+            extra: {
+              fileType: logoFile.type,
+              fileSize: logoFile.size,
+              fileName: logoFile.name,
+              userAgent: navigator.userAgent,
+            },
+          });
+          showToast(
+            "Couldn't process that image. Try a smaller photo or a different format (JPG/PNG).",
+            'error',
+          );
+          setLogoStatus('idle');
+          setIsSaving(false);
+          return;
+        }
+
+        // Upload — abort the whole save if this fails. Previously we showed
+        // "Failed to upload logo" but kept going and toasted "Business updated!",
+        // leaving the user thinking the new image had saved when it hadn't.
+        setLogoStatus('uploading');
         const fileName = `${business.owner_id}/${Date.now()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('business-logos')
           .upload(fileName, compressed, { contentType: 'image/jpeg' });
 
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from('business-logos').getPublicUrl(fileName);
-          uploadedLogoUrl = urlData.publicUrl;
-        } else {
-          showToast('Failed to upload logo', 'error');
+        if (uploadError) {
+          Sentry.captureException(uploadError, {
+            tags: { feature: 'business-logo', stage: 'upload' },
+            extra: {
+              fileName,
+              compressedSize: compressed.size,
+              ownerId: business.owner_id,
+              userAgent: navigator.userAgent,
+            },
+          });
+          showToast(
+            uploadError.message
+              ? `Logo upload failed: ${uploadError.message}`
+              : "Logo upload failed. Check your connection and try again.",
+            'error',
+          );
+          setLogoStatus('idle');
+          setIsSaving(false);
+          return;
         }
+
+        const { data: urlData } = supabase.storage.from('business-logos').getPublicUrl(fileName);
+        uploadedLogoUrl = urlData.publicUrl;
+        setLogoStatus('idle');
       }
 
       const result = await updateBusiness(business.id, {
@@ -140,11 +220,17 @@ export default function EditBusinessProfilePage() {
         await refreshBusiness();
         navigate('/business/dashboard');
       } else {
+        Sentry.captureMessage('business-logo: updateBusiness failed', {
+          level: 'error',
+          extra: { error: result.error, businessId: business.id },
+        });
         showToast(result.error || 'Failed to update', 'error');
       }
-    } catch {
+    } catch (err) {
+      Sentry.captureException(err, { tags: { feature: 'business-logo', stage: 'save' } });
       showToast('Something went wrong', 'error');
     } finally {
+      setLogoStatus('idle');
       setIsSaving(false);
     }
   };
@@ -160,7 +246,12 @@ export default function EditBusinessProfilePage() {
         <div>
           <label className="block text-sm font-medium text-text mb-2">Business Logo</label>
           <div className="flex items-center gap-4">
-            {logoUrl ? (
+            {logoStatus !== 'idle' ? (
+              <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-coral flex flex-col items-center justify-center text-coral">
+                <Loader2 className="h-5 w-5 animate-spin mb-1" />
+                <span className="text-[10px] capitalize">{logoStatus}…</span>
+              </div>
+            ) : logoUrl ? (
               <div className="relative">
                 <img src={logoUrl} alt="Business logo" className="w-20 h-20 rounded-2xl object-cover border-2 border-border" />
                 <button type="button" onClick={handleRemoveLogo} className="absolute -top-2 -right-2 w-6 h-6 bg-error rounded-full flex items-center justify-center text-white">
@@ -173,7 +264,10 @@ export default function EditBusinessProfilePage() {
                 <span className="text-xs">Upload</span>
               </button>
             )}
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+            <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" onChange={handleLogoSelect} className="hidden" />
+            {logoStatus === 'converting' && (
+              <p className="text-xs text-text-muted">Converting iPhone photo…</p>
+            )}
           </div>
         </div>
 

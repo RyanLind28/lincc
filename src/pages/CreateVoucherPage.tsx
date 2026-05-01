@@ -7,7 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
 import { Input, TextArea, GradientButton, DatePicker } from '../components/ui';
 import { supabase } from '../lib/supabase';
-import { compressImage, validateImageSize } from '../lib/imageCompression';
+import { compressImage, validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
+import * as Sentry from '@sentry/react';
 import { getLocationsByBusiness } from '../services/businessService';
 import { cn } from '../lib/utils';
 import type { BusinessLocation } from '../types';
@@ -100,17 +101,43 @@ export default function CreateVoucherPage() {
     );
   }
 
-  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
-    const sizeError = validateImageSize(file);
-    if (sizeError) {
-      showToast(sizeError, 'error');
+
+    const validation = await validateImageDetailed(file);
+    if (!validation.ok) {
+      Sentry.captureMessage('voucher-cover: validation rejected file', {
+        level: 'info',
+        extra: { reason: validation.error, fileType: file.type, fileSize: file.size, fileName: file.name },
+      });
+      showToast(validation.error, 'error');
       return;
     }
-    setCoverImageFile(file);
-    setCoverImageUrl(URL.createObjectURL(file));
-    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    let workingFile = file;
+    if (validation.format === 'heic') {
+      setIsUploading(true);
+      try {
+        workingFile = await convertHeicIfNeeded(file, 'heic');
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { feature: 'voucher-cover', stage: 'heic-convert' },
+          extra: { fileType: file.type, fileSize: file.size, fileName: file.name },
+        });
+        showToast(
+          "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",
+          'error',
+        );
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
+
+    setCoverImageFile(workingFile);
+    setCoverImageUrl(URL.createObjectURL(workingFile));
   };
 
   const handleCoverImageReset = () => {
@@ -169,31 +196,59 @@ export default function CreateVoucherPage() {
     setIsLoading(true);
 
     try {
-      // Upload cover image if selected
+      // Upload cover image if selected. Abort the whole submit on failure rather
+      // than silently saving a voucher without the image the user picked.
       let finalCoverImageUrl = coverImageUrl;
       if (coverImageFile) {
         setIsUploading(true);
+        let compressed: Blob;
         try {
-          const compressed = await compressImage(coverImageFile);
-          const fileName = `${user.id}/${Date.now()}.jpg`;
-          const { error: uploadError } = await supabase.storage
-            .from('event-images')
-            .upload(fileName, compressed, { contentType: 'image/jpeg' });
-
-          if (uploadError) {
-            logger.error('Upload error:', uploadError);
-            showToast('Failed to upload image', 'error');
-          } else {
-            const { data: urlData } = supabase.storage
-              .from('event-images')
-              .getPublicUrl(fileName);
-            finalCoverImageUrl = urlData.publicUrl;
-          }
-        } catch (uploadErr) {
-          logger.error('Image upload failed:', uploadErr);
-        } finally {
+          compressed = await compressImage(coverImageFile);
+        } catch (err) {
+          Sentry.captureException(err, {
+            tags: { feature: 'voucher-cover', stage: 'compress' },
+            extra: {
+              fileType: coverImageFile.type,
+              fileSize: coverImageFile.size,
+              fileName: coverImageFile.name,
+              userAgent: navigator.userAgent,
+            },
+          });
+          showToast(
+            "Couldn't process that image. Try a smaller photo or a different format (JPG/PNG).",
+            'error',
+          );
           setIsUploading(false);
+          setIsLoading(false);
+          return;
         }
+
+        const fileName = `${user.id}/${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('event-images')
+          .upload(fileName, compressed, { contentType: 'image/jpeg' });
+
+        if (uploadError) {
+          Sentry.captureException(uploadError, {
+            tags: { feature: 'voucher-cover', stage: 'upload' },
+            extra: { fileName, compressedSize: compressed.size, userAgent: navigator.userAgent },
+          });
+          showToast(
+            uploadError.message
+              ? `Image upload failed: ${uploadError.message}`
+              : "Image upload failed. Check your connection and try again.",
+            'error',
+          );
+          setIsUploading(false);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('event-images')
+          .getPublicUrl(fileName);
+        finalCoverImageUrl = urlData.publicUrl;
+        setIsUploading(false);
       }
 
       const { error } = await supabase
@@ -455,7 +510,7 @@ export default function CreateVoucherPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif"
                   onChange={handleCoverImageUpload}
                   className="hidden"
                 />

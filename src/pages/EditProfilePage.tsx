@@ -7,7 +7,8 @@ import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
 import { Avatar, Button, Input, TextArea, ChipGroup, AvatarCropper } from '../components/ui';
 import { Camera, Mail, Lock, ChevronRight, Loader2 } from 'lucide-react';
-import { validateImage } from '../lib/imageCompression';
+import { validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
+import * as Sentry from '@sentry/react';
 
 const INTEREST_TAGS = [
   { value: 'coffee', label: 'Coffee', icon: '☕' },
@@ -61,24 +62,39 @@ export default function EditProfilePage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
 
-    // HEIC/HEIF won't decode in <img> in most browsers — catch this early
-    const lower = file.name.toLowerCase();
-    if (lower.endsWith('.heic') || lower.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif') {
-      showToast(
-        "iPhone HEIC photos aren't supported. In iOS Settings → Camera → Formats, switch to Most Compatible, or pick a JPEG/PNG.",
-        'error',
-      );
+    const validation = await validateImageDetailed(file);
+    if (!validation.ok) {
+      Sentry.captureMessage('avatar: validation rejected file', {
+        level: 'info',
+        extra: { reason: validation.error, fileType: file.type, fileSize: file.size, fileName: file.name },
+      });
+      showToast(validation.error, 'error');
       return;
     }
 
-    const validationError = await validateImage(file);
-    if (validationError) {
-      showToast(validationError, 'error');
-      return;
+    // HEIC/HEIF won't decode in <img>/cropper in most browsers — convert first.
+    let workingFile = file;
+    if (validation.format === 'heic') {
+      setIsUploadingAvatar(true);
+      try {
+        workingFile = await convertHeicIfNeeded(file, 'heic');
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { feature: 'avatar', stage: 'heic-convert' },
+          extra: { fileType: file.type, fileSize: file.size, fileName: file.name },
+        });
+        showToast(
+          "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",
+          'error',
+        );
+        setIsUploadingAvatar(false);
+        return;
+      }
+      setIsUploadingAvatar(false);
     }
 
     // Open the cropper
-    const objectUrl = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(workingFile);
     setCropSrc(objectUrl);
   };
 
@@ -98,7 +114,14 @@ export default function EditProfilePage() {
         .upload(filePath, croppedBlob, { contentType: 'image/jpeg' });
 
       if (uploadError) {
-        logger.error('Avatar upload error:', uploadError);
+        Sentry.captureException(uploadError, {
+          tags: { feature: 'avatar', stage: 'upload' },
+          extra: {
+            filePath,
+            blobSize: croppedBlob.size,
+            userAgent: navigator.userAgent,
+          },
+        });
         if (uploadError.message?.includes('exceeded')) {
           showToast('File too large for the storage limits', 'error');
         } else if (uploadError.message?.toLowerCase().includes('not authorized')
@@ -119,7 +142,10 @@ export default function EditProfilePage() {
         .eq('id', user.id);
 
       if (updateError) {
-        logger.error('Avatar DB update error:', updateError);
+        Sentry.captureException(updateError, {
+          tags: { feature: 'avatar', stage: 'profile-update' },
+          extra: { newUrl, userId: user.id },
+        });
         showToast(`Saved photo, couldn't update profile: ${updateError.message}`, 'error');
         return;
       }
@@ -139,7 +165,7 @@ export default function EditProfilePage() {
       await refreshProfile(user.id);
       showToast('Photo updated', 'success');
     } catch (err) {
-      logger.error('Avatar flow error:', err);
+      Sentry.captureException(err, { tags: { feature: 'avatar', stage: 'flow' } });
       showToast(err instanceof Error ? err.message : 'Failed to update photo', 'error');
     } finally {
       setIsUploadingAvatar(false);
@@ -282,7 +308,7 @@ export default function EditProfilePage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
             onChange={handlePhotoSelect}
             className="hidden"
           />
