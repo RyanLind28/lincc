@@ -149,10 +149,11 @@ export default function SettingsPage() {
     if (deleteConfirmText !== 'DELETE' || !user?.id) return;
     setIsDeleting(true);
 
-    const { error } = await supabase.rpc('delete_user_account', { target_user_id: user.id });
+    const { data, error } = await supabase.functions.invoke('delete-account');
 
-    if (error) {
-      showToast(error.message || 'Failed to delete account', 'error');
+    if (error || (data && (data as { error?: string }).error)) {
+      const message = (data as { error?: string } | null)?.error ?? error?.message ?? 'Failed to delete account';
+      showToast(message, 'error');
       setIsDeleting(false);
     } else {
       await signOut();
