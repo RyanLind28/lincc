@@ -1,6 +1,12 @@
 # LINCC TODO
 
-Last updated: 2026-04-29
+Last updated: 2026-05-01
+
+---
+
+## Backlog
+
+- **Verify Sentry DSN is set in Vercel** — `VITE_SENTRY_DSN` is set locally in `.env.local` but is not listed among the Vercel env vars in CLAUDE.md. If it's missing, every `Sentry.captureException` call (including the new ones added 2026-05-01 for image uploads, account deletion, Samsung browser triage) is a silent no-op in production. Check Vercel → lincc project → Settings → Environment Variables for `VITE_SENTRY_DSN`. If absent, copy the value from `.env.local` and add for Production + Preview, then redeploy. If you don't have a Sentry account at all, sign up at sentry.io (free tier covers current scale), create a React project, copy the DSN, and add it to both `.env.local` and Vercel.
 
 ---
 
