@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../../components/layout';
 import { Input, Avatar, Badge, Button, ChatListSkeleton } from '../../components/ui';
-import { Search, Users, Download, CheckSquare, Square, Flag, ChevronRight, Store } from 'lucide-react';
+import { Search, Users, Download, CheckSquare, Square, Flag, ChevronRight, Store, AlertCircle } from 'lucide-react';
 import { fetchAdminUsers, bulkUpdateUserStatus, exportUsersCSV } from '../../services/adminService';
 import { useToast } from '../../contexts/ToastContext';
 import { cn } from '../../lib/utils';
@@ -29,6 +29,7 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [flaggedOnly, setFlaggedOnly] = useState(false);
+  const [hideIncomplete, setHideIncomplete] = useState(true);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -91,6 +92,10 @@ export default function AdminUsersPage() {
     return () => clearTimeout(timeout);
   }, [loadUsers]);
 
+  const isComplete = (u: AdminUser) => !!u.first_name?.trim();
+  const visibleUsers = hideIncomplete ? users.filter(isComplete) : users;
+  const hiddenCount = users.length - visibleUsers.length;
+
   const statusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
     switch (status) {
       case 'active': return 'success';
@@ -152,6 +157,9 @@ export default function AdminUsersPage() {
             <Pill active={flaggedOnly} onClick={() => setFlaggedOnly(!flaggedOnly)}>
               <Flag className="h-3 w-3 inline mr-0.5" />Flagged
             </Pill>
+            <Pill active={hideIncomplete} onClick={() => setHideIncomplete(!hideIncomplete)}>
+              Hide incomplete
+            </Pill>
           </div>
         </div>
 
@@ -182,10 +190,13 @@ export default function AdminUsersPage() {
         ) : (
           <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
             <button onClick={toggleSelectAll} className="w-full px-4 py-2 flex items-center gap-2 text-xs text-text-muted hover:text-text">
-              {selectedIds.size === users.length ? <CheckSquare className="h-4 w-4 text-coral" /> : <Square className="h-4 w-4" />}
-              {selectedIds.size === users.length ? 'Deselect all' : 'Select all'}
+              {selectedIds.size === visibleUsers.length ? <CheckSquare className="h-4 w-4 text-coral" /> : <Square className="h-4 w-4" />}
+              {selectedIds.size === visibleUsers.length ? 'Deselect all' : 'Select all'}
+              {hideIncomplete && hiddenCount > 0 && (
+                <span className="ml-auto text-text-light">{hiddenCount} incomplete hidden</span>
+              )}
             </button>
-            {users.map((user) => (
+            {visibleUsers.map((user) => (
               <div key={user.id} className="p-4 flex items-center gap-3 hover:bg-background transition-colors">
                 <button onClick={() => toggleSelect(user.id)} className="flex-shrink-0">
                   {selectedIds.has(user.id) ? <CheckSquare className="h-5 w-5 text-coral" /> : <Square className="h-5 w-5 text-text-light" />}
@@ -194,7 +205,14 @@ export default function AdminUsersPage() {
                   <Avatar src={user.avatar_url} size="md" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-text truncate">{user.first_name || 'No name'}</p>
+                      <p className="font-medium text-text truncate">
+                        {user.first_name?.trim() || <span className="italic text-text-muted">No name yet</span>}
+                      </p>
+                      {!user.first_name?.trim() && (
+                        <Badge variant="warning" size="sm" title="Signed up but never finished onboarding">
+                          <AlertCircle className="h-3 w-3 inline mr-0.5" />Incomplete
+                        </Badge>
+                      )}
                       {user.role === 'admin' && <Badge variant="primary" size="sm">Admin</Badge>}
                       {user.account_type === 'business' && <Badge variant="default" size="sm"><Store className="h-3 w-3 inline mr-0.5" />Business</Badge>}
                       {user.is_flagged && <Badge variant="error" size="sm"><Flag className="h-3 w-3 inline mr-0.5" />Flagged</Badge>}

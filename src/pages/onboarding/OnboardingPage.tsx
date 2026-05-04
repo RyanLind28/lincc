@@ -69,7 +69,7 @@ export default function OnboardingPage() {
   const [locationCoords, setLocationCoords] = useState<Coordinates | null>(null);
   const [locationVibe] = useState(() => LOCATION_VIBES[Math.floor(Math.random() * LOCATION_VIBES.length)]);
 
-  const { user, isProfileComplete, refreshProfile } = useAuth();
+  const { user, profile, isProfileComplete, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const { isInstallable, isInstalled, promptInstall } = usePWA();
@@ -96,8 +96,15 @@ export default function OnboardingPage() {
     }
   }, []);
 
-  // Prefill from OAuth metadata (Google sign-up provides name + avatar)
+  // Prefill from existing profile (email signup already wrote first_name via the
+  // handle_new_user trigger) and OAuth metadata (Google provides full_name + avatar).
   useEffect(() => {
+    if (profile?.first_name && !firstName) {
+      setFirstName(profile.first_name);
+    }
+    if (profile?.avatar_url && !avatarUrl) {
+      setAvatarUrl(profile.avatar_url);
+    }
     if (!user) return;
     const meta = user.user_metadata;
     if (meta) {
@@ -110,7 +117,7 @@ export default function OnboardingPage() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, profile?.id]);
 
   // If profile is already complete on mount (before user starts), redirect to home.
   // Don't redirect once user is actively going through onboarding (step > 1)

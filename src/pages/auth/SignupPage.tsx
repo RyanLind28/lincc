@@ -51,15 +51,16 @@ export default function SignupPage() {
       showToast('You must be 18 or over to use Lincc', 'error');
       return;
     }
-    if (accountType === 'business') {
-      if (!contactName.trim()) {
-        showToast('Please enter a contact name', 'error');
-        return;
-      }
-      if (!businessName.trim()) {
-        showToast('Please enter your business name', 'error');
-        return;
-      }
+    if (!contactName.trim()) {
+      showToast(
+        accountType === 'business' ? 'Please enter a contact name' : 'Please enter your first name',
+        'error',
+      );
+      return;
+    }
+    if (accountType === 'business' && !businessName.trim()) {
+      showToast('Please enter your business name', 'error');
+      return;
     }
 
     setIsLoading(true);
@@ -68,7 +69,9 @@ export default function SignupPage() {
       accountType,
       termsAccepted: true,
       ageConfirmed: accountType === 'personal' ? true : undefined,
-      contactName: accountType === 'business' ? contactName : undefined,
+      // Sent for both account types — the handle_new_user trigger writes this
+      // into profiles.first_name so no signup ever produces a nameless profile.
+      contactName: contactName.trim(),
       businessName: accountType === 'business' ? businessName : undefined,
       businessCategory: accountType === 'business' ? businessCategory : undefined,
     });
@@ -220,6 +223,16 @@ export default function SignupPage() {
 
           <form onSubmit={handleSignup} className="space-y-4">
             <Input
+              label={accountType === 'business' ? 'Your name (contact)' : 'First name'}
+              type="text"
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              placeholder={accountType === 'business' ? 'The person we contact at the business' : 'e.g. Alex'}
+              autoComplete="given-name"
+              required
+            />
+
+            <Input
               label="Email"
               type="email"
               value={email}
@@ -248,14 +261,6 @@ export default function SignupPage() {
 
             {accountType === 'business' && (
               <>
-                <Input
-                  label="Your name (contact)"
-                  type="text"
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  placeholder="The person we contact at the business"
-                  required
-                />
                 <Input
                   label="Business name"
                   type="text"
