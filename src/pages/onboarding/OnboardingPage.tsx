@@ -1,15 +1,15 @@
 import { logger } from '../../lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
-import { GradientButton, Input, TextArea, Avatar, ChipGroup } from '../../components/ui';
+import { GradientButton, Input, TextArea, Avatar, ChipGroup, AvatarCropper } from '../../components/ui';
 import { Camera, ArrowLeft, ArrowRight, Download, Bell, Share, ChevronRight, MapPin, CheckCircle } from 'lucide-react';
 import { usePWA } from '../../hooks/usePWA';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
-import { validateImageDetailed, convertHeicIfNeeded, compressImage } from '../../lib/imageCompression';
+import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
 
@@ -130,8 +130,12 @@ export default function OnboardingPage() {
   const notificationStep = showInstallStep ? 7 : 6;
   const totalSteps = notificationStep;
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file || !user) return;
 
     const validation = await validateImageDetailed(file);
@@ -144,10 +148,9 @@ export default function OnboardingPage() {
       return;
     }
 
-    setIsLoading(true);
-
     let workingFile: File = file;
     if (validation.format === 'heic') {
+      setIsLoading(true);
       try {
         workingFile = await convertHeicIfNeeded(file, 'heic');
       } catch (err) {
@@ -162,38 +165,32 @@ export default function OnboardingPage() {
         setIsLoading(false);
         return;
       }
+      setIsLoading(false);
     }
 
-    let compressed: Blob;
-    try {
-      compressed = await compressImage(workingFile);
-    } catch (err) {
-      Sentry.captureException(err, {
-        tags: { feature: 'onboarding-avatar', stage: 'compress' },
-        extra: {
-          fileType: workingFile.type,
-          fileSize: workingFile.size,
-          fileName: workingFile.name,
-          userAgent: navigator.userAgent,
-        },
-      });
-      showToast(
-        "Couldn't process that image. Try a smaller photo or a different format (JPG/PNG).",
-        'error',
-      );
-      setIsLoading(false);
-      return;
-    }
+    setCropSrc(URL.createObjectURL(workingFile));
+  };
+
+  const handleCropCancel = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  };
+
+  const handleCropConfirm = async (croppedBlob: Blob) => {
+    if (!user) return;
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    setIsLoading(true);
 
     const filePath = `${user.id}/${Date.now()}.jpg`;
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(filePath, compressed, { contentType: 'image/jpeg' });
+      .upload(filePath, croppedBlob, { contentType: 'image/jpeg' });
 
     if (uploadError) {
       Sentry.captureException(uploadError, {
         tags: { feature: 'onboarding-avatar', stage: 'upload' },
-        extra: { filePath, compressedSize: compressed.size, userAgent: navigator.userAgent },
+        extra: { filePath, blobSize: croppedBlob.size, userAgent: navigator.userAgent },
       });
       showToast(
         uploadError.message
@@ -363,9 +360,10 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                   <input
+                    ref={fileInputRef}
                     type="file"
-                    accept="image/*,.heic,.heif"
-                    onChange={handlePhotoUpload}
+                    accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
+                    onChange={handlePhotoSelect}
                     className="hidden"
                   />
                 </label>
@@ -374,6 +372,17 @@ export default function OnboardingPage() {
                 </p>
               </div>
             </div>
+          )}
+
+          {cropSrc && (
+            <AvatarCropper
+              src={cropSrc}
+              isOpen
+              onClose={handleCropCancel}
+              onConfirm={handleCropConfirm}
+              cropShape="round"
+              aspect={1}
+            />
           )}
 
           {/* Step 2: Basic Info */}

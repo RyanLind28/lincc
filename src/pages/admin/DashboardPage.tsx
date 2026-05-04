@@ -4,7 +4,7 @@ import { Header } from '../../components/layout';
 import { Card, CardContent, Skeleton } from '../../components/ui';
 import {
   Users, Calendar, Flag, Tag, Shield, Megaphone, Zap,
-  UserPlus, Handshake, MessageSquare, Ticket, Building2, Gift, Store,
+  UserPlus, Handshake, MessageSquare, Ticket, Building2, Gift, Store, Image as ImageIcon,
 } from 'lucide-react';
 import {
   getAdminStats, getDashboardMetrics, getAdminActionCounts,
@@ -15,6 +15,7 @@ import { EngagementChart } from '../../components/admin/EngagementChart';
 import { ActivityFeed } from '../../components/admin/ActivityFeed';
 import { DateRangePicker } from '../../components/admin/DateRangePicker';
 import { TopList } from '../../components/admin/TopList';
+import { SystemStatus } from '../../components/admin/SystemStatus';
 
 type CountKey = 'flaggedUsers' | 'flaggedEvents' | 'pendingApplications' | 'pendingVerifications' | 'pendingReports';
 
@@ -31,6 +32,7 @@ const menuItems: Array<{
   { to: '/admin/business-applications', label: 'Business Applications', icon: Store, description: 'Approve or reject pending business signups', countKey: 'pendingApplications' },
   { to: '/admin/reports', label: 'Report Queue', icon: Flag, description: 'Review user reports', countKey: 'pendingReports' },
   { to: '/admin/categories', label: 'Categories', icon: Tag, description: 'Manage event categories' },
+  { to: '/admin/images', label: 'Images', icon: ImageIcon, description: 'Browse and remove uploaded images' },
   { to: '/admin/announcements', label: 'Announcements', icon: Megaphone, description: 'Broadcast to all users' },
   { to: '/admin/feature-flags', label: 'Feature Flags', icon: Zap, description: 'Toggle features on/off' },
   { to: '/admin/audit-log', label: 'Audit Log', icon: Shield, description: 'View admin action history' },
@@ -109,45 +111,8 @@ export default function AdminDashboard() {
       <Header title="Admin Dashboard" showBack />
 
       <div className="p-4 lg:p-6 space-y-6 max-w-7xl mx-auto">
-        {/* Quick manage — front and centre */}
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Manage</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {menuItems.map((item) => {
-              const count = item.countKey ? actionCounts[item.countKey] : 0;
-              const showBadge = count > 0;
-              // Surface verifications-waiting on the Business Applications tile too
-              const extraBadge = item.to === '/admin/business-applications' && actionCounts.pendingVerifications > 0
-                ? actionCounts.pendingVerifications
-                : 0;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className="group relative bg-surface rounded-2xl border border-border p-4 hover:border-coral/40 hover:shadow-md transition-all flex flex-col gap-2"
-                >
-                  {showBadge && (
-                    <span className="absolute top-3 right-3 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-coral rounded-full">
-                      {count > 99 ? '99+' : count}
-                    </span>
-                  )}
-                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-white">
-                    <item.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-text text-sm group-hover:text-coral transition-colors">{item.label}</h3>
-                    <p className="text-xs text-text-muted line-clamp-2 mt-0.5">{item.description}</p>
-                    {extraBadge > 0 && (
-                      <p className="text-[11px] font-medium text-warning mt-1">
-                        +{extraBadge} verification{extraBadge === 1 ? '' : 's'} to review
-                      </p>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
+        {/* System status — top of page so issues are unmissable */}
+        <SystemStatus />
 
         {/* Totals (all-time) — 4 columns on desktop */}
         <section>
@@ -230,6 +195,45 @@ export default function AdminDashboard() {
             emptyText="No redemptions yet"
           />
         </div>
+
+        {/* Quick manage — full set of admin tools */}
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">Manage</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {menuItems.map((item) => {
+              const count = item.countKey ? actionCounts[item.countKey] : 0;
+              const showBadge = count > 0;
+              const extraBadge = item.to === '/admin/business-applications' && actionCounts.pendingVerifications > 0
+                ? actionCounts.pendingVerifications
+                : 0;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="group relative bg-surface rounded-2xl border border-border p-4 hover:border-coral/40 hover:shadow-md transition-all flex flex-col gap-2"
+                >
+                  {showBadge && (
+                    <span className="absolute top-3 right-3 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-coral rounded-full">
+                      {count > 99 ? '99+' : count}
+                    </span>
+                  )}
+                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-white">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-text text-sm group-hover:text-coral transition-colors">{item.label}</h3>
+                    <p className="text-xs text-text-muted line-clamp-2 mt-0.5">{item.description}</p>
+                    {extraBadge > 0 && (
+                      <p className="text-[11px] font-medium text-warning mt-1">
+                        +{extraBadge} verification{extraBadge === 1 ? '' : 's'} to review
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
 
         {/* Recent activity */}
         <ActivityFeed />

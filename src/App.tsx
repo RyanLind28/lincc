@@ -65,6 +65,7 @@ const AdminUserDetailPage = lazy(() => import('./pages/admin/UserDetailPage'));
 const AdminEventsPage = lazy(() => import('./pages/admin/EventsPage'));
 const AdminReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/CategoriesPage'));
+const AdminImagesPage = lazy(() => import('./pages/admin/ImagesPage'));
 const AdminBusinessesPage = lazy(() => import('./pages/admin/BusinessesPage'));
 const AdminBusinessApplicationsPage = lazy(() => import('./pages/admin/BusinessApplicationsPage'));
 const AdminBusinessDetailPage = lazy(() => import('./pages/admin/BusinessDetailPage'));
@@ -316,6 +317,14 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <FeatureFlagsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/images"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminImagesPage />
               </ProtectedRoute>
             }
           />

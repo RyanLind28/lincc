@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Header } from '../components/layout';
-import { Input, TextArea, GradientButton, PlacesAutocomplete } from '../components/ui';
+import { Input, TextArea, GradientButton, PlacesAutocomplete, AvatarCropper } from '../components/ui';
 import type { PlaceDetails } from '../services/placesService';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { Camera, X, Loader2, AlertTriangle } from 'lucide-react';
@@ -36,6 +36,7 @@ export default function EditBusinessProfilePage() {
   const [address, setAddress] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [hours, setHours] = useState<BusinessOpeningHours>({});
   const [isSaving, setIsSaving] = useState(false);
   const [logoStatus, setLogoStatus] = useState<LogoStatus>('idle');
@@ -108,9 +109,21 @@ export default function EditBusinessProfilePage() {
       }
     }
 
-    setLogoFile(workingFile);
-    setLogoUrl(URL.createObjectURL(workingFile));
     setLogoStatus('idle');
+    setCropSrc(URL.createObjectURL(workingFile));
+  };
+
+  const handleCropCancel = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  };
+
+  const handleCropConfirm = (croppedBlob: Blob) => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    const file = new File([croppedBlob], `logo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    setLogoFile(file);
+    setLogoUrl(URL.createObjectURL(croppedBlob));
   };
 
   const handleRemoveLogo = () => {
@@ -238,6 +251,18 @@ export default function EditBusinessProfilePage() {
   return (
     <div className="min-h-screen bg-background pb-8">
       <Header showBack showLogo />
+
+      {cropSrc && (
+        <AvatarCropper
+          src={cropSrc}
+          isOpen
+          onClose={handleCropCancel}
+          onConfirm={handleCropConfirm}
+          cropShape="rect"
+          aspect={1}
+          title="Crop your logo"
+        />
+      )}
 
       <div className="p-4 space-y-6">
         <h1 className="text-2xl font-bold text-text">Edit Business</h1>

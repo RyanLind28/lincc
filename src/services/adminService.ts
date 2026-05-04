@@ -361,7 +361,7 @@ export async function toggleFeatureFlag(id: string, isEnabled: boolean, updatedB
 export async function logAdminAction(
   adminId: string,
   action: string,
-  targetType: 'user' | 'event' | 'report' | 'category' | 'business' | 'business_verification',
+  targetType: 'user' | 'event' | 'report' | 'category' | 'business' | 'business_verification' | 'image',
   targetId?: string,
   details?: Record<string, unknown>
 ) {
@@ -818,4 +818,133 @@ export async function fetchCategories() {
     .select('*')
     .order('sort_order', { ascending: true });
   return { data: data ?? [], error };
+}
+
+// ============================================================
+// IMAGE MANAGEMENT
+// ============================================================
+
+export type ImageBucket = 'avatars' | 'event-images' | 'business-logos';
+
+export type AdminImage = {
+  bucket: ImageBucket;
+  path: string;
+  name: string;
+  publicUrl: string;
+  size: number | null;
+  updatedAt: string | null;
+  ownerId: string | null;
+  ownerName: string | null;
+  ownerAvatar: string | null;
+};
+
+type StorageObject = {
+  id: string | null;
+  name: string;
+  updated_at: string | null;
+  created_at: string | null;
+  metadata: { size?: number; mimetype?: string } | null;
+};
+
+async function listBucketRecursive(
+  bucket: ImageBucket,
+  prefix = '',
+  limit = 500,
+): Promise<{ path: string; name: string; size: number | null; updatedAt: string | null }[]> {
+  const { data, error } = await supabase.storage.from(bucket).list(prefix, {
+    limit,
+    sortBy: { column: 'updated_at', order: 'desc' },
+  });
+  if (error || !data) return [];
+
+  const results: { path: string; name: string; size: number | null; updatedAt: string | null }[] = [];
+  const folders: string[] = [];
+
+  for (const entry of data as StorageObject[]) {
+    if (entry.id === null) {
+      folders.push(prefix ? `${prefix}/${entry.name}` : entry.name);
+    } else {
+      const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+      results.push({
+        path,
+        name: entry.name,
+        size: entry.metadata?.size ?? null,
+        updatedAt: entry.updated_at ?? entry.created_at ?? null,
+      });
+    }
+  }
+
+  for (const folder of folders) {
+    const nested = await listBucketRecursive(bucket, folder, limit);
+    results.push(...nested);
+  }
+
+  return results;
+}
+
+export async function fetchAdminImages(bucket: ImageBucket, limit = 200): Promise<AdminImage[]> {
+  const objects = await listBucketRecursive(bucket, '', limit);
+  if (objects.length === 0) return [];
+
+  const sorted = objects
+    .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
+    .slice(0, limit);
+
+  // Owner is encoded as the first path segment for all three buckets.
+  const ownerIds = Array.from(
+    new Set(
+      sorted
+        .map((o) => o.path.split('/')[0])
+        .filter((id): id is string => /^[0-9a-f-]{36}$/i.test(id ?? '')),
+    ),
+  );
+
+  const ownerMap = new Map<string, { name: string | null; avatar: string | null }>();
+  if (ownerIds.length > 0) {
+    const { data: owners } = await supabase
+      .from('profiles')
+      .select('id, first_name, avatar_url')
+      .in('id', ownerIds);
+    for (const o of owners ?? []) {
+      ownerMap.set(o.id, { name: o.first_name ?? null, avatar: o.avatar_url ?? null });
+    }
+  }
+
+  return sorted.map((o) => {
+    const ownerId = /^[0-9a-f-]{36}$/i.test(o.path.split('/')[0] ?? '') ? o.path.split('/')[0] : null;
+    const owner = ownerId ? ownerMap.get(ownerId) : undefined;
+    return {
+      bucket,
+      path: o.path,
+      name: o.name,
+      publicUrl: supabase.storage.from(bucket).getPublicUrl(o.path).data.publicUrl,
+      size: o.size,
+      updatedAt: o.updatedAt,
+      ownerId,
+      ownerName: owner?.name ?? null,
+      ownerAvatar: owner?.avatar ?? null,
+    };
+  });
+}
+
+export async function deleteAdminImage(
+  adminId: string,
+  bucket: ImageBucket,
+  path: string,
+): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+  if (error) return { success: false, error: error.message };
+
+  // Best-effort: clear references on the owning row so the UI doesn't show a broken image.
+  const publicUrl = supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  if (bucket === 'avatars') {
+    await supabase.from('profiles').update({ avatar_url: null }).eq('avatar_url', publicUrl);
+  } else if (bucket === 'event-images') {
+    await supabase.from('events').update({ cover_image_url: null }).eq('cover_image_url', publicUrl);
+  } else if (bucket === 'business-logos') {
+    await supabase.from('businesses').update({ logo_url: null }).eq('logo_url', publicUrl);
+  }
+
+  await logAdminAction(adminId, 'image.delete', 'image', undefined, { bucket, path });
+  return { success: true };
 }

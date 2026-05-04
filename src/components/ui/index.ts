@@ -21,6 +21,7 @@ export { BottomSheet, type BottomSheetProps } from './BottomSheet';
 export { CategoryIcon, iconMap } from './CategoryIcon';
 export { MapView, type MapViewProps, type MapEvent } from './MapView';
 export { VoucherTile, type VoucherTileProps } from './VoucherTile';
+export { VoucherCard, VoucherCardSkeleton, type VoucherCardProps } from './VoucherCard';
 export { ScratchCard, type ScratchCardProps } from './ScratchCard';
 export { SwipeToRedeem, type SwipeToRedeemProps } from './SwipeToRedeem';
 export { Toggle, type ToggleProps } from './Toggle';
