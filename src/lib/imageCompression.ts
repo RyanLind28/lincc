@@ -29,9 +29,11 @@ type DetectedFormat = 'jpeg' | 'png' | 'gif' | 'webp' | 'heic' | null;
  * a reference but `arrayBuffer()` fails with NotReadableError.
  */
 export class FileReadError extends Error {
-  constructor(message: string, public readonly cause?: unknown) {
+  readonly cause?: unknown;
+  constructor(message: string, cause?: unknown) {
     super(message);
     this.name = 'FileReadError';
+    this.cause = cause;
   }
 }
 
