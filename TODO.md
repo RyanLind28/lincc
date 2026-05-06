@@ -1,12 +1,36 @@
 # LINCC TODO
 
-Last updated: 2026-05-01
+Last updated: 2026-05-06
 
 ---
 
 ## Backlog
 
 - **Verify Sentry DSN is set in Vercel** — `VITE_SENTRY_DSN` is set locally in `.env.local` but is not listed among the Vercel env vars in CLAUDE.md. If it's missing, every `Sentry.captureException` call (including the new ones added 2026-05-01 for image uploads, account deletion, Samsung browser triage) is a silent no-op in production. Check Vercel → lincc project → Settings → Environment Variables for `VITE_SENTRY_DSN`. If absent, copy the value from `.env.local` and add for Production + Preview, then redeploy. If you don't have a Sentry account at all, sign up at sentry.io (free tier covers current scale), create a React project, copy the DSN, and add it to both `.env.local` and Vercel.
+
+---
+
+## Session Changelog — 2026-05-06
+
+Two production fixes — one auth regression, one image-upload reliability pass driven by a real Sentry event from a Samsung user. Migration 047 applied live, no TypeScript regressions.
+
+### Business signup regression — `handle_new_user` trigger restored
+- **Root cause** — the May 4 `handle_new_user_oauth_name` migration (applied live, no local file) overwrote the function from 045 and dropped the branches that read `raw_user_meta_data->>'account_type'` and inserted the pending `businesses` row. Result: every business signup since 4 May landed as `account_type='personal'` with no business record. Confirmed against `tami+ryantest@lincc.live` (signed up 06:30 UTC today as a business, came out as personal).
+- **Migration 047 — `047_fix_handle_new_user_account_type.sql`** — merged both code paths back: OAuth-name resolution (`contact_name` → `full_name` → `name`) **plus** account_type resolution (`account_type` → legacy `is_business` → default `personal`) **plus** pending `businesses` row creation with auto-slug for business signups. Applied live via Supabase MCP.
+- **Backfill** — DO block in the same migration flips any `auth.users.raw_user_meta_data` saying business but `profiles.account_type='personal'` over to business and creates the missing pending business row. Restored `tami+ryantest@lincc.live` → `account_type='business'` + new `Test Business` business in `pending_approval`.
+- **Cleanup** — deleted the abandoned `dannybomaths@gmail.com` signup (had only legacy `is_business: true` in metadata, no contact_name / business_name / terms_accepted_at — stuck mid-onboarding). Confirmed `Danny's Maths-Hub` business is owned by `d.bohannan@nadeenschool.com` (likely the same person).
+
+### Image upload reliability — Samsung NotReadableError fix + general hardening
+Driven by Sentry issue `JAVASCRIPT-REACT-3` (`NotReadableError: The requested file could not be read…`) reported on an older Samsung device. Root cause: the photo was a **Samsung Cloud / Google Photos placeholder** — the picker hands us a content URI but the bytes aren't on the device. `file.slice(0, 16).arrayBuffer()` in `detectImageFormat` failed; with no try/catch the error bubbled up as an unhandled rejection and the user just saw the upload silently fail.
+
+All changes in `src/lib/imageCompression.ts`:
+
+- **New `FileReadError`** typed error wraps NotReadableError thrown from the magic-byte read; `validateImageDetailed` catches it and surfaces a tailored toast: *"Couldn't read this photo. It might be saved to cloud storage (Samsung Cloud, Google Photos) — open it in your gallery to download it to your device, then try again."* Existing Sentry capture in upload pages picks up the typed error so we can track this case separately.
+- **`MAX_INPUT_SIZE` raised 10MB → 25MB** — Samsung high-MP cameras commonly produce 12–18MB JPEGs at full res; we previously rejected them outright. Output is canvas-recompressed to ~150KB regardless of input size, so the larger cap doesn't change storage cost.
+- **`ALLOWED_TYPES` extended** with `image/jpg` (Samsung Gallery and several older Android pickers emit this — no "e") and `image/pjpeg` (legacy progressive JPEG MIME).
+- **Magic bytes are now authoritative** — `validateImageDetailed` no longer rejects a file because of its MIME if the first 16 bytes match a recognised image format. MIME is checked only as a fallback when detection comes back null. Removes the "wrong MIME → instant reject" failure mode for Android pickers that mis-label otherwise valid JPEGs.
+
+`npx tsc --noEmit` clean. `npm run test:run` 56/57 pass; the one failure is a pre-existing `VoucherCard.test.tsx` clock flake (`6h left` vs `5h left`) unrelated to this work.
 
 ---
 

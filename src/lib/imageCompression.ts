@@ -1,10 +1,15 @@
 const MAX_DIMENSION_AVATAR = 800; // px — for profile avatars
 const MAX_DIMENSION_COVER = 1200; // px — for event/voucher cover images
 const JPEG_QUALITY = 0.8;
-const MAX_INPUT_SIZE = 10 * 1024 * 1024; // 10MB
+// 25MB — Samsung high-MP cameras commonly produce 12–18MB JPEGs at full res.
+// Output is canvas-recompressed to ~150KB regardless of input size.
+const MAX_INPUT_SIZE = 25 * 1024 * 1024;
+const MAX_INPUT_SIZE_LABEL = '25MB';
 
 const ALLOWED_TYPES = new Set([
   'image/jpeg',
+  'image/jpg',     // Samsung Gallery / older Android pickers
+  'image/pjpeg',   // legacy progressive JPEG MIME
   'image/png',
   'image/webp',
   'image/gif',
@@ -12,15 +17,23 @@ const ALLOWED_TYPES = new Set([
   'image/heif',
 ]);
 
-// Some Android pickers / camera apps return blank or generic MIMEs even for valid
-// photos. Treat these as "unknown — fall through to magic-byte check" rather than
-// rejecting the file outright.
-const UNKNOWN_MIME_TYPES = new Set(['', 'application/octet-stream']);
-
 // HEIC/HEIF brands that may appear in the ftyp box (offset 4..8 in the file).
 const HEIC_BRANDS = new Set(['heic', 'heix', 'hevc', 'heim', 'heis', 'hevm', 'hevs', 'mif1', 'msf1']);
 
 type DetectedFormat = 'jpeg' | 'png' | 'gif' | 'webp' | 'heic' | null;
+
+/**
+ * Thrown when the underlying file bytes can't be read — typically because the
+ * photo is a cloud placeholder (Samsung Cloud / Google Photos sync), lives on an
+ * unmounted SD card, or sits inside Samsung Secure Folder. The picker hands back
+ * a reference but `arrayBuffer()` fails with NotReadableError.
+ */
+export class FileReadError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'FileReadError';
+  }
+}
 
 /**
  * Reads the first bytes of a file to detect its real format from magic bytes.
@@ -28,7 +41,18 @@ type DetectedFormat = 'jpeg' | 'png' | 'gif' | 'webp' | 'heic' | null;
  * that passed for many non-images. This version checks the proper ftyp box brand.
  */
 async function detectImageFormat(file: File): Promise<DetectedFormat> {
-  const buffer = await file.slice(0, 16).arrayBuffer();
+  let buffer: ArrayBuffer;
+  try {
+    buffer = await file.slice(0, 16).arrayBuffer();
+  } catch (err) {
+    // NotReadableError on Android/Samsung means the photo is a cloud-only
+    // placeholder. Surface this distinctly so the UI can tell the user to
+    // download it to the device first.
+    throw new FileReadError(
+      "Couldn't read this photo. It might be saved to cloud storage (Samsung Cloud, Google Photos) — open it in your gallery to download it to your device, then try again.",
+      err,
+    );
+  }
   const bytes = new Uint8Array(buffer);
 
   if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return 'jpeg';
@@ -58,21 +82,34 @@ export type ImageValidationResult = { ok: true; format: DetectedFormat } | { ok:
  */
 export async function validateImageDetailed(file: File): Promise<ImageValidationResult> {
   if (file.size > MAX_INPUT_SIZE) {
-    return { ok: false, error: 'Image must be less than 10MB' };
+    return { ok: false, error: `Image must be less than ${MAX_INPUT_SIZE_LABEL}` };
   }
 
-  // Reject obviously-non-image MIMEs early. Allow unknown/blank MIMEs (common on
-  // Android) to fall through to the magic-byte check.
-  if (file.type && !ALLOWED_TYPES.has(file.type) && !UNKNOWN_MIME_TYPES.has(file.type)) {
-    return { ok: false, error: 'Unsupported image format. Use JPEG, PNG, WebP, or HEIC.' };
+  // Magic bytes are authoritative — Samsung/Android pickers regularly mis-label
+  // valid JPEGs as `image/jpg`, `application/octet-stream`, or empty string. If
+  // the bytes are a real image we accept it regardless of MIME; only fall back
+  // to the MIME check when detection comes back null.
+  let format: DetectedFormat;
+  try {
+    format = await detectImageFormat(file);
+  } catch (err) {
+    if (err instanceof FileReadError) {
+      return { ok: false, error: err.message };
+    }
+    throw err;
   }
 
-  const format = await detectImageFormat(file);
-  if (!format) {
-    return { ok: false, error: 'File does not appear to be a valid image' };
+  if (format) {
+    return { ok: true, format };
   }
 
-  return { ok: true, format };
+  if (file.type && ALLOWED_TYPES.has(file.type)) {
+    // Unknown header but a trusted MIME — accept and let the canvas pipeline
+    // handle it. Returning `null` keeps `convertHeicIfNeeded` a no-op.
+    return { ok: true, format: null };
+  }
+
+  return { ok: false, error: 'File does not appear to be a valid image' };
 }
 
 /**

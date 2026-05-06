@@ -448,7 +448,7 @@ supabase/
 - All admin actions written to `admin_audit_log` and surface user notifications
 
 ### Trust & safety
-- HEIC detection + magic-byte image validation
+- HEIC detection + magic-byte image validation (authoritative over MIME — handles Samsung's mis-labelled `image/jpg` photos), 25MB input cap, typed `FileReadError` for cloud-only photo placeholders (Samsung Cloud / Google Photos) with a tailored toast directing the user to download the photo to device first
 - Avatar cropper (round + square crops via `react-easy-crop`)
 - Soft-gate for unapproved businesses (banner across app, publishing blocked at DB trigger level)
 - Cookie consent gate before Google Analytics fires
@@ -523,6 +523,7 @@ The app boots at `http://localhost:5173`. Database migrations live in `supabase/
 | 045 | Account types + business approval workflow |
 | 047 | Business verifications + storage bucket |
 | 049 | Chat reports (`message_id`, `dm_message_id` on reports) |
+| 047_fix | Restore account_type + pending business creation in `handle_new_user` (regression fix) |
 
 Full list under `supabase/migrations/`.
 
