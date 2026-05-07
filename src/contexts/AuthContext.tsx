@@ -318,10 +318,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (options.businessCategory) metadata.business_category = options.businessCategory;
       if (options.contactName) metadata.contact_name = options.contactName.trim();
     }
+    // Business accounts land on /business/verify after clicking the email link
+    // so they upload their documents before hitting the dashboard. Personal
+    // accounts use the default redirect (Site URL → /).
+    const emailRedirectTo = options.accountType === 'business'
+      ? `${window.location.origin}/business/verify`
+      : undefined;
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: metadata },
+      options: { data: metadata, ...(emailRedirectTo && { emailRedirectTo }) },
     });
     if (error) {
       log('signUp error:', error.message);

@@ -137,7 +137,7 @@ export default function SignupPage() {
             </p>
             {accountType === 'business' && (
               <p className="text-sm text-text-muted mb-4">
-                After verifying, your business will go into review. We'll let you know once you're approved.
+                After verifying, you'll be taken straight to upload your business documents. Once submitted, our team will review and let you know when you're approved.
               </p>
             )}
             <p className="text-xs text-text-light mb-6">

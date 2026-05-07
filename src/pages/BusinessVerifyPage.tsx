@@ -1,13 +1,14 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
   Camera, IdCard, FileText, UserCircle, ChevronLeft, CheckCircle,
-  AlertTriangle, ShieldCheck, Loader2, Upload,
+  AlertTriangle, ShieldCheck, Loader2, Upload, MessageSquareWarning,
 } from 'lucide-react';
 import { Header } from '../components/layout';
 import { Badge, GradientButton } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { formatRelativeTime } from '../lib/utils';
 import {
   getMyVerification,
   uploadVerificationDoc,
@@ -152,6 +153,7 @@ function SlotCard({
 export default function BusinessVerifyPage() {
   const { user, business, profile, refreshBusiness } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [verification, setVerification] = useState<BusinessVerification | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadingSlot, setUploadingSlot] = useState<VerificationDocSlot | null>(null);
@@ -199,6 +201,7 @@ export default function BusinessVerifyPage() {
       showToast('Sent for review — we\'ll be in touch', 'success');
       refresh();
       refreshBusiness();
+      navigate('/business/dashboard');
     } else {
       showToast(result.error || 'Submission failed', 'error');
     }
@@ -254,13 +257,35 @@ export default function BusinessVerifyPage() {
             <AlertTriangle className="h-5 w-5 text-error mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-error">More info needed</p>
-              {verification?.rejection_notes && (
-                <p className="text-sm text-text mt-1">{verification.rejection_notes}</p>
-              )}
-              <p className="text-xs text-text-muted mt-1">Replace any flagged documents below and re-submit.</p>
+              <p className="text-xs text-text-muted mt-1">Check the admin's notes below, replace any flagged documents, and re-submit.</p>
             </div>
           </div>
         ) : null}
+
+        {/* Admin feedback — shown when the reviewer left notes (typically on
+            rejection, but also when notes accompany an approval). Always
+            visible while notes exist so the user knows what to act on. */}
+        {!isLoading && verification?.rejection_notes?.trim() && (
+          <div className="rounded-2xl border border-error/30 bg-error/5 overflow-hidden">
+            <div className="px-4 py-2.5 bg-error/10 border-b border-error/20 flex items-center gap-2">
+              <MessageSquareWarning className="h-4 w-4 text-error flex-shrink-0" />
+              <p className="text-sm font-semibold text-error">Reviewer's notes</p>
+              {verification.reviewed_at && (
+                <span className="ml-auto text-[11px] text-text-muted">
+                  {formatRelativeTime(verification.reviewed_at)}
+                </span>
+              )}
+            </div>
+            <div className="p-4 space-y-3">
+              <p className="text-sm text-text whitespace-pre-wrap">{verification.rejection_notes}</p>
+              {status === 'rejected' && (
+                <p className="text-xs text-text-muted">
+                  Replace the documents flagged above and tap <span className="font-medium">Re-submit for review</span> when you're done.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Slots */}
         <div className="space-y-3">

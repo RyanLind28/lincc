@@ -1,32 +1,34 @@
 import { Link } from 'react-router-dom';
-import { Clock, ShieldCheck, AlertTriangle, ChevronRight, X } from 'lucide-react';
+import { Clock, ShieldCheck, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMyVerification } from '../../services/verificationService';
 import type { VerificationStatus } from '../../types';
 
-const DISMISS_KEY = 'lincc:biz-approval-banner-dismissed';
-
 /**
  * Persistent banner shown to business accounts whose business isn't yet
- * approved. Appears app-wide via MainLayout. Dismissable per session.
+ * approved. Appears app-wide via MainLayout. Not dismissable — stays put
+ * until the business is approved, otherwise users lose their only path back
+ * to /business/verify.
  */
 export function BusinessApprovalBanner() {
   const { profile, business, isBusinessApproved } = useAuth();
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
-  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem(DISMISS_KEY) === '1');
+  const [rejectionNotes, setRejectionNotes] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!business?.id) { setVerificationStatus(null); return; }
-    getMyVerification(business.id).then((v) => setVerificationStatus(v?.status ?? 'draft'));
+    if (!business?.id) { setVerificationStatus(null); setRejectionNotes(null); return; }
+    getMyVerification(business.id).then((v) => {
+      setVerificationStatus(v?.status ?? 'draft');
+      setRejectionNotes(v?.rejection_notes ?? null);
+    });
   }, [business?.id]);
 
   if (
     !profile ||
     profile.account_type !== 'business' ||
     !business ||
-    isBusinessApproved ||
-    dismissed
+    isBusinessApproved
   ) {
     return null;
   }
@@ -51,7 +53,11 @@ export function BusinessApprovalBanner() {
     tone = 'error';
     icon = AlertTriangle;
     title = 'Verification needs another look';
-    body = 'Replace any flagged documents and re-submit to get the verified tick.';
+    // Surface the admin's notes verbatim so the user knows what to fix without
+    // an extra click. Falls back to generic copy when notes weren't provided.
+    body = rejectionNotes?.trim()
+      ? rejectionNotes
+      : 'Replace any flagged documents and re-submit to get the verified tick.';
     cta = { to: '/business/verify', label: 'Re-submit' };
   } else if (verifSubmitted) {
     tone = 'warning';
@@ -82,17 +88,10 @@ export function BusinessApprovalBanner() {
         </div>
         <Link
           to={cta.to}
-          className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-text hover:underline whitespace-nowrap"
+          className="inline-flex items-center gap-1 text-sm font-medium text-text hover:underline whitespace-nowrap"
         >
           {cta.label} <ChevronRight className="h-3 w-3" />
         </Link>
-        <button
-          onClick={() => { sessionStorage.setItem(DISMISS_KEY, '1'); setDismissed(true); }}
-          className="p-1 text-text-muted hover:text-text"
-          aria-label="Dismiss"
-        >
-          <X className="h-4 w-4" />
-        </button>
       </div>
     </div>
   );

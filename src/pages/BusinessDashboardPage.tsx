@@ -3,7 +3,7 @@ import { Link, useNavigate, Navigate } from 'react-router-dom';
 import {
   Pencil, Ticket, Eye, AlertTriangle, MapPin, X, Calendar,
   Star, Users, TrendingUp, Clock, Activity as ActivityIcon, Building2,
-  Globe, ExternalLink,
+  Globe, ExternalLink, ShieldCheck,
 } from 'lucide-react';
 import { Header } from '../components/layout';
 import { GradientButton, Badge, PlacesAutocomplete, Avatar } from '../components/ui';
@@ -267,6 +267,11 @@ export default function BusinessDashboardPage() {
                   <GradientButton size="sm" variant="outline">
                     <Pencil className="h-3.5 w-3.5 mr-1" /> Edit profile
                   </GradientButton>
+                </Link>
+                <Link to="/business/verify">
+                  <button className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-border text-text-muted hover:text-text text-sm font-medium">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Verification
+                  </button>
                 </Link>
                 {isBusinessApproved && (
                   <Link to={businessHref(business)}>
