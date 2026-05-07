@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Cropper, { type Area } from 'react-easy-crop';
 import { Modal, GradientButton, Button } from './';
 import { cropImageToBlob } from '../../lib/imageCompression';
@@ -14,6 +14,9 @@ interface AvatarCropperProps {
   /** "circle" shows a circular crop frame, "square" shows a square one. */
   cropShape?: 'round' | 'rect';
   title?: string;
+  /** When set, renders a "Choose different photo" button that re-opens the
+   *  parent's file input via <label htmlFor>. Pass the parent input's `id`. */
+  pickerInputId?: string;
 }
 
 export function AvatarCropper({
@@ -24,11 +27,20 @@ export function AvatarCropper({
   aspect = 1,
   cropShape = 'round',
   title = 'Crop your photo',
+  pickerInputId,
 }: AvatarCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [pixels, setPixels] = useState<Area | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Reset crop position/zoom when the user picks a different photo, otherwise
+  // react-easy-crop keeps the previous coordinates against the new image.
+  useEffect(() => {
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setPixels(null);
+  }, [src]);
 
   const onCropComplete = useCallback((_area: Area, areaPixels: Area) => {
     setPixels(areaPixels);
@@ -79,6 +91,14 @@ export function AvatarCropper({
           <Button variant="ghost" onClick={onClose} className="flex-1">
             Cancel
           </Button>
+          {pickerInputId && (
+            <label
+              htmlFor={pickerInputId}
+              className="flex-1 inline-flex items-center justify-center h-11 px-3 rounded-xl border border-border text-sm font-medium text-text hover:border-coral hover:text-coral cursor-pointer transition-colors"
+            >
+              Choose different
+            </label>
+          )}
           <GradientButton onClick={handleConfirm} isLoading={isProcessing} fullWidth>
             Use photo
           </GradientButton>

@@ -58,7 +58,8 @@ export default function EditProfilePage() {
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    // Reset the input so re-selecting the same file fires onChange again
+    // Reset value first — re-selecting the same file later still fires onChange,
+    // and avoids iOS Safari quirks with stale input state across re-renders.
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
 
@@ -93,7 +94,9 @@ export default function EditProfilePage() {
       setIsUploadingAvatar(false);
     }
 
-    // Open the cropper
+    // Open the cropper. Revoke the previous source first — happens when the
+    // user picked a new file via the cropper's "Choose different" button.
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
     const objectUrl = URL.createObjectURL(workingFile);
     setCropSrc(objectUrl);
   };
@@ -290,13 +293,12 @@ export default function EditProfilePage() {
 
       <div className="p-4 space-y-6">
         {/* Photo */}
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploadingAvatar}
-            className="relative cursor-pointer disabled:opacity-70"
-            aria-label="Change profile photo"
+        <div className="flex flex-col items-center gap-2">
+          <label
+            htmlFor="profile-avatar-input"
+            aria-disabled={isUploadingAvatar}
+            className={`relative ${isUploadingAvatar ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+            aria-label={avatarUrl ? 'Replace profile photo' : 'Add profile photo'}
           >
             <Avatar src={avatarUrl} name={firstName} size="xl" />
             <div className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-md">
@@ -304,14 +306,26 @@ export default function EditProfilePage() {
                 ? <Loader2 className="h-4 w-4 text-white animate-spin" />
                 : <Camera className="h-4 w-4 text-white" />}
             </div>
-          </button>
+          </label>
+          {/* sr-only keeps the input clickable on iOS Safari, where
+              display:none breaks programmatic file-picker triggers. */}
           <input
             ref={fileInputRef}
+            id="profile-avatar-input"
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
             onChange={handlePhotoSelect}
-            className="hidden"
+            className="sr-only"
+            disabled={isUploadingAvatar}
           />
+          {avatarUrl && !isUploadingAvatar && (
+            <label
+              htmlFor="profile-avatar-input"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-coral cursor-pointer hover:underline"
+            >
+              <Camera className="h-3.5 w-3.5" /> Replace photo
+            </label>
+          )}
         </div>
 
         {cropSrc && (
@@ -322,6 +336,7 @@ export default function EditProfilePage() {
             onConfirm={handleCropConfirm}
             cropShape="round"
             aspect={1}
+            pickerInputId="profile-avatar-input"
           />
         )}
 

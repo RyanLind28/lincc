@@ -103,6 +103,7 @@ export default function CreateVoucherPage() {
 
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset value first — re-selecting the same file later still fires onChange.
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
 
@@ -490,13 +491,13 @@ export default function CreateVoucherPage() {
                   </div>
                 )}
                 <div className="absolute bottom-2 right-2 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white hover:bg-black/70 transition-colors"
+                  <label
+                    htmlFor="voucher-cover-input"
+                    className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white hover:bg-black/70 transition-colors cursor-pointer"
+                    aria-label={coverImageFile ? 'Replace cover image' : 'Upload cover image'}
                   >
                     <Camera className="h-5 w-5" />
-                  </button>
+                  </label>
                   {coverImageFile && (
                     <button
                       type="button"
@@ -507,14 +508,25 @@ export default function CreateVoucherPage() {
                     </button>
                   )}
                 </div>
+                {/* sr-only keeps the input clickable on iOS Safari, where
+                    display:none breaks programmatic file-picker triggers. */}
                 <input
                   ref={fileInputRef}
+                  id="voucher-cover-input"
                   type="file"
                   accept="image/*,.heic,.heif"
                   onChange={handleCoverImageUpload}
-                  className="hidden"
+                  className="sr-only"
                 />
               </div>
+              {coverImageFile && (
+                <label
+                  htmlFor="voucher-cover-input"
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-coral cursor-pointer hover:underline"
+                >
+                  <Camera className="h-3.5 w-3.5" /> Replace photo
+                </label>
+              )}
             </div>
 
             {/* Expiry date */}

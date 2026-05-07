@@ -156,6 +156,7 @@ export default function CreateEventPage() {
 
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset value first — re-selecting the same file later still fires onChange.
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
 
@@ -635,14 +636,13 @@ export default function CreateEventPage() {
                 )}
                 {/* Overlay buttons */}
                 <div className="absolute bottom-2 right-2 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white hover:bg-black/70 transition-colors"
-                    aria-label="Upload cover image"
+                  <label
+                    htmlFor="event-cover-input"
+                    className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white hover:bg-black/70 transition-colors cursor-pointer"
+                    aria-label={coverImageFile ? 'Replace cover image' : 'Upload cover image'}
                   >
                     <Camera className="h-5 w-5" />
-                  </button>
+                  </label>
                   {coverImageFile && (
                     <button
                       type="button"
@@ -654,17 +654,29 @@ export default function CreateEventPage() {
                     </button>
                   )}
                 </div>
+                {/* sr-only keeps the input clickable on iOS Safari, where
+                    display:none breaks programmatic file-picker triggers. */}
                 <input
                   ref={fileInputRef}
+                  id="event-cover-input"
                   type="file"
                   accept="image/*,.heic,.heif"
                   onChange={handleCoverImageUpload}
-                  className="hidden"
+                  className="sr-only"
                 />
               </div>
-              <p className="text-xs text-text-muted mt-1">
-                Tap the camera to upload your own photo
-              </p>
+              {coverImageFile ? (
+                <label
+                  htmlFor="event-cover-input"
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-coral cursor-pointer hover:underline"
+                >
+                  <Camera className="h-3.5 w-3.5" /> Replace photo
+                </label>
+              ) : (
+                <p className="text-xs text-text-muted mt-1">
+                  Tap the camera to upload your own photo
+                </p>
+              )}
             </div>
 
             <Input

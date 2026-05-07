@@ -74,8 +74,21 @@ registerRoute(
   })
 );
 
-// --- SKIP WAITING HANDLER ---
-// When the app sends SKIP_WAITING, activate the new service worker immediately
+// --- AUTO ACTIVATION ---
+// Skip waiting on install + claim clients on activate so a new SW takes
+// over immediately, without needing the in-app Update prompt to be visible.
+// Users on an old bundle that hides the prompt behind login still update
+// the next time they open the app. The Update prompt remains a fallback
+// for the (rare) case where a fresh tab is already running stale code.
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+// Manual SKIP_WAITING from the in-app Update button still works.
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

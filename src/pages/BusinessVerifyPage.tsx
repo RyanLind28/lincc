@@ -82,11 +82,15 @@ function SlotCard({
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) onUpload(file);
+    // Reset value first — re-selecting the same file later still fires onChange,
+    // and avoids iOS Safari quirks with stale input state across re-renders.
     if (inputRef.current) inputRef.current.value = '';
+    if (file) onUpload(file);
   };
 
   const isImage = path && /\.(jpe?g|png|webp|gif|heic)$/i.test(path);
+  const inputId = `verify-doc-${slot.key}`;
+  const disabled = locked || isUploading;
 
   return (
     <div className="bg-surface rounded-2xl border border-border p-4">
@@ -117,23 +121,29 @@ function SlotCard({
       )}
 
       <div className="mt-3">
+        {/* Hidden but kept in layout — `display:none` breaks programmatic .click()
+            on iOS Safari, so we use sr-only and trigger via <label htmlFor>. */}
         <input
           ref={inputRef}
+          id={inputId}
           type="file"
           accept="image/*,.pdf"
           onChange={handleFile}
-          className="hidden"
-          disabled={locked || isUploading}
+          className="sr-only"
+          disabled={disabled}
         />
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={locked || isUploading}
-          className="w-full flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-border text-text-muted hover:border-coral hover:text-coral text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        <label
+          htmlFor={inputId}
+          aria-disabled={disabled}
+          className={`w-full flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-border text-sm font-medium transition-colors ${
+            disabled
+              ? 'opacity-50 cursor-not-allowed text-text-muted'
+              : 'text-text-muted hover:border-coral hover:text-coral cursor-pointer'
+          }`}
         >
           {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           {path ? 'Replace' : 'Upload'}
-        </button>
+        </label>
       </div>
     </div>
   );

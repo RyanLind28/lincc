@@ -175,6 +175,9 @@ export default function OnboardingPage() {
       setIsLoading(false);
     }
 
+    // Revoke the previous source before opening with a new one — happens when
+    // the user picks again via the cropper's "Choose different" button.
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(URL.createObjectURL(workingFile));
   };
 
@@ -368,6 +371,7 @@ export default function OnboardingPage() {
                   </div>
                   <input
                     ref={fileInputRef}
+                    id="onboarding-avatar-input"
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
                     onChange={handlePhotoSelect}
@@ -389,6 +393,7 @@ export default function OnboardingPage() {
               onConfirm={handleCropConfirm}
               cropShape="round"
               aspect={1}
+              pickerInputId="onboarding-avatar-input"
             />
           )}
 

@@ -75,6 +75,7 @@ export default function EditBusinessProfilePage() {
 
   const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset value first — re-selecting the same file later still fires onChange.
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
 
@@ -110,6 +111,9 @@ export default function EditBusinessProfilePage() {
     }
 
     setLogoStatus('idle');
+    // Revoke the previous source before opening with a new one — happens when
+    // the user picks again via the cropper's "Choose different" button.
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(URL.createObjectURL(workingFile));
   };
 
@@ -261,6 +265,7 @@ export default function EditBusinessProfilePage() {
           cropShape="rect"
           aspect={1}
           title="Crop your logo"
+          pickerInputId="business-logo-input"
         />
       )}
 
@@ -284,12 +289,19 @@ export default function EditBusinessProfilePage() {
                 </button>
               </div>
             ) : (
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center text-text-muted hover:border-coral hover:text-coral transition-colors">
+              <label htmlFor="business-logo-input" className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center text-text-muted hover:border-coral hover:text-coral transition-colors cursor-pointer">
                 <Camera className="h-5 w-5 mb-1" />
                 <span className="text-xs">Upload</span>
-              </button>
+              </label>
             )}
-            <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" onChange={handleLogoSelect} className="hidden" />
+            {/* sr-only keeps the input clickable on iOS Safari, where
+                display:none breaks programmatic file-picker triggers. */}
+            <input ref={fileInputRef} id="business-logo-input" type="file" accept="image/*,.heic,.heif" onChange={handleLogoSelect} className="sr-only" />
+            {logoUrl && logoStatus === 'idle' && (
+              <label htmlFor="business-logo-input" className="inline-flex items-center gap-1.5 text-sm font-medium text-coral cursor-pointer hover:underline">
+                <Camera className="h-4 w-4" /> Replace logo
+              </label>
+            )}
             {logoStatus === 'converting' && (
               <p className="text-xs text-text-muted">Converting iPhone photo…</p>
             )}
