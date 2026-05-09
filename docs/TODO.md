@@ -22,7 +22,14 @@ Source: `docs/Meeting started 2026_05_08 16_34 BST – Notes by Gemini.pdf`. Tha
 - [x] **Welcome email — Esen's social links attached** — `https://www.instagram.com/lincc_live` and `https://www.tiktok.com/@lincc_live` plumbed into `supabase/email-templates/waitlist-confirmation.html` (X removed since not provided). Same handles applied to landing footer across `landing/index.html`, `about.html`, `contact.html`, `terms.html`, `privacy.html` (X icon swapped for TikTok). (2026-05-09)
 - [x] **Shorten + refine verification link** — `confirm-signup.html` no longer dumps the full URL; replaced with a compact "Verify your email here" link as the button fallback. (2026-05-09)
 - [x] **Verify-email button in Outlook/Hotmail** — `confirm-signup.html` now uses a VML + table bulletproof button that renders correctly in Outlook 2007–2019 + Outlook.com + Hotmail. Long URL fallback replaced with a compact "Verify your email here" link. (2026-05-09)
-- [ ] **Confirmation email — junk/spam reliability** — needs DNS + SMTP setup, must be done by Ryan:
+- [ ] **Email deliverability — Resend warnings on test send (2026-05-09)** — three issues flagged on email `a75b542e-5fa3-473d-baaf-8212746c1e58` to `linccuser@hotmail.com`:
+    1. **Link URL ≠ sending domain.** Emails contain `https://srrubyupwiiqnehshszd.supabase.co/auth/v1/verify?...` but sender is `@system.lincc.live`. Fix: set up a Supabase **custom auth hostname** (e.g. `auth.system.lincc.live`) so verify links read `https://auth.system.lincc.live/auth/v1/verify?...`. Requires Supabase Pro. Steps: Dashboard → Settings → Authentication → URL Configuration → add `auth.system.lincc.live`, copy the CNAME record Supabase shows, add it on Namecheap → Advanced DNS → wait for verification → update Site URL.
+    2. **No DMARC on `system.lincc.live`.** Earlier "done" didn't propagate. Likely Namecheap UI quirk — Host field needs to be `_dmarc.system` (not `_dmarc.system.lincc.live`). Add TXT record: `v=DMARC1; p=none; rua=mailto:dmarc@lincc.live; ruf=mailto:dmarc@lincc.live; adkim=r; aspf=r;`. Verify with `dig +short TXT _dmarc.system.lincc.live`.
+    3. **`noreply@` sender hurts trust.** Change Supabase Auth → SMTP Settings → Sender email from `noreply@system.lincc.live` to `hello@system.lincc.live` (or similar). Then update both edge function secrets (`send-waitlist-email`, `send-welcome-email`) `EMAIL_FROM` to match.
+
+  **Order**: DMARC → Sender address → custom auth hostname. First two are 5 min each; third is ~30 min and optional for short-term sending. (Logged 2026-05-09; Ryan to address tomorrow.)
+
+- [ ] **Confirmation email — junk/spam reliability (older entry)** — needs DNS + SMTP setup, must be done by Ryan:
     - **No SPF record on lincc.live** (only `google-site-verification` exists). This alone is enough for Hotmail/Outlook to junk anything claiming to be `@lincc.live`.
     - **DMARC is set but weak**: `v=DMARC1; p=none;` — no `rua=` reporting destination so we have no visibility on what's actually being delivered.
     - **No DKIM records found** on common selectors (default, supabase, s1, mail).
@@ -61,6 +68,8 @@ Source: `docs/Meeting started 2026_05_08 16_34 BST – Notes by Gemini.pdf`. Tha
 ## Backlog
 
 - **Verify Sentry DSN is set in Vercel** — `VITE_SENTRY_DSN` is set locally in `.env.local` but is not listed among the Vercel env vars in CLAUDE.md. If it's missing, every `Sentry.captureException` call (including the new ones added 2026-05-01 for image uploads, account deletion, Samsung browser triage) is a silent no-op in production. Check Vercel → lincc project → Settings → Environment Variables for `VITE_SENTRY_DSN`. If absent, copy the value from `.env.local` and add for Production + Preview, then redeploy. If you don't have a Sentry account at all, sign up at sentry.io (free tier covers current scale), create a React project, copy the DSN, and add it to both `.env.local` and Vercel.
+
+- ~~**Investigate `send-welcome-email` Edge Function failures**~~ — RESOLVED 2026-05-09. Resend dashboard now shows successful sends from all three pipelines (Supabase Auth confirm-signup, send-waitlist-email, send-welcome-email). The Sentry failure I'd flagged was from before the `EMAIL_FROM` secret was switched to `@system.lincc.live`.
 
 ---
 

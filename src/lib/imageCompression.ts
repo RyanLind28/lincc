@@ -122,6 +122,74 @@ export async function validateImage(file: File): Promise<string | null> {
   return result.ok ? null : result.error;
 }
 
+/**
+ * Last-resort recovery for Samsung Cloud / Google Photos placeholder files.
+ *
+ * When `arrayBuffer()` fails because the bytes aren't on the device, the
+ * picker still gives us a File reference. Loading that reference into an
+ * `<img>` via `URL.createObjectURL` sometimes triggers the Android media
+ * subsystem to actually fetch the cloud bytes — different code path from
+ * the FileReader / Blob.arrayBuffer one that throws NotReadableError.
+ *
+ * If the image loads, we redraw it to a canvas and export a fresh JPEG.
+ * The caller can treat the returned File like any other and skip
+ * validation since we just rendered real pixels.
+ *
+ * Returns `null` if the recovery fails (cloud-only file truly inaccessible,
+ * timeout, or browser doesn't support the trick) — caller should then
+ * surface the original error.
+ */
+export async function recoverUnreadableImage(file: File): Promise<File | null> {
+  if (typeof URL === 'undefined' || typeof Image === 'undefined') return null;
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await loadImage(objectUrl, 25_000);
+    if (!img) return null;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
+    );
+    if (!blob) return null;
+
+    return new File([blob], `recovered-${Date.now()}.jpg`, { type: 'image/jpeg' });
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+function loadImage(src: string, timeoutMs: number): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    let resolved = false;
+    const timer = window.setTimeout(() => {
+      if (!resolved) { resolved = true; resolve(null); }
+    }, timeoutMs);
+    img.onload = () => {
+      if (resolved) return;
+      resolved = true;
+      window.clearTimeout(timer);
+      resolve(img);
+    };
+    img.onerror = () => {
+      if (resolved) return;
+      resolved = true;
+      window.clearTimeout(timer);
+      resolve(null);
+    };
+    img.src = src;
+  });
+}
+
 export function validateImageSize(file: File): string | null {
   if (file.size > MAX_INPUT_SIZE) {
     return 'Image must be less than 10MB';

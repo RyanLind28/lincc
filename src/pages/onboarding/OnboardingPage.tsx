@@ -10,7 +10,7 @@ import { usePWA } from '../../hooks/usePWA';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
-import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
+import { validateImageDetailed, convertHeicIfNeeded, recoverUnreadableImage } from '../../lib/imageCompression';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
 
@@ -242,36 +242,59 @@ export default function OnboardingPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isRecovering, setIsRecovering] = useState(false);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file || !user) return;
+    setPhotoError(null);
 
-    const validation = await validateImageDetailed(file);
+    let workingFile: File = file;
+    let validation = await validateImageDetailed(file);
+
+    // Cloud-placeholder recovery: if validation failed because the bytes
+    // couldn't be read, try loading the file via <img>+canvas — the Android
+    // media subsystem often materialises Samsung Cloud / Google Photos
+    // bytes when accessed through createObjectURL even though arrayBuffer()
+    // throws NotReadableError.
+    if (!validation.ok && /cloud storage/i.test(validation.error)) {
+      setIsRecovering(true);
+      try {
+        const recovered = await recoverUnreadableImage(file);
+        if (recovered) {
+          Sentry.captureMessage('onboarding-avatar: recovered cloud-placeholder file', {
+            level: 'info',
+            extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: recovered.size },
+          });
+          workingFile = recovered;
+          validation = { ok: true, format: 'jpeg' };
+        }
+      } finally {
+        setIsRecovering(false);
+      }
+    }
+
     if (!validation.ok) {
       Sentry.captureMessage('onboarding-avatar: validation rejected file', {
         level: 'info',
         extra: { reason: validation.error, fileType: file.type, fileSize: file.size, fileName: file.name },
       });
-      showToast(validation.error, 'error');
+      setPhotoError(validation.error);
       return;
     }
 
-    let workingFile: File = file;
     if (validation.format === 'heic') {
       setIsLoading(true);
       try {
-        workingFile = await convertHeicIfNeeded(file, 'heic');
+        workingFile = await convertHeicIfNeeded(workingFile, 'heic');
       } catch (err) {
         Sentry.captureException(err, {
           tags: { feature: 'onboarding-avatar', stage: 'heic-convert' },
-          extra: { fileType: file.type, fileSize: file.size, fileName: file.name },
+          extra: { fileType: workingFile.type, fileSize: workingFile.size, fileName: workingFile.name },
         });
-        showToast(
-          "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",
-          'error',
-        );
+        setPhotoError("Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.");
         setIsLoading(false);
         return;
       }
@@ -317,6 +340,7 @@ export default function OnboardingPage() {
 
     const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
     setAvatarUrl(data.publicUrl);
+    setPhotoError(null);
     setIsLoading(false);
   };
 
@@ -498,7 +522,11 @@ export default function OnboardingPage() {
                   <div className="relative">
                     <Avatar src={avatarUrl} name={firstName || 'You'} size="xl" />
                     <div className="absolute bottom-0 right-0 w-8 h-8 gradient-primary rounded-full flex items-center justify-center shadow-md">
-                      <Camera className="h-4 w-4 text-white" />
+                      {isRecovering ? (
+                        <Loader2 className="h-4 w-4 text-white animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4 text-white" />
+                      )}
                     </div>
                   </div>
                   <input
@@ -511,8 +539,42 @@ export default function OnboardingPage() {
                   />
                 </label>
                 <p className="text-sm text-text-muted">
-                  Tap to upload (max 10MB). Optional, you can add one later.
+                  {isRecovering
+                    ? 'Fetching photo from cloud — this can take a few seconds…'
+                    : 'Tap to upload (max 25MB). Optional, you can add one later.'}
                 </p>
+
+                {photoError && (
+                  <div className="w-full text-left bg-error/5 border border-error/20 rounded-xl p-4 mt-2">
+                    <p className="text-sm font-semibold text-error mb-2">
+                      Couldn't use this photo
+                    </p>
+                    <p className="text-sm text-text-muted mb-3 leading-relaxed">
+                      {photoError}
+                    </p>
+                    {/cloud storage/i.test(photoError) && (
+                      <div className="text-xs text-text-muted bg-background rounded-lg p-3 mb-3 leading-relaxed">
+                        <p className="font-semibold text-text mb-1">On Samsung:</p>
+                        <ol className="list-decimal pl-4 space-y-0.5">
+                          <li>Open <span className="font-medium">Samsung Gallery</span></li>
+                          <li>Tap the photo you want to use</li>
+                          <li>Tap the <span className="font-medium">cloud icon</span> to download it to the device</li>
+                          <li>Come back here and tap your avatar to try again</li>
+                        </ol>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoError(null);
+                        fileInputRef.current?.click();
+                      }}
+                      className="text-sm font-semibold text-coral hover:text-coral-dark"
+                    >
+                      Try a different photo →
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
