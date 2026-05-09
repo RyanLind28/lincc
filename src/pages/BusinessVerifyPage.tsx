@@ -16,6 +16,8 @@ import {
   getDocSignedUrl,
   type VerificationDocSlot,
 } from '../services/verificationService';
+import { validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
+import * as Sentry from '@sentry/react';
 import type { BusinessVerification } from '../types';
 
 interface SlotConfig {
@@ -182,12 +184,57 @@ export default function BusinessVerifyPage() {
   const handleUpload = async (slot: VerificationDocSlot, file: File) => {
     if (!user?.id || !business.id) return;
     setUploadingSlot(slot);
-    const result = await uploadVerificationDoc(business.id, user.id, slot, file);
-    setUploadingSlot(null);
+
+    // Image files (the three photo slots) get the same hardening as the rest
+    // of the app: magic-byte validation surfaces a friendly toast for Samsung
+    // Cloud / Google Photos placeholders, HEIC files get converted before
+    // upload. Registration docs are often PDFs, so skip validation when it's
+    // not an image MIME.
+    let workingFile = file;
+    const isImage = file.type.startsWith('image/');
+    if (isImage) {
+      const validation = await validateImageDetailed(file);
+      if (!validation.ok) {
+        Sentry.captureMessage('verification-doc: validation rejected file', {
+          level: 'info',
+          extra: { slot, reason: validation.error, fileType: file.type, fileSize: file.size },
+        });
+        setUploadingSlot(null);
+        showToast(validation.error, 'error');
+        return;
+      }
+      if (validation.format === 'heic') {
+        try {
+          workingFile = await convertHeicIfNeeded(file, 'heic');
+        } catch (err) {
+          Sentry.captureException(err, {
+            tags: { feature: 'verification-doc', stage: 'heic-convert' },
+            extra: { slot, fileType: file.type, fileSize: file.size },
+          });
+          setUploadingSlot(null);
+          showToast(
+            "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",
+            'error',
+          );
+          return;
+        }
+      }
+    }
+
+    const result = await uploadVerificationDoc(business.id, user.id, slot, workingFile);
     if (result.success) {
+      // Await the refresh so the SlotCard re-renders with the new path before
+      // we drop the uploading state — otherwise the user can hit "Replace"
+      // again on stale data and confuse the picker on Samsung Internet.
+      await refresh();
+      setUploadingSlot(null);
       showToast('Uploaded', 'success');
-      refresh();
     } else {
+      setUploadingSlot(null);
+      Sentry.captureMessage('verification-doc: upload failed', {
+        level: 'error',
+        extra: { slot, error: result.error, fileType: file.type, fileSize: file.size },
+      });
       showToast(result.error || 'Upload failed', 'error');
     }
   };

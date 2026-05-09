@@ -65,10 +65,12 @@ export interface SignUpOptions {
   accountType: AccountType;
   termsAccepted?: boolean;
   ageConfirmed?: boolean;
+  firstName?: string;
+  lastName?: string;
+  profileName?: string;
   // Business-only:
   businessName?: string;
   businessCategory?: string;
-  contactName?: string;
 }
 
 interface AuthContextType {
@@ -313,10 +315,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     if (options.termsAccepted) metadata.terms_accepted_at = new Date().toISOString();
     if (options.ageConfirmed) metadata.age_confirmed = true;
+    // Names sent for both account types — handle_new_user reads first_name +
+    // last_name + profile_name and sets defaults so no signup ever produces a
+    // nameless or blank-display-name profile.
+    if (options.firstName) metadata.first_name = options.firstName.trim();
+    if (options.lastName) metadata.last_name = options.lastName.trim();
+    if (options.profileName) metadata.profile_name = options.profileName.trim();
     if (options.accountType === 'business') {
       if (options.businessName) metadata.business_name = options.businessName.trim();
       if (options.businessCategory) metadata.business_category = options.businessCategory;
-      if (options.contactName) metadata.contact_name = options.contactName.trim();
     }
     // Business accounts land on /business/verify after clicking the email link
     // so they upload their documents before hitting the dashboard. Personal

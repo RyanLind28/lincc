@@ -42,6 +42,10 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number): numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+// Hard cap for discovery — anything beyond this is not surfaced even in the
+// "further afield" section. Locked to 100km per the 2026-05-08 product call.
+const MAX_DISCOVERY_KM = 100;
+
 // Map categories from data file to filter format (exclude "Other" — not useful as a filter)
 const ALL_CATEGORIES = CATEGORIES
   .filter((cat) => cat.value !== 'other')
@@ -131,8 +135,20 @@ export default function HomePage() {
   } = useRecommendedEvents({ maxDistance: debouncedDistance, locationOverride: customLocation });
 
   // Get user location for map + readable name
-  const { location: userLocation } = useUserLocation();
+  const { location: userLocation, isLoading: isLocationLoading, error: locationError } = useUserLocation();
   const { locationName } = useLocationName(userLocation);
+
+  // Auto-trigger a location fetch when the user opens the filter sheet without
+  // an active location — the distance slider is meaningless without one, and
+  // Thameena reported the sheet showed nothing useful when location wasn't
+  // enabled. Only re-fires when the sheet transitions closed → open, never
+  // while already open.
+  useEffect(() => {
+    if (isFilterSheetOpen && !hasLocation && !isLocationLoading) {
+      refreshLocation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFilterSheetOpen]);
 
   // Bookmarks
   const { savedIds, toggleSave } = useBookmarks();
@@ -169,9 +185,18 @@ export default function HomePage() {
   }, [refresh]);
   const { pullDistance, isRefreshing, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
 
-  // Split events into nearby and further away
-  const nearbyEvents = events.filter((e) => e.distance_km !== undefined && e.distance_km <= debouncedDistance);
-  const furtherEvents = events.filter((e) => e.distance_km === undefined || e.distance_km > debouncedDistance);
+  // Split events into nearby and further away. Anything beyond MAX_DISCOVERY_KM
+  // is dropped entirely so the feed stays locally relevant — events with no
+  // computed distance (e.g. before location resolves) fall into "further" so
+  // they don't disappear silently.
+  const nearbyEvents = events.filter(
+    (e) => e.distance_km !== undefined && e.distance_km <= debouncedDistance,
+  );
+  const furtherEvents = events.filter(
+    (e) =>
+      e.distance_km === undefined ||
+      (e.distance_km > debouncedDistance && e.distance_km <= MAX_DISCOVERY_KM),
+  );
 
   // Result count + reset state
   const resultCount = events.length;
@@ -182,7 +207,8 @@ export default function HomePage() {
     getActiveVouchers().then(setVouchers).catch(logger.error);
   }, []);
 
-  // Split vouchers into nearby vs further away
+  // Split vouchers into nearby vs further away. Same MAX_DISCOVERY_KM cap as
+  // events so a global voucher in California doesn't show up under "further".
   const nearbyVouchers = effectiveLocation
     ? vouchers.filter((v) => {
         const d = haversine(effectiveLocation.latitude, effectiveLocation.longitude, v.venue_lat, v.venue_lng);
@@ -192,7 +218,7 @@ export default function HomePage() {
   const farVouchers = effectiveLocation
     ? vouchers.filter((v) => {
         const d = haversine(effectiveLocation.latitude, effectiveLocation.longitude, v.venue_lat, v.venue_lng);
-        return d > debouncedDistance;
+        return d > debouncedDistance && d <= MAX_DISCOVERY_KM;
       })
     : [];
 
@@ -544,8 +570,27 @@ export default function HomePage() {
             <span className="text-sm font-semibold text-text">Distance</span>
             <span className="ml-auto text-lg font-bold gradient-text">{distance} km</span>
           </div>
-          {locationName && (
+          {hasLocation && locationName ? (
             <p className="text-xs text-text-muted mb-3 ml-6">from {locationName}</p>
+          ) : isLocationLoading ? (
+            <p className="text-xs text-text-muted mb-3 ml-6 flex items-center gap-1.5">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Finding your location…
+            </p>
+          ) : (
+            <div className="ml-6 mb-3">
+              <p className="text-xs text-text-muted mb-1.5">
+                {locationError ? 'Couldn\'t get your location.' : 'Location not enabled.'}
+              </p>
+              <button
+                type="button"
+                onClick={refreshLocation}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-coral bg-coral/10 hover:bg-coral/15 rounded-full transition-colors"
+              >
+                <Navigation className="h-3 w-3" />
+                Enable location
+              </button>
+            </div>
           )}
           <Slider
             value={distance}

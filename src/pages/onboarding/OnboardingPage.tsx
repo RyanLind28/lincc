@@ -5,8 +5,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { GradientButton, Input, TextArea, Avatar, ChipGroup, AvatarCropper } from '../../components/ui';
-import { Camera, ArrowLeft, ArrowRight, Download, Bell, Share, ChevronRight, MapPin, CheckCircle } from 'lucide-react';
+import { Camera, ArrowLeft, ArrowRight, Download, Bell, ChevronRight, MapPin, CheckCircle } from 'lucide-react';
 import { usePWA } from '../../hooks/usePWA';
+import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
 import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
@@ -55,6 +56,8 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [profileName, setProfileName] = useState('');
   const [dobDay, setDobDay] = useState('');
   const [dobMonth, setDobMonth] = useState('');
   const [dobYear, setDobYear] = useState('');
@@ -96,21 +99,21 @@ export default function OnboardingPage() {
     }
   }, []);
 
-  // Prefill from existing profile (email signup already wrote first_name via the
-  // handle_new_user trigger) and OAuth metadata (Google provides full_name + avatar).
+  // Prefill from existing profile (email signup already wrote first_name +
+  // last_name + profile_name via the handle_new_user trigger) and OAuth
+  // metadata (Google provides full_name + avatar).
   useEffect(() => {
-    if (profile?.first_name && !firstName) {
-      setFirstName(profile.first_name);
-    }
-    if (profile?.avatar_url && !avatarUrl) {
-      setAvatarUrl(profile.avatar_url);
-    }
+    if (profile?.first_name && !firstName) setFirstName(profile.first_name);
+    if (profile?.last_name && !lastName) setLastName(profile.last_name);
+    if (profile?.profile_name && !profileName) setProfileName(profile.profile_name);
+    if (profile?.avatar_url && !avatarUrl) setAvatarUrl(profile.avatar_url);
     if (!user) return;
     const meta = user.user_metadata;
     if (meta) {
       if (meta.full_name && !firstName) {
         const parts = (meta.full_name as string).split(' ');
         setFirstName(parts[0] || '');
+        if (parts.length > 1 && !lastName) setLastName(parts.slice(1).join(' '));
       }
       if (meta.avatar_url && !avatarUrl) {
         setAvatarUrl(meta.avatar_url as string);
@@ -118,6 +121,15 @@ export default function OnboardingPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, profile?.id]);
+
+  // Default profile name to "First Last" once both are populated, but don't
+  // overwrite an explicit edit (we only set it when it's still blank).
+  useEffect(() => {
+    if (!profileName && (firstName || lastName)) {
+      setProfileName(`${firstName} ${lastName}`.trim());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstName, lastName]);
 
   // If profile is already complete on mount (before user starts), redirect to home.
   // Don't redirect once user is actively going through onboarding (step > 1)
@@ -129,6 +141,61 @@ export default function OnboardingPage() {
       navigate('/', { replace: true });
     }
   }, [isProfileComplete, navigate, step, avatarUrl]);
+
+  // Resume onboarding after interruption (call/text on mobile backgrounds the
+  // PWA and clears in-memory state). We persist the current step and form
+  // fields to localStorage on every change and restore on mount, scoped per
+  // user so multiple sessions on the same device don't collide.
+  const resumeKey = user?.id ? `lincc-onboarding:${user.id}` : null;
+  const hasRestoredRef = useRef(false);
+  useEffect(() => {
+    if (!resumeKey || hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+    try {
+      const raw = localStorage.getItem(resumeKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Partial<{
+        step: number;
+        firstName: string;
+        lastName: string;
+        profileName: string;
+        dobDay: string;
+        dobMonth: string;
+        dobYear: string;
+        gender: Gender;
+        tags: string[];
+        bio: string;
+      }>;
+      if (saved.step && saved.step > 1) setStep(saved.step);
+      if (saved.firstName) setFirstName(saved.firstName);
+      if (saved.lastName) setLastName(saved.lastName);
+      if (saved.profileName) setProfileName(saved.profileName);
+      if (saved.dobDay) setDobDay(saved.dobDay);
+      if (saved.dobMonth) setDobMonth(saved.dobMonth);
+      if (saved.dobYear) setDobYear(saved.dobYear);
+      if (saved.gender) setGender(saved.gender);
+      if (saved.tags) setTags(saved.tags);
+      if (saved.bio) setBio(saved.bio);
+    } catch (err) {
+      logger.warn('Failed to restore onboarding state', err);
+    }
+  }, [resumeKey]);
+
+  useEffect(() => {
+    if (!resumeKey || !hasRestoredRef.current) return;
+    // Once the profile has been persisted, stop saving — saveProfile clears
+    // the cache and we don't want to immediately rewrite it as the user
+    // walks the post-save steps (install / location / notifications).
+    if (isProfileComplete) return;
+    try {
+      localStorage.setItem(
+        resumeKey,
+        JSON.stringify({ step, firstName, lastName, profileName, dobDay, dobMonth, dobYear, gender, tags, bio }),
+      );
+    } catch {
+      // Quota or private mode — fail silent; resume is best-effort.
+    }
+  }, [resumeKey, isProfileComplete, step, firstName, lastName, profileName, dobDay, dobMonth, dobYear, gender, tags, bio]);
 
   // Skip the install step entirely if the app is already installed
   const showInstallStep = !isInstalled;
@@ -225,7 +292,15 @@ export default function OnboardingPage() {
         return true;
       case 2: {
         if (!firstName.trim()) {
-          showToast('Please enter your name', 'error');
+          showToast('Please enter your first name', 'error');
+          return false;
+        }
+        if (!lastName.trim()) {
+          showToast('Please enter your last name', 'error');
+          return false;
+        }
+        if (!profileName.trim()) {
+          showToast('Please enter a profile name', 'error');
           return false;
         }
         if (!dobDay || !dobMonth || !dobYear) {
@@ -284,6 +359,8 @@ export default function OnboardingPage() {
       id: user.id as string,
       email: user.email as string,
       first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      profile_name: profileName.trim() || `${firstName.trim()} ${lastName.trim()}`.trim() || 'User',
       dob,
       gender: gender as Gender,
       avatar_url: avatarUrl,
@@ -300,6 +377,10 @@ export default function OnboardingPage() {
       logger.error(error);
     } else {
       await refreshProfile(user.id);
+      // Onboarding form persisted, clear the resume cache.
+      if (resumeKey) {
+        try { localStorage.removeItem(resumeKey); } catch { /* ignore */ }
+      }
       setStep(showInstallStep ? installStep : locationStep);
     }
 
@@ -400,18 +481,40 @@ export default function OnboardingPage() {
           {/* Step 2: Basic Info */}
           {step === 2 && (
             <div>
-              <h1 className="text-2xl font-bold gradient-text mb-2">About you</h1>
+              <h1 className="text-2xl font-bold gradient-text mb-2">
+                {firstName ? `About you, ${firstName}` : 'About you'}
+              </h1>
               <p className="text-text-muted mb-8">
                 Tell us a bit about yourself.
               </p>
 
               <div className="space-y-4">
-                <Input
-                  label="First Name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Your first name"
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="First Name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Your first name"
+                    autoComplete="given-name"
+                  />
+                  <Input
+                    label="Last Name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Your last name"
+                    autoComplete="family-name"
+                  />
+                </div>
+
+                <div>
+                  <Input
+                    label="Profile Name"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    placeholder="How others see you on Lincc"
+                  />
+                  <p className="text-xs text-text-muted mt-1.5">This is the name other people see. Defaults to your full name.</p>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-text mb-1.5">
@@ -525,8 +628,18 @@ export default function OnboardingPage() {
               </p>
 
               <div className="space-y-3 text-left">
-                {/* Android / Chrome desktop — native install prompt */}
-                {isInstallable && !isInstalled && (
+                {/* Already installed — show confirmation */}
+                {isInstalled && (
+                  <div className="text-center py-4">
+                    <div className="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Download className="h-7 w-7 text-green-500" />
+                    </div>
+                    <p className="text-text-muted text-sm">Lincc is already installed!</p>
+                  </div>
+                )}
+
+                {/* Native install prompt available (Android Chrome / Samsung Internet that has fired beforeinstallprompt) */}
+                {!isInstalled && isInstallable && (
                   <button
                     onClick={handleInstall}
                     className="w-full p-4 bg-coral/5 rounded-xl border border-coral/20 flex items-center gap-4 hover:bg-coral/10 transition-colors"
@@ -542,54 +655,37 @@ export default function OnboardingPage() {
                   </button>
                 )}
 
-                {/* iOS Safari — step-by-step instructions */}
-                {!isInstallable && !isInstalled && /iPad|iPhone|iPod/.test(navigator.userAgent) && (
-                  <div className="w-full p-4 bg-coral/5 rounded-xl border border-coral/20">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-11 h-11 bg-coral rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Download className="h-5 w-5 text-white" />
+                {/* No native prompt — fall back to platform-specific manual steps.
+                    Covers Android browsers that haven't yet fired beforeinstallprompt,
+                    iOS Safari, and the iOS-Chrome edge case (where the user must
+                    re-open in Safari first). */}
+                {!isInstalled && !isInstallable && (() => {
+                  const platform = detectInstallPlatform();
+                  const instructions = getInstallInstructions(platform);
+                  if (!instructions) {
+                    return (
+                      <div className="text-center py-4">
+                        <p className="text-text-muted text-sm">
+                          You can install Lincc anytime from your browser menu.
+                        </p>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-text">Add to Home Screen</h3>
-                        <p className="text-xs text-text-muted">Use Lincc like a native app</p>
+                    );
+                  }
+                  return (
+                    <div className="w-full p-4 bg-coral/5 rounded-xl border border-coral/20">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-11 h-11 bg-coral rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Download className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-text">Add to Home Screen</h3>
+                          <p className="text-xs text-text-muted">{instructions.tagline}</p>
+                        </div>
                       </div>
+                      <InstallSteps steps={instructions.steps} />
                     </div>
-                    {/* Detect if NOT Safari (Chrome/Firefox/etc on iOS can't install PWAs) */}
-                    {!/Safari/.test(navigator.userAgent) || /CriOS|FxiOS|OPiOS|EdgiOS/.test(navigator.userAgent) ? (
-                      <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 text-xs text-text-muted">
-                        <p className="font-medium text-warning mb-1">Open in Safari to install</p>
-                        <p>PWAs can only be installed from Safari on iOS. Copy this URL and open it in Safari, then follow the steps below.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border">
-                          <span className="w-6 h-6 bg-coral/10 rounded-full flex items-center justify-center text-xs font-bold text-coral">1</span>
-                          <p className="text-sm text-text">Tap the <Share className="inline h-4 w-4 text-blue" /> Share button below</p>
-                        </div>
-                        <div className="flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border">
-                          <span className="w-6 h-6 bg-coral/10 rounded-full flex items-center justify-center text-xs font-bold text-coral">2</span>
-                          <p className="text-sm text-text">Scroll down and tap <span className="font-medium">"Add to Home Screen"</span></p>
-                        </div>
-                        <div className="flex items-center gap-3 p-2.5 bg-surface rounded-lg border border-border">
-                          <span className="w-6 h-6 bg-coral/10 rounded-full flex items-center justify-center text-xs font-bold text-coral">3</span>
-                          <p className="text-sm text-text">Tap <span className="font-medium">"Add"</span> in the top right</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Already installed or desktop — show confirmation */}
-                {(isInstalled || (!isInstallable && !/iPad|iPhone|iPod/.test(navigator.userAgent))) && (
-                  <div className="text-center py-4">
-                    <div className="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Download className="h-7 w-7 text-green-500" />
-                    </div>
-                    <p className="text-text-muted text-sm">
-                      {isInstalled ? 'Lincc is already installed!' : 'You can install Lincc anytime from your browser menu.'}
-                    </p>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           )}

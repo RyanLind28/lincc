@@ -8,6 +8,8 @@ export interface Profile {
   id: string;
   email: string;
   first_name: string;
+  last_name: string;
+  profile_name: string;
   dob: string;
   gender: Gender;
   avatar_url: string | null;
@@ -24,6 +26,7 @@ export interface Profile {
   last_lat: number | null;
   last_lng: number | null;
   welcomed_at: string | null;
+  onboarding_step: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -314,6 +317,8 @@ export interface CreateEventForm {
 
 export interface UpdateProfileForm {
   first_name: string;
+  last_name?: string;
+  profile_name?: string;
   bio?: string;
   tags: string[];
   avatar_url?: string;
@@ -322,6 +327,8 @@ export interface UpdateProfileForm {
 export interface OnboardingForm {
   avatar_url: string;
   first_name: string;
+  last_name: string;
+  profile_name: string;
   dob: string;
   gender: Gender;
   tags: string[];

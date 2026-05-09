@@ -56,7 +56,7 @@ HTML body is branded. Fix:
 2. Also bumps your rate limits well above the default shared SMTP's ~2-4/hour,
    which is essential once more testers sign up in a burst.
 
-See TODO.md → "Confirmation email sometimes not delivered" for context.
+See docs/TODO.md → "Confirmation email sometimes not delivered" for context.
 
 ## Extras
 

@@ -134,6 +134,37 @@ img { display: block; max-width: 100%; height: auto; }
   font-weight: 500;
   font-size: 14px;
   margin-bottom: 32px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.hero-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(132,94,247,0.15);
+}
+
+.mobile-bottom-cta {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #FF6B6B 0%, #845EF7 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 10px 30px rgba(132,94,247,0.35);
+  z-index: 60;
+}
+.mobile-bottom-cta.is-hidden {
+  display: none;
+}
+@media (min-width: 640px) {
+  .mobile-bottom-cta { display: none; }
 }
 
 .hero h1 {

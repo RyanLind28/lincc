@@ -10,7 +10,7 @@ Lincc is a **local events and discovery platform** — everything happening arou
 
 **PRD**: Full product requirements document at `PRD/Lincc PRD V1.rtf`.
 
-**Task tracking**: All tasks, phases, and progress tracked in `TODO.md`.
+**Task tracking**: All tasks, phases, and progress tracked in `docs/TODO.md`.
 
 ---
 

@@ -16,7 +16,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [contactName, setContactName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [businessCategory, setBusinessCategory] = useState<string>(BUSINESS_CATEGORIES[0]);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,11 +52,12 @@ export default function SignupPage() {
       showToast('You must be 18 or over to use Lincc', 'error');
       return;
     }
-    if (!contactName.trim()) {
-      showToast(
-        accountType === 'business' ? 'Please enter a contact name' : 'Please enter your first name',
-        'error',
-      );
+    if (!firstName.trim()) {
+      showToast('Please enter your first name', 'error');
+      return;
+    }
+    if (!lastName.trim()) {
+      showToast('Please enter your last name', 'error');
       return;
     }
     if (accountType === 'business' && !businessName.trim()) {
@@ -65,13 +67,16 @@ export default function SignupPage() {
 
     setIsLoading(true);
 
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
     const { error, alreadyExists } = await signUp(email, password, {
       accountType,
       termsAccepted: true,
       ageConfirmed: accountType === 'personal' ? true : undefined,
-      // Sent for both account types — the handle_new_user trigger writes this
-      // into profiles.first_name so no signup ever produces a nameless profile.
-      contactName: contactName.trim(),
+      firstName: trimmedFirst,
+      lastName: trimmedLast,
+      // profile_name defaults to "First Last" — users can edit it during onboarding.
+      profileName: `${trimmedFirst} ${trimmedLast}`,
       businessName: accountType === 'business' ? businessName : undefined,
       businessCategory: accountType === 'business' ? businessCategory : undefined,
     });
@@ -222,15 +227,26 @@ export default function SignupPage() {
           )}
 
           <form onSubmit={handleSignup} className="space-y-4">
-            <Input
-              label={accountType === 'business' ? 'Your name (contact)' : 'First name'}
-              type="text"
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-              placeholder={accountType === 'business' ? 'The person we contact at the business' : 'e.g. Alex'}
-              autoComplete="given-name"
-              required
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label={accountType === 'business' ? 'Contact first name' : 'First name'}
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="e.g. Alex"
+                autoComplete="given-name"
+                required
+              />
+              <Input
+                label={accountType === 'business' ? 'Contact last name' : 'Last name'}
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="e.g. Smith"
+                autoComplete="family-name"
+                required
+              />
+            </div>
 
             <Input
               label="Email"

@@ -7,7 +7,7 @@ Lincc is a local events and discovery platform that surfaces what's happening ar
 - **Live**: [lincc.live](https://lincc.live)
 - **Status**: pre-launch / demo-ready
 - **PRD**: `PRD/Lincc PRD V1.rtf`
-- **Tasks & changelog**: [`TODO.md`](TODO.md)
+- **Tasks & changelog**: [`docs/TODO.md`](docs/TODO.md)
 - **Project guide for AI agents**: [`CLAUDE.md`](CLAUDE.md)
 
 ---

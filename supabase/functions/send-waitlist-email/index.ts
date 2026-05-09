@@ -37,6 +37,9 @@ body{margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSys
 .highlight-box ul{margin:0;padding:0 0 0 18px;color:#3f3f46}
 .highlight-box li{font-size:14px;line-height:1.7;margin:0 0 4px}
 .subtle-text{font-size:13px;color:#a1a1aa;margin:16px 0 0;line-height:1.5}
+.social-row{margin:24px 0 8px;text-align:center}
+.social-row p{font-size:13px;color:#71717a;margin:0 0 12px;font-weight:500}
+.social-icon{display:inline-block;width:36px;height:36px;margin:0 6px;background:#f4f4f5;border-radius:50%;text-align:center;line-height:36px;text-decoration:none}
 .footer{padding:24px 40px;text-align:center;border-top:1px solid #f4f4f5}
 .footer p{font-size:12px;color:#a1a1aa;margin:0 0 4px;line-height:1.5}
 .footer a{color:#a1a1aa;text-decoration:underline}
@@ -53,9 +56,13 @@ body{margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSys
 <li>Got a business? Reply to this email — we'd love to chat.</li>
 </ul></div>
 <p class="subtle-text">You can reach us any time at <a href="mailto:hello@lincc.live" style="color:#845EF7">hello@lincc.live</a>.</p>
+<div class="social-row"><p>Follow Lincc</p>
+<a href="https://www.instagram.com/lincc_live" class="social-icon" target="_blank" rel="noopener" aria-label="Instagram" style="color:#845EF7"><span style="font-size:14px;font-weight:700">IG</span></a>
+<a href="https://www.tiktok.com/@lincc_live" class="social-icon" target="_blank" rel="noopener" aria-label="TikTok" style="color:#845EF7"><span style="font-size:14px;font-weight:700">TT</span></a>
+</div>
 </div>
 <div class="footer"><p>&copy; Lincc. All rights reserved.</p>
-<p>You received this email because you joined the waitlist at <a href="https://lincc-six.vercel.app">lincc-six.vercel.app</a>.</p>
+<p>You received this email because you joined the waitlist at <a href="https://lincc.live">lincc.live</a>.</p>
 </div></div></div></body></html>`;
 }
 

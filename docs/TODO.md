@@ -1,6 +1,60 @@
 # LINCC TODO
 
-Last updated: 2026-05-06
+Last updated: 2026-05-09
+
+---
+
+## Meeting 2026-05-08 — Action Items (with Thameena)
+
+Source: `docs/Meeting started 2026_05_08 16_34 BST – Notes by Gemini.pdf`. Thameena needs a working waitlist + welcome email in 3–4 days to start Sheffield business outreach, so the waitlist + email items are the launch blockers.
+
+### Decisions aligned (apply across the work below)
+- Sign-up captures **first name + last name** (legal records); a separate user-facing **profile name** field is added and defaults to the real name. Profile name is **mandatory**.
+- Event discovery is capped at a **100 km radius** with farther events relegated to a secondary section.
+- All waitlist CTAs ("Join Waitlist", "Coming Soon", bottom nav tab) link directly to the signup form.
+- Staged rollout: **businesses onboard and post first**, then general users.
+- Business monetisation: **1 month free** → subscription or pay-per-post.
+- Market focus: **Sheffield student population + local niche orgs** (Manchester next).
+
+### P0 — Waitlist + welcome email (launch blockers, target ≤ 4 days)
+- [x] **Fix waitlist submit "Something went wrong" error** — root cause was migration `021_waitlist_business_flag.sql` never applied to prod, so `is_business / business_name / business_type` columns the form posts didn't exist; PostgREST returned a column-not-found error caught generically. Migration applied 2026-05-09 via Supabase MCP. Verified anon insert returns 201 with business fields persisted.
+- [x] **All 3 waitlist CTAs link to signup** — landing/index.html: hero "Coming Soon" badge converted to `<a href="#waitlist">`; added a mobile-only sticky bottom "Join Waitlist" bar (auto-hides when the form is in view or after submit); CSS in `landing/styles.css`. (2026-05-09)
+- [x] **Welcome email — Esen's social links attached** — `https://www.instagram.com/lincc_live` and `https://www.tiktok.com/@lincc_live` plumbed into `supabase/email-templates/waitlist-confirmation.html` (X removed since not provided). Same handles applied to landing footer across `landing/index.html`, `about.html`, `contact.html`, `terms.html`, `privacy.html` (X icon swapped for TikTok). (2026-05-09)
+- [x] **Shorten + refine verification link** — `confirm-signup.html` no longer dumps the full URL; replaced with a compact "Verify your email here" link as the button fallback. (2026-05-09)
+- [x] **Verify-email button in Outlook/Hotmail** — `confirm-signup.html` now uses a VML + table bulletproof button that renders correctly in Outlook 2007–2019 + Outlook.com + Hotmail. Long URL fallback replaced with a compact "Verify your email here" link. (2026-05-09)
+- [ ] **Confirmation email — junk/spam reliability** — needs DNS + SMTP setup, must be done by Ryan:
+    - **No SPF record on lincc.live** (only `google-site-verification` exists). This alone is enough for Hotmail/Outlook to junk anything claiming to be `@lincc.live`.
+    - **DMARC is set but weak**: `v=DMARC1; p=none;` — no `rua=` reporting destination so we have no visibility on what's actually being delivered.
+    - **No DKIM records found** on common selectors (default, supabase, s1, mail).
+    - MX → Google Workspace (so receiving email works).
+    - **Action**: pick an SMTP provider (recommend **Resend** — generous free tier, easy DNS, well-aligned with Vercel projects). Steps: 1. Create Resend account, verify `lincc.live` domain → it gives you SPF/DKIM TXT records to add at the DNS host. 2. Add `v=spf1 include:_spf.resend.com ~all` (or whatever Resend specifies). 3. Add the DKIM CNAMEs Resend provides. 4. Update DMARC to `v=DMARC1; p=none; rua=mailto:dmarc@lincc.live;` so we can see reports. 5. In Supabase Dashboard → Authentication → SMTP Settings, plug in Resend's SMTP creds with sender `hello@lincc.live`. 6. Re-paste the updated email templates from `supabase/email-templates/` into the Supabase Dashboard → Authentication → Email Templates UI (the repo files are reference only). 7. Send a test verify email to Gmail + Outlook + Hotmail and confirm inbox placement.
+
+### P1 — Onboarding stability (blocks further testing)
+- [x] **Capture first + last name on signup** — migration 048 adds `last_name` + `profile_name` columns; `handle_new_user` trigger reads explicit `first_name` / `last_name` keys with OAuth `full_name` split fallback. SignupPage now has split First/Last inputs (personal flow) and Contact First/Last inputs (business flow). Pre-existing bug fixed: AuthContext only sent `contact_name` for business signups, so personal signups produced empty `first_name`. (2026-05-09)
+- [x] **Profile name mandatory** — `profile_name` is `NOT NULL DEFAULT ''` and trigger writes `first + last` (or `'User'`). Onboarding About You has a Profile Name input enforced by `validateStep`. Existing rows backfilled from `first_name`. (2026-05-09)
+- [x] **Personalise "About You" prompt** — headline now reads `About you, {firstName}` once the name is known; copy still falls back to plain "About you" before then. (2026-05-09)
+- [x] **Tooltips must not fire post-verification** — `WelcomeGuide` now reads `profile.welcomed_at` and skips entirely when set. Dismiss handler writes `welcomed_at` to the DB so the gate persists across devices. Existing complete profiles backfilled to `now()` so no current user sees stale tooltips. (2026-05-09)
+- [x] **Onboarding skip on interruption** — `OnboardingPage` persists step + form fields to `localStorage` (`lincc-onboarding:{userId}`) on every change, restores on mount, clears on `saveProfile`. Stops saving once `isProfileComplete` so post-save steps don't repopulate the cache. (2026-05-09)
+
+### P2 — Samsung/Android image + document uploads
+- [ ] **Purchase test phone** — Samsung S21 (or comparable older Android) via Facebook Marketplace. (Ryan, manual.)
+- [ ] **Samsung Android simulation** — set up a local Android emulator profile matching Thameena's S21 + Hotmail/Outlook. (Manual, requires GUI; emulator instructions: Android Studio → AVD Manager → create Pixel/Samsung profile → install Chrome → connect to dev server via `10.0.2.2:5173`.)
+- [x] **Audit avatar / business logo upload + replace paths** — `OnboardingPage`, `EditProfilePage`, `EditBusinessProfilePage` all already use unique-per-upload filenames (`Date.now()` in path) + `validateImageDetailed` + `refreshProfile` / `refreshBusiness`. No state-staleness bugs found in those paths. (2026-05-09)
+- [x] **Business ID document upload — add validation** — `BusinessVerifyPage.handleUpload` now calls `validateImageDetailed` (Samsung Cloud / HEIC / magic-byte hardening) before passing to `verificationService.uploadVerificationDoc`, with HEIC auto-conversion and Sentry capture on failures. Also awaits `refresh()` so the SlotCard re-renders before the uploading state clears, preventing the Samsung Internet "Replace seems broken" symptom. (2026-05-09)
+- [x] **PWA install step — fix Android fallback** — onboarding install step previously fell through to "You can install Lincc anytime from your browser menu" with no actual instructions when `beforeinstallprompt` hadn't fired. Now uses the shared `getInstallInstructions(platform)` helper so Android browsers (Chrome, Samsung Internet) without an active deferred prompt get explicit step-by-step menu instructions. iOS Safari path unchanged. (2026-05-09)
+- [ ] **Verify on real S21** — phone-dependent. Final reproduce/confirm cycle once the test device arrives.
+
+### P3 — Discovery + content
+- [x] **100 km radius filter** — `MAX_DISCOVERY_KM = 100` constant added in `HomePage.tsx`; events and vouchers beyond 100 km are now dropped entirely. Within 100 km the feed still splits into "Events Near You" (within the user's slider value, default 10 km) and "Events Further Away" (between slider value and 100 km). Slider already maxed at 100 km, settings radius slider at 1–20 km — both within cap. (2026-05-09)
+- [x] **Filter sheet — auto-prompt for location** — opening the filter sheet without a location now (a) auto-fires `refreshLocation()` so the browser permission prompt shows immediately, and (b) renders one of three states next to the Distance slider: "from {locationName}", "Finding your location…" with spinner, or an "Enable location" button on permission denied / error. Mirrors the existing pattern from the Map view. (2026-05-09)
+- [ ] **30-second demo video** — produce a quick rundown of app functionality including event filtering, for Thameena's outreach. **Owner: marketing team** (not Ryan).
+
+### P4 — Outreach support (small)
+- [ ] **Send Amy's contact + Born Digital info to Thameena** — growth marketing freelancer for IG/TikTok.
+
+### Thameena's items (logged for visibility, not on Ryan)
+- Contact Sheffield orgs/businesses to seed the waitlist.
+- Draft business outreach email offering 1 month free posting.
 
 ---
 

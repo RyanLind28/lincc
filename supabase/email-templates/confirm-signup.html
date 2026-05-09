@@ -121,13 +121,25 @@
           Thanks for signing up. Please verify your email address to get started
           and unlock everything Lincc has to offer.
         </p>
-        <a href="{{ .ConfirmationURL }}" class="cta-button" target="_blank">
-          Verify Email Address
-        </a>
+        <!-- Bulletproof button — VML for Outlook 2007-2019, anchor for everything else -->
+        <table border="0" cellspacing="0" cellpadding="0" role="presentation" align="center" style="margin: 24px auto;">
+          <tr>
+            <td align="center" bgcolor="#FF6B6B" style="border-radius: 8px; mso-padding-alt: 14px 36px;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:46px;v-text-anchor:middle;width:240px;" arcsize="18%" stroke="f" fillcolor="#FF6B6B">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;font-weight:600;">Verify Email Address</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-- -->
+              <a href="{{ .ConfirmationURL }}" target="_blank" style="background: linear-gradient(135deg, #FF6B6B 0%, #845EF7 100%); background-color: #FF6B6B; color: #ffffff; display: inline-block; font-size: 15px; font-weight: 600; line-height: 46px; text-align: center; text-decoration: none; width: 240px; -webkit-text-size-adjust: none; border-radius: 8px;">Verify Email Address</a>
+              <!--<![endif]-->
+            </td>
+          </tr>
+        </table>
         <p class="subtle-text">
-          If the button above doesn't work, copy and paste this link into your
-          browser:<br />
-          <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+          Button not working?
+          <a href="{{ .ConfirmationURL }}" target="_blank" style="color: #845EF7; word-break: normal;">Verify your email here</a>.
         </p>
         <p class="subtle-text">
           If you didn't create an account with Lincc, you can safely ignore this
@@ -142,7 +154,7 @@
         <p>&copy; Lincc. All rights reserved.</p>
         <p>
           You received this email because you signed up at
-          <a href="https://lincc-six.vercel.app">lincc-six.vercel.app</a>.
+          <a href="https://lincc.live">lincc.live</a>.
         </p>
       </div>
     </div>
