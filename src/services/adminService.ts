@@ -927,6 +927,35 @@ export async function fetchAdminImages(bucket: ImageBucket, limit = 200): Promis
   });
 }
 
+export interface WaitlistEntry {
+  id: string;
+  email: string;
+  name: string;
+  is_business: boolean;
+  business_name: string | null;
+  business_type: string | null;
+  created_at: string;
+}
+
+/**
+ * Returns waitlist signups in reverse chronological order. Filtered server-side
+ * by `is_business` so personal vs business tabs each get their own count.
+ * Relies on the admin SELECT policy from migration 050.
+ */
+export async function fetchWaitlist(
+  filter: 'personal' | 'business' | 'all' = 'all',
+): Promise<{ data: WaitlistEntry[]; error: string | null }> {
+  let query = supabase
+    .from('waitlist')
+    .select('id, email, name, is_business, business_name, business_type, created_at')
+    .order('created_at', { ascending: false });
+  if (filter === 'personal') query = query.eq('is_business', false);
+  if (filter === 'business') query = query.eq('is_business', true);
+  const { data, error } = await query;
+  if (error) return { data: [], error: error.message };
+  return { data: (data ?? []) as WaitlistEntry[], error: null };
+}
+
 export async function deleteAdminImage(
   adminId: string,
   bucket: ImageBucket,

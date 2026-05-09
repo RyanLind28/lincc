@@ -72,6 +72,7 @@ const AdminBusinessDetailPage = lazy(() => import('./pages/admin/BusinessDetailP
 const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
 const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
 const FeatureFlagsPage = lazy(() => import('./pages/admin/FeatureFlagsPage'));
+const AdminWaitlistPage = lazy(() => import('./pages/admin/WaitlistPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
 const SearchPeoplePage = lazy(() => import('./pages/SearchPeoplePage'));
 const BusinessDirectoryPage = lazy(() => import('./pages/BusinessDirectoryPage'));
@@ -301,6 +302,14 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <AuditLogPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/waitlist"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminWaitlistPage />
               </ProtectedRoute>
             }
           />

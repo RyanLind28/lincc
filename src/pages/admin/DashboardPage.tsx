@@ -5,6 +5,7 @@ import { Card, CardContent, Skeleton } from '../../components/ui';
 import {
   Users, Calendar, Flag, Tag, Shield, Megaphone, Zap,
   UserPlus, Handshake, MessageSquare, Ticket, Building2, Gift, Store, Image as ImageIcon,
+  ClipboardList,
 } from 'lucide-react';
 import {
   getAdminStats, getDashboardMetrics, getAdminActionCounts,
@@ -26,6 +27,7 @@ const menuItems: Array<{
   description: string;
   countKey?: CountKey;
 }> = [
+  { to: '/admin/waitlist', label: 'Waitlist', icon: ClipboardList, description: 'Personal & business signups before launch' },
   { to: '/admin/users', label: 'User Management', icon: Users, description: 'View and manage users', countKey: 'flaggedUsers' },
   { to: '/admin/events', label: 'Event Management', icon: Calendar, description: 'View and manage events', countKey: 'flaggedEvents' },
   { to: '/admin/businesses', label: 'Business Management', icon: Store, description: 'View and manage businesses' },
