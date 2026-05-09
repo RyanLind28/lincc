@@ -1,0 +1,10 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://www.lincc.live/",
+      "service-doc": [
+        { "href": "https://www.lincc.live/llms.txt", "type": "text/plain" }
+      ]
+    }
+  ]
+}
