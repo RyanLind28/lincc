@@ -300,7 +300,7 @@ export default function OnboardingPage() {
           return false;
         }
         if (!profileName.trim()) {
-          showToast('Please enter a profile name', 'error');
+          showToast('Please choose a username', 'error');
           return false;
         }
         if (!dobDay || !dobMonth || !dobYear) {
@@ -482,33 +482,39 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div>
               <h1 className="text-2xl font-bold gradient-text mb-2">
-                {firstName ? `About you, ${firstName}` : 'About you'}
+                {firstName ? `Tell us about you, ${firstName}` : 'Tell us about you'}
               </h1>
               <p className="text-text-muted mb-8">
-                Tell us a bit about yourself.
+                Pick a username and the basics.
               </p>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="First Name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Your first name"
-                    autoComplete="given-name"
-                  />
-                  <Input
-                    label="Last Name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Your last name"
-                    autoComplete="family-name"
-                  />
-                </div>
+                {/* Fallback for users who reached onboarding without a captured
+                    first/last name — typically a one-word OAuth login or an
+                    older account. Skipped for the common path because we
+                    already collected these on the signup form. */}
+                {(!firstName.trim() || !lastName.trim()) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      label="First name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Your first name"
+                      autoComplete="given-name"
+                    />
+                    <Input
+                      label="Last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Your last name"
+                      autoComplete="family-name"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <Input
-                    label="Profile Name"
+                    label="Username"
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
                     placeholder="How others see you on Lincc"
