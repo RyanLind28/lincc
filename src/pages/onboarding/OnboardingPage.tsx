@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { GradientButton, Input, TextArea, Avatar, ChipGroup, AvatarCropper } from '../../components/ui';
-import { Camera, ArrowLeft, ArrowRight, Download, Bell, ChevronRight, MapPin, CheckCircle } from 'lucide-react';
+import { Camera, ArrowLeft, ArrowRight, Download, Bell, ChevronRight, MapPin, CheckCircle, Loader2 } from 'lucide-react';
 import { usePWA } from '../../hooks/usePWA';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
@@ -58,6 +58,7 @@ export default function OnboardingPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [profileName, setProfileName] = useState('');
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const [dobDay, setDobDay] = useState('');
   const [dobMonth, setDobMonth] = useState('');
   const [dobYear, setDobYear] = useState('');
@@ -130,6 +131,41 @@ export default function OnboardingPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstName, lastName]);
+
+  // Debounced username availability check. Hits the unique index from
+  // migration 049 — case-insensitive, whitespace-trimmed. Excludes the
+  // current user's own row so editing your existing username doesn't trip
+  // the "taken" state.
+  useEffect(() => {
+    const trimmed = profileName.trim();
+    if (!trimmed) {
+      setUsernameStatus('idle');
+      return;
+    }
+    // Skip the network call if the user hasn't changed their existing name
+    if (profile?.profile_name && trimmed.toLowerCase() === profile.profile_name.trim().toLowerCase()) {
+      setUsernameStatus('available');
+      return;
+    }
+    setUsernameStatus('checking');
+    const timer = setTimeout(async () => {
+      const query = supabase
+        .from('profiles')
+        .select('id')
+        .ilike('profile_name', trimmed)
+        .limit(1);
+      if (user?.id) query.neq('id', user.id);
+      const { data, error } = await query;
+      if (error) {
+        // Don't block the user on a network blip; let saveProfile catch it
+        setUsernameStatus('idle');
+        return;
+      }
+      setUsernameStatus(data && data.length > 0 ? 'taken' : 'available');
+    }, 400);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileName, user?.id, profile?.profile_name]);
 
   // If profile is already complete on mount (before user starts), redirect to home.
   // Don't redirect once user is actively going through onboarding (step > 1)
@@ -303,6 +339,14 @@ export default function OnboardingPage() {
           showToast('Please choose a username', 'error');
           return false;
         }
+        if (usernameStatus === 'taken') {
+          showToast('That username is already taken — try another.', 'error');
+          return false;
+        }
+        if (usernameStatus === 'checking') {
+          showToast('Checking username…', 'info');
+          return false;
+        }
         if (!dobDay || !dobMonth || !dobYear) {
           showToast('Please select your date of birth', 'error');
           return false;
@@ -373,8 +417,15 @@ export default function OnboardingPage() {
       .upsert(profileData, { onConflict: 'id' });
 
     if (error) {
-      showToast('Failed to save profile', 'error');
-      logger.error(error);
+      // Unique violation on profile_name — surface the exact reason so the
+      // user can pick a different one without going round again.
+      if (error.code === '23505' && /profile_name/i.test(error.message)) {
+        showToast('That username is already taken — try another.', 'error');
+        setStep(2); // step back to About You so they can edit it
+      } else {
+        showToast('Failed to save profile', 'error');
+        logger.error(error);
+      }
     } else {
       await refreshProfile(user.id);
       // Onboarding form persisted, clear the resume cache.
@@ -519,7 +570,26 @@ export default function OnboardingPage() {
                     onChange={(e) => setProfileName(e.target.value)}
                     placeholder="How others see you on Lincc"
                   />
-                  <p className="text-xs text-text-muted mt-1.5">This is the name other people see. Defaults to your full name.</p>
+                  {profileName.trim() && usernameStatus === 'checking' && (
+                    <p className="text-xs text-text-muted mt-1.5 flex items-center gap-1.5">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Checking availability…
+                    </p>
+                  )}
+                  {profileName.trim() && usernameStatus === 'available' && (
+                    <p className="text-xs text-success mt-1.5 flex items-center gap-1.5">
+                      <CheckCircle className="h-3 w-3" />
+                      Available
+                    </p>
+                  )}
+                  {profileName.trim() && usernameStatus === 'taken' && (
+                    <p className="text-xs text-error mt-1.5">
+                      That username is taken — try another.
+                    </p>
+                  )}
+                  {!profileName.trim() && (
+                    <p className="text-xs text-text-muted mt-1.5">This is the name other people see. Defaults to your full name.</p>
+                  )}
                 </div>
 
                 <div>

@@ -23,6 +23,8 @@ const MOCK_PROFILE: Profile = {
   id: 'dev-user-123',
   email: 'dev@lincc.app',
   first_name: 'Dev',
+  last_name: 'User',
+  profile_name: 'Dev User',
   dob: '1995-06-15',
   gender: 'female',
   avatar_url: null,
@@ -39,6 +41,7 @@ const MOCK_PROFILE: Profile = {
   last_lng: null,
   account_type: 'personal',
   welcomed_at: new Date().toISOString(),
+  onboarding_step: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
