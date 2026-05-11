@@ -21,6 +21,7 @@ const LazyMapView = lazy(() => import('../components/ui/MapView'));
 import { useUserLocation } from '../hooks/useUserLocation';
 import { useLocationName } from '../hooks/useLocationName';
 import { useGeocode } from '../hooks/useGeocode';
+import { useToast } from '../contexts/ToastContext';
 import { Header } from '../components/layout';
 import { AnnouncementBanner } from '../components/ui/AnnouncementBanner';
 import { ReviewPromptModal } from '../components/features/ReviewPromptModal';
@@ -130,9 +131,25 @@ export default function HomePage() {
     clearAll,
     hasActiveFilters,
     hasLocation,
+    locationPermission,
     refreshLocation,
     refresh,
   } = useRecommendedEvents({ maxDistance: debouncedDistance, locationOverride: customLocation });
+
+  const { showToast } = useToast();
+
+  // Wraps refreshLocation with toast feedback so the button has visible
+  // effect — including the dead-feeling case where the browser has the
+  // permission persistently denied and getCurrentPosition rejects instantly.
+  const handleEnableLocation = useCallback(async () => {
+    const result = (await refreshLocation()) as { hasPermission: boolean; permissionState: string; error: string | null };
+    if (result?.hasPermission) return;
+    if (result?.permissionState === 'denied') {
+      showToast('Location is blocked in your browser. Allow it in site settings and try again.', 'error');
+    } else if (result?.error) {
+      showToast(result.error, 'error');
+    }
+  }, [refreshLocation, showToast]);
 
   // Get user location for map + readable name
   const { location: userLocation, isLoading: isLocationLoading, error: locationError } = useUserLocation();
@@ -469,9 +486,13 @@ export default function HomePage() {
                   </div>
                   <h2 className="text-xl font-semibold text-text mb-2">Enable Location</h2>
                   <p className="text-text-muted mb-4 max-w-xs">
-                    Allow location access to discover events near you.
+                    {locationPermission === 'denied'
+                      ? 'Location is blocked in your browser. Allow it in site settings (lock icon in the address bar), then reload this page.'
+                      : 'Allow location access to discover events near you.'}
                   </p>
-                  <GradientButton onClick={refreshLocation}>Enable Location</GradientButton>
+                  {locationPermission !== 'denied' && (
+                    <GradientButton onClick={handleEnableLocation}>Enable Location</GradientButton>
+                  )}
                 </div>
               </div>
             ) : (
@@ -577,6 +598,13 @@ export default function HomePage() {
               <Loader2 className="h-3 w-3 animate-spin" />
               Finding your location…
             </p>
+          ) : locationPermission === 'denied' ? (
+            <div className="ml-6 mb-3">
+              <p className="text-xs text-warning mb-1">Location is blocked in your browser.</p>
+              <p className="text-[11px] text-text-muted leading-snug">
+                Click the lock/info icon in the address bar, allow Location for this site, then reload.
+              </p>
+            </div>
           ) : (
             <div className="ml-6 mb-3">
               <p className="text-xs text-text-muted mb-1.5">
@@ -584,7 +612,7 @@ export default function HomePage() {
               </p>
               <button
                 type="button"
-                onClick={refreshLocation}
+                onClick={handleEnableLocation}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-coral bg-coral/10 hover:bg-coral/15 rounded-full transition-colors"
               >
                 <Navigation className="h-3 w-3" />

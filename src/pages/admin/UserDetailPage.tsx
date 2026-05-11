@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../../components/layout';
-import { Avatar, Badge, Button, Card, CardContent, Skeleton } from '../../components/ui';
+import { Avatar, Badge, Button, Card, CardContent, Skeleton, Modal, Input } from '../../components/ui';
 import {
   Mail, Calendar, Shield, Ban, AlertTriangle, Flag, KeyRound, UserCheck,
-  Users as UsersIcon, MessageSquare, FileWarning, Store, ShieldAlert,
+  Users as UsersIcon, MessageSquare, FileWarning, Store, ShieldAlert, Trash2,
 } from 'lucide-react';
 import {
   getUserDetail, updateUserStatus, updateUserRole, flagUser, unflagUser,
-  sendAdminPasswordReset, logAdminAction,
+  sendAdminPasswordReset, logAdminAction, adminDeleteUser,
 } from '../../services/adminService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -24,6 +24,9 @@ export default function AdminUserDetailPage() {
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isActing, setIsActing] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -90,6 +93,19 @@ export default function AdminUserDetailPage() {
 
   const handlePasswordReset = () =>
     withAction(() => sendAdminPasswordReset(p.email), `Password reset email sent to ${p.email}`, 'send_password_reset');
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    const res = await adminDeleteUser(p.id);
+    if (res.success) {
+      if (authUser?.id) logAdminAction(authUser.id, 'user_delete', 'user', p.id, { email: p.email });
+      showToast(`Deleted ${p.first_name || p.email}`, 'success');
+      navigate('/admin/users');
+    } else {
+      showToast(res.error || 'Delete failed', 'error');
+      setIsDeleting(false);
+    }
+  };
 
   const statCards = [
     { label: 'Events Hosted', value: detail.eventsHosted.total, icon: Calendar, color: 'bg-coral/10 text-coral' },
@@ -255,6 +271,28 @@ export default function AdminUserDetailPage() {
           </div>
         </div>
 
+        {/* Danger zone */}
+        <div className="bg-surface rounded-2xl border border-error/30 p-4">
+          <h3 className="font-semibold text-error text-sm mb-1 flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4" /> Danger zone
+          </h3>
+          <p className="text-xs text-text-muted mb-3">
+            Permanently removes the auth account, profile, events, messages, and all related data. This cannot be undone.
+          </p>
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={() => { setDeleteConfirm(''); setDeleteOpen(true); }}
+            disabled={isActing || isSelf || p.role === 'admin'}
+            title={p.role === 'admin' ? 'Revoke admin role first' : isSelf ? 'You cannot delete your own account' : undefined}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete account
+          </Button>
+          {p.role === 'admin' && !isSelf && (
+            <p className="text-xs text-text-muted mt-2">Revoke admin role before deleting.</p>
+          )}
+        </div>
+
         {/* Events hosted */}
         <Section title={`Events hosted (${detail.eventsHosted.total})`} empty="No events hosted" items={detail.eventsHosted.items}>
           {(e) => (
@@ -335,6 +373,42 @@ export default function AdminUserDetailPage() {
           </Button>
         </div>
       </div>
+
+      <Modal
+        isOpen={deleteOpen}
+        onClose={() => !isDeleting && setDeleteOpen(false)}
+        title="Delete account"
+        size="sm"
+        closeOnOverlayClick={!isDeleting}
+      >
+        <p className="text-sm text-text mb-3">
+          This will permanently delete <strong>{p.first_name || p.email}</strong> and all of their data
+          (events, messages, vouchers, reports, follows). This cannot be undone.
+        </p>
+        <p className="text-xs text-text-muted mb-2">
+          Type the user's email <span className="font-mono text-text">{p.email}</span> to confirm.
+        </p>
+        <Input
+          value={deleteConfirm}
+          onChange={(e) => setDeleteConfirm(e.target.value)}
+          placeholder={p.email}
+          autoFocus
+          disabled={isDeleting}
+        />
+        <div className="flex gap-2 justify-end mt-4">
+          <Button variant="ghost" size="sm" onClick={() => setDeleteOpen(false)} disabled={isDeleting}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting || deleteConfirm.trim().toLowerCase() !== p.email.trim().toLowerCase()}
+          >
+            {isDeleting ? 'Deleting…' : 'Delete permanently'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

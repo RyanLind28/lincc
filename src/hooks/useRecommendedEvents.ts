@@ -41,7 +41,8 @@ interface UseRecommendedEventsResult {
   // Location
   hasLocation: boolean;
   locationError: string | null;
-  refreshLocation: () => void;
+  locationPermission: 'unknown' | 'prompt' | 'granted' | 'denied';
+  refreshLocation: () => Promise<unknown>;
 
   // Refresh
   refresh: () => void;
@@ -62,6 +63,7 @@ export function useRecommendedEvents(
     isLoading: isLocationLoading,
     error: locationError,
     hasPermission,
+    permissionState,
     refresh: refreshLocation,
   } = useUserLocation();
   const { engagementByCategory, preferredHours, isLoading: isEngagementLoading } = useUserEngagement();
@@ -184,6 +186,7 @@ export function useRecommendedEvents(
     // Location
     hasLocation: hasPermission,
     locationError,
+    locationPermission: permissionState,
     refreshLocation,
 
     // Refresh

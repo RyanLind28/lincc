@@ -537,6 +537,14 @@ export async function updateUserRole(userId: string, role: 'user' | 'admin') {
   return { success: !error, error: error?.message };
 }
 
+// Hard-deletes a user account (admin only). Removes auth.users + cascades
+// through every per-user table. Server-side function enforces admin role
+// and refuses self-deletion or deleting another admin.
+export async function adminDeleteUser(userId: string) {
+  const { error } = await supabase.rpc('admin_delete_user_account', { target_user_id: userId });
+  return { success: !error, error: error?.message };
+}
+
 // Events
 export async function fetchAdminEvents(search = '', status = '', offset = 0, limit = 20) {
   let query = supabase
