@@ -94,6 +94,17 @@ export default function ChatRoomPage() {
     {} as Record<string, typeof messages>
   );
 
+  // Chat lifecycle:
+  //   - active up to event.expires_at (start + 2h)
+  //   - read-only between expires_at and expires_at + 24h
+  //   - archived (inaccessible) beyond expires_at + 24h -- enforced by RLS;
+  //     the page just renders a clear empty-state instead of waiting on a
+  //     silent zero-results response.
+  const expiresAtMs = event ? new Date(event.expires_at).getTime() : 0;
+  const archiveCutoffMs = expiresAtMs + 24 * 60 * 60 * 1000;
+  const isPastEventEnd = !!event && nowMs > expiresAtMs;
+  const isArchived = !!event && nowMs > archiveCutoffMs;
+
   if (isLoading || eventLoading) {
     return (
       <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-3xl mx-auto">
@@ -116,6 +127,26 @@ export default function ChatRoomPage() {
           <h2 className="text-xl font-semibold text-text mb-2">Access Denied</h2>
           <p className="text-text-muted text-center max-w-xs mb-6">
             You need to be an approved participant to access this chat.
+          </p>
+          <GradientButton onClick={() => navigate(`/event/${eventId}`)}>
+            View Event
+          </GradientButton>
+        </div>
+      </div>
+    );
+  }
+
+  if (isArchived) {
+    return (
+      <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-3xl mx-auto">
+        <Header showBack title={event?.title || 'Chat'} />
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mb-4">
+            <Lock className="h-8 w-8 text-text-light" />
+          </div>
+          <h2 className="text-xl font-semibold text-text mb-2">Chat archived</h2>
+          <p className="text-text-muted text-center max-w-xs mb-6">
+            This event ended more than 24 hours ago, so its chat has been closed.
           </p>
           <GradientButton onClick={() => navigate(`/event/${eventId}`)}>
             View Event
@@ -294,18 +325,23 @@ export default function ChatRoomPage() {
           {error && (
             <p className="text-error text-sm mb-2 text-center">{error}</p>
           )}
+          {isPastEventEnd && (
+            <p className="text-xs text-text-muted text-center mb-2">
+              This event has ended — the chat is read-only until it archives.
+            </p>
+          )}
           <div className="flex gap-2 items-end">
             <Input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type a message..."
+              placeholder={isPastEventEnd ? 'Event ended' : 'Type a message...'}
               className="flex-1"
               onKeyDown={handleKeyDown}
-              disabled={isSending}
+              disabled={isSending || isPastEventEnd}
             />
             <GradientButton
               onClick={handleSend}
-              disabled={!message.trim() || isSending}
+              disabled={!message.trim() || isSending || isPastEventEnd}
               isLoading={isSending}
             >
               <Send className="h-4 w-4" />

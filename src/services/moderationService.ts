@@ -89,6 +89,40 @@ export async function deleteDirectMessage(dmId: string, adminId: string): Promis
   return { success: true };
 }
 
+// ---- Review-level actions ----
+// Admin policies on host_reviews / guest_reviews permit DELETE without
+// extra RPC. We also notify the review author so they know it was removed.
+
+export async function deleteHostReview(reviewId: string, adminId: string, reason: string): Promise<Result> {
+  const { data: review } = await supabase
+    .from('host_reviews')
+    .select('guest_id')
+    .eq('id', reviewId)
+    .maybeSingle();
+  const { error } = await supabase.from('host_reviews').delete().eq('id', reviewId);
+  if (error) return { success: false, error: error.message };
+  if (review?.guest_id) {
+    await notifyUser(review.guest_id, 'review_removed', 'Your review was removed', `A moderator removed your review. ${reason.trim() ? `Reason: ${reason.trim()}` : ''}`.trim());
+  }
+  await logAdminAction(adminId, 'review.delete', 'user', reviewId, { kind: 'host_review', reason });
+  return { success: true };
+}
+
+export async function deleteGuestReview(reviewId: string, adminId: string, reason: string): Promise<Result> {
+  const { data: review } = await supabase
+    .from('guest_reviews')
+    .select('host_id')
+    .eq('id', reviewId)
+    .maybeSingle();
+  const { error } = await supabase.from('guest_reviews').delete().eq('id', reviewId);
+  if (error) return { success: false, error: error.message };
+  if (review?.host_id) {
+    await notifyUser(review.host_id, 'review_removed', 'Your review was removed', `A moderator removed your review. ${reason.trim() ? `Reason: ${reason.trim()}` : ''}`.trim());
+  }
+  await logAdminAction(adminId, 'review.delete', 'user', reviewId, { kind: 'guest_review', reason });
+  return { success: true };
+}
+
 // ---- Event-level actions ----
 
 export async function removeParticipant(eventId: string, userId: string, adminId: string): Promise<Result> {

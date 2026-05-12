@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const [showEmailChange, setShowEmailChange] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const defaultPrefs: NotificationPreferences = {
     join_request: true,
@@ -100,7 +101,24 @@ export default function SettingsPage() {
   }, [user?.id, notifPrefs, allOn, isSubscribed, permission, pushSubscribe, pushUnsubscribe, showToast]);
 
   const [isWomenOnlyMode, setIsWomenOnlyMode] = useState(profile?.is_women_only_mode || false);
+  const [allowDms, setAllowDms] = useState(profile?.allow_dms ?? true);
   const [radius, setRadius] = useState(profile?.settings_radius || 10);
+
+  const handleToggleAllowDms = async () => {
+    if (!user?.id) return;
+    const newValue = !allowDms;
+    setAllowDms(newValue);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ allow_dms: newValue })
+      .eq('id', user.id);
+    if (error) {
+      showToast('Failed to update setting', 'error');
+      setAllowDms(!newValue);
+    } else {
+      await refreshProfile(user.id);
+    }
+  };
 
   const handleToggleWomenOnlyMode = async () => {
     if (!user?.id) return;
@@ -141,8 +159,23 @@ export default function SettingsPage() {
     navigate('/login');
   };
 
-  const handleExportData = () => {
-    showToast('Data export feature coming soon', 'info');
+  const handleExportData = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    const { data, error } = await supabase.rpc('export_user_data');
+    setIsExporting(false);
+    if (error || !data) {
+      showToast(error?.message ?? 'Could not export data', 'error');
+      return;
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lincc-data-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Your data is downloading', 'success');
   };
 
   const handleDeleteAccount = async () => {
@@ -252,6 +285,18 @@ export default function SettingsPage() {
                 <Toggle checked={isWomenOnlyMode} onChange={handleToggleWomenOnlyMode} />
               </div>
             )}
+
+            {/* Allow DMs — global preference applied across all events */}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="h-5 w-5 text-blue" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Allow direct messages</h3>
+                <p className="text-sm text-text-muted">When off, new people can't start a DM with you. Existing chats stay open.</p>
+              </div>
+              <Toggle checked={allowDms} onChange={handleToggleAllowDms} />
+            </div>
           </div>
         </section>
 
@@ -546,14 +591,15 @@ export default function SettingsPage() {
 
             <button
               onClick={handleExportData}
-              className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
+              disabled={isExporting}
+              className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors disabled:opacity-50"
             >
               <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center">
-                <Download className="h-5 w-5 text-text-muted" />
+                {isExporting ? <Loader2 className="h-5 w-5 text-text-muted animate-spin" /> : <Download className="h-5 w-5 text-text-muted" />}
               </div>
               <div className="flex-1">
                 <h3 className="font-medium text-text">Export My Data</h3>
-                <p className="text-sm text-text-muted">Download all your data</p>
+                <p className="text-sm text-text-muted">{isExporting ? 'Preparing your data…' : 'Download a JSON copy of everything'}</p>
               </div>
               <ChevronRight className="h-5 w-5 text-text-muted" />
             </button>
@@ -785,7 +831,7 @@ export default function SettingsPage() {
 
         {/* Version */}
         <p className="text-center text-sm text-text-light">
-          Lincc v0.10.0
+          Lincc v0.11.0
         </p>
 
         {/* Delete Account Confirmation Modal */}

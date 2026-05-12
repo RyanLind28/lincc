@@ -974,6 +974,7 @@ export type Database = {
       profiles: {
         Row: {
           account_type: string
+          allow_dms: boolean
           avatar_url: string | null
           bio: string | null
           created_at: string | null
@@ -1004,6 +1005,7 @@ export type Database = {
         }
         Insert: {
           account_type?: string
+          allow_dms?: boolean
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
@@ -1034,6 +1036,7 @@ export type Database = {
         }
         Update: {
           account_type?: string
+          allow_dms?: boolean
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
@@ -1671,6 +1674,7 @@ export type Database = {
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       expire_past_events: { Args: never; Returns: number }
+      export_user_data: { Args: never; Returns: Json }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
@@ -1862,6 +1866,7 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      redeem_voucher: { Args: { voucher_id_input: string }; Returns: undefined }
       search_events: {
         Args: { max_results?: number; search_query: string }
         Returns: {

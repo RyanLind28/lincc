@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Header } from '../../components/layout';
 import { Avatar, Badge, Modal, Button, TextArea, ChatListSkeleton, Input } from '../../components/ui';
-import { Flag, CheckCircle, XCircle, AlertTriangle, Download, Star, MessageSquareWarning, UserX, Ban, UserMinus, CalendarX, Trash2 } from 'lucide-react';
+import { Flag, CheckCircle, XCircle, AlertTriangle, Download, Star, MessageSquareWarning, UserX, Ban, UserMinus, CalendarX, Trash2, StarOff } from 'lucide-react';
 import { fetchAdminReports, updateReportStatus, exportReportsCSV } from '../../services/adminService';
 import {
   warnUser, suspendUser, banUser,
   deleteEventMessage, deleteDirectMessage,
   removeParticipant, cancelEvent,
+  deleteHostReview, deleteGuestReview,
 } from '../../services/moderationService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -91,7 +92,8 @@ type ModAction =
   | 'ban'
   | 'delete_message'
   | 'remove_participant'
-  | 'cancel_event';
+  | 'cancel_event'
+  | 'delete_review';
 
 function ActionButton({
   icon: Icon, label, onClick, tone = 'default',
@@ -123,6 +125,7 @@ const ACTION_LABELS: Record<ModAction, { title: string; needsReason: boolean; ne
   delete_message:     { title: 'Delete message', needsReason: false },
   remove_participant: { title: 'Remove from event', needsReason: false },
   cancel_event:       { title: 'Cancel event', needsReason: true },
+  delete_review:      { title: 'Delete review', needsReason: true },
 };
 
 export default function AdminReportsPage() {
@@ -227,6 +230,15 @@ export default function AdminReportsPage() {
             res = await cancelEvent(selectedReport.event.id, user.id, actionReason);
           } else {
             res = { success: false, error: 'No event linked to this report' };
+          }
+          break;
+        case 'delete_review':
+          if (selectedReport.host_review_id) {
+            res = await deleteHostReview(selectedReport.host_review_id, user.id, actionReason);
+          } else if (selectedReport.guest_review_id) {
+            res = await deleteGuestReview(selectedReport.guest_review_id, user.id, actionReason);
+          } else {
+            res = { success: false, error: 'No review linked to this report' };
           }
           break;
       }
@@ -516,6 +528,9 @@ export default function AdminReportsPage() {
                     {(selectedReport.message_id || selectedReport.dm_message_id) && (
                       <ActionButton icon={Trash2} label="Delete message" tone="danger" onClick={() => setPendingAction('delete_message')} />
                     )}
+                    {(selectedReport.host_review_id || selectedReport.guest_review_id) && (
+                      <ActionButton icon={StarOff} label="Delete review" tone="danger" onClick={() => setPendingAction('delete_review')} />
+                    )}
                     {selectedReport.event && (
                       <>
                         <ActionButton icon={UserMinus} label="Remove from event" onClick={() => setPendingAction('remove_participant')} />
@@ -559,6 +574,9 @@ export default function AdminReportsPage() {
             )}
             {pendingAction === 'cancel_event' && (
               <p className="text-sm text-warning font-medium">This will cancel the event and notify the host.</p>
+            )}
+            {pendingAction === 'delete_review' && (
+              <p className="text-sm text-warning font-medium">This removes the review permanently and notifies the author. Use when you've upheld a dispute.</p>
             )}
             {pendingAction === 'suspend' && (
               <Input

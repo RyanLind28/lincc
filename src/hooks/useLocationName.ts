@@ -16,7 +16,7 @@ export function useLocationName(location: Coordinates | null) {
 
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json&zoom=14&addressdetails=1`;
 
-    fetch(url, { headers: { 'User-Agent': 'Lincc/0.10.0' } })
+    fetch(url, { headers: { 'User-Agent': 'Lincc/0.11.0' } })
       .then((res) => {
         if (!res.ok) throw new Error(`Nominatim returned ${res.status}`);
         return res.json();

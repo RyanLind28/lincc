@@ -52,45 +52,33 @@ export async function getVoucherById(id: string): Promise<VoucherWithDetails | n
   return data as unknown as VoucherWithDetails;
 }
 
+// Maps the SQLSTATE / message strings raised by redeem_voucher() to friendly UI copy.
+// Anything not in this map falls through to a generic error.
+const REDEEM_ERROR_MESSAGES: Record<string, string> = {
+  voucher_not_found: "This voucher no longer exists.",
+  voucher_inactive: "This voucher isn't active right now.",
+  voucher_expired: "This voucher has expired.",
+  voucher_exhausted: "All vouchers have been claimed.",
+  already_redeemed: "You've already redeemed this voucher.",
+  not_authenticated: "Sign in to redeem this voucher.",
+};
+
 /**
- * Redeem a voucher for a user
+ * Redeem a voucher for a user. Backed by the atomic redeem_voucher() RPC
+ * which holds a row lock for the duration of the limit-check + insert +
+ * count-bump, so two clients can't push the redemption past the cap.
  */
 export async function redeemVoucher(
   voucherId: string,
-  userId: string
+  _userId: string,
 ): Promise<{ success: boolean; error?: string }> {
-  // Insert redemption record
-  const { error: insertError } = await supabase
-    .from('voucher_redemptions')
-    .insert({ voucher_id: voucherId, user_id: userId });
+  const { error } = await supabase.rpc('redeem_voucher', { voucher_id_input: voucherId });
 
-  if (insertError) {
-    if (insertError.code === '23505') {
-      return { success: false, error: 'You have already redeemed this voucher.' };
-    }
-    logger.error('Error redeeming voucher:', insertError);
-    return { success: false, error: insertError.message };
-  }
-
-  // Increment redemption_count on the voucher
-  const { error: updateError } = await supabase.rpc('increment_redemption_count', {
-    voucher_id_input: voucherId,
-  });
-
-  // If RPC doesn't exist, fall back to manual update
-  if (updateError) {
-    const { data: voucher } = await supabase
-      .from('vouchers')
-      .select('redemption_count')
-      .eq('id', voucherId)
-      .single();
-
-    if (voucher) {
-      await supabase
-        .from('vouchers')
-        .update({ redemption_count: (voucher.redemption_count || 0) + 1 })
-        .eq('id', voucherId);
-    }
+  if (error) {
+    // The RPC RAISEs with a stable string in error.message ("voucher_expired" etc.)
+    const friendly = REDEEM_ERROR_MESSAGES[error.message] ?? null;
+    if (!friendly) logger.error('Error redeeming voucher:', error);
+    return { success: false, error: friendly ?? 'Could not redeem this voucher.' };
   }
 
   invalidatePrefix('vouchers:');

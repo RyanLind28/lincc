@@ -76,7 +76,9 @@ describe('VoucherCard', () => {
   });
 
   it('flags an "Ending soon" chip when the voucher expires within 24h', () => {
-    const soon = { ...baseVoucher, expires_at: new Date(Date.now() + 6 * 3_600_000).toISOString() };
+    // 6.5h gives the floor-rounded renderer a stable "6h left" output even
+    // if the test takes a few hundred ms to reach the assertion.
+    const soon = { ...baseVoucher, expires_at: new Date(Date.now() + 6.5 * 3_600_000).toISOString() };
     renderCard(soon);
     expect(screen.getByText(/Ending soon/i)).toBeInTheDocument();
     expect(screen.getByText(/6h left/i)).toBeInTheDocument();

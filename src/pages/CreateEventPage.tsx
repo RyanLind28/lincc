@@ -87,7 +87,11 @@ export default function CreateEventPage() {
   const [capacity, setCapacity] = useState((draft.current?.capacity as number) || 4);
   const [joinMode, setJoinMode] = useState<JoinMode>((draft.current?.joinMode as JoinMode) || 'request');
   const [audience, setAudience] = useState<Audience>((draft.current?.audience as Audience) || 'everyone');
-  const [allowDms, setAllowDms] = useState(draft.current?.allowDms !== undefined ? draft.current.allowDms as boolean : true);
+  // Default to the host's existing profile-level allow_dms preference so the
+  // toggle reflects "your current setting" rather than always-on per event.
+  const [allowDms, setAllowDms] = useState(
+    draft.current?.allowDms !== undefined ? (draft.current.allowDms as boolean) : (profile?.allow_dms ?? true),
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   // Cover image state (file can't survive remount, but URL can)
@@ -349,6 +353,12 @@ export default function CreateEventPage() {
       );
 
       if (result.success && result.data) {
+        // Mirror the per-event toggle into the host's profile-level allow_dms
+        // so the preference applies across every future event (and is what
+        // the conversations RLS gate now reads).
+        if (profile && profile.allow_dms !== allowDms) {
+          await supabase.from('profiles').update({ allow_dms: allowDms }).eq('id', user.id);
+        }
         clearDraft();
         if (asDraft) {
           showToast('Draft saved. Publish it anytime from My Events.', 'success');

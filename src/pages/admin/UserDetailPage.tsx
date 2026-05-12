@@ -27,6 +27,8 @@ export default function AdminUserDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [flagOpen, setFlagOpen] = useState(false);
+  const [flagReason, setFlagReason] = useState('');
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -83,10 +85,12 @@ export default function AdminUserDetailPage() {
   const handleRole = (role: 'user' | 'admin') =>
     withAction(() => updateUserRole(p.id, role), `Role set to ${role}`, `role_${role}`);
 
-  const handleFlag = () => {
-    const reason = prompt('Flag reason:');
+  const handleFlag = async () => {
+    const reason = flagReason.trim();
     if (!reason) return;
-    return withAction(() => flagUser(p.id, reason), 'User flagged', 'flag_user', { reason });
+    setFlagOpen(false);
+    await withAction(() => flagUser(p.id, reason), 'User flagged', 'flag_user', { reason });
+    setFlagReason('');
   };
 
   const handleUnflag = () => withAction(() => unflagUser(p.id), 'Flag cleared', 'unflag_user');
@@ -253,7 +257,7 @@ export default function AdminUserDetailPage() {
                     <Flag className="h-3.5 w-3.5 mr-1" /> Clear flag
                   </Button>
                 ) : (
-                  <Button size="sm" variant="ghost" onClick={handleFlag} disabled={isActing}>
+                  <Button size="sm" variant="ghost" onClick={() => { setFlagReason(''); setFlagOpen(true); }} disabled={isActing}>
                     <Flag className="h-3.5 w-3.5 mr-1" /> Flag
                   </Button>
                 )}
@@ -373,6 +377,32 @@ export default function AdminUserDetailPage() {
           </Button>
         </div>
       </div>
+
+      <Modal
+        isOpen={flagOpen}
+        onClose={() => setFlagOpen(false)}
+        title="Flag user"
+        size="sm"
+      >
+        <p className="text-sm text-text-muted mb-3">
+          The flag is visible to other admins and shows on the user's profile.
+          Add a short reason so the next admin reviewing knows the context.
+        </p>
+        <Input
+          value={flagReason}
+          onChange={(e) => setFlagReason(e.target.value)}
+          placeholder="e.g. spam profile pic, repeated no-shows…"
+          autoFocus
+        />
+        <div className="flex gap-2 justify-end mt-4">
+          <Button variant="ghost" size="sm" onClick={() => setFlagOpen(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleFlag} disabled={!flagReason.trim()}>
+            Flag user
+          </Button>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={deleteOpen}
