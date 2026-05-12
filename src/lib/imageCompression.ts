@@ -6,6 +6,12 @@ const JPEG_QUALITY = 0.8;
 const MAX_INPUT_SIZE = 25 * 1024 * 1024;
 const MAX_INPUT_SIZE_LABEL = '25MB';
 
+// Total wall-clock budget for the recovery cascade. Each stage has its own
+// inner timeout; this is a belt-and-braces cap so a wedged decode can't hang
+// the picker indefinitely.
+const RECOVERY_BUDGET_MS = 20_000;
+const IMAGE_LOAD_TIMEOUT_MS = 15_000;
+
 const ALLOWED_TYPES = new Set([
   'image/jpeg',
   'image/jpg',     // Samsung Gallery / older Android pickers
@@ -22,40 +28,19 @@ const HEIC_BRANDS = new Set(['heic', 'heix', 'hevc', 'heim', 'heis', 'hevm', 'he
 
 type DetectedFormat = 'jpeg' | 'png' | 'gif' | 'webp' | 'heic' | null;
 
-/**
- * Thrown when the underlying file bytes can't be read — typically because the
- * photo is a cloud placeholder (Samsung Cloud / Google Photos sync), lives on an
- * unmounted SD card, or sits inside Samsung Secure Folder. The picker hands back
- * a reference but `arrayBuffer()` fails with NotReadableError.
- */
-export class FileReadError extends Error {
-  readonly cause?: unknown;
-  constructor(message: string, cause?: unknown) {
-    super(message);
-    this.name = 'FileReadError';
-    this.cause = cause;
-  }
-}
+// User-facing copy when every read path failed. Points at the Android Share
+// intent — that route hands Chrome a fresh Content URI from the source app,
+// which side-steps the picker URI that just failed us.
+const UNREADABLE_MESSAGE =
+  "Couldn't open this photo. Try opening it in your gallery and tapping Share → Lincc, " +
+  "or pick a different photo.";
 
-/**
- * Reads the first bytes of a file to detect its real format from magic bytes.
- * The previous implementation used a too-loose `[0x00, 0x00, 0x00]` HEIC signature
- * that passed for many non-images. This version checks the proper ftyp box brand.
- */
-async function detectImageFormat(file: File): Promise<DetectedFormat> {
-  let buffer: ArrayBuffer;
-  try {
-    buffer = await file.slice(0, 16).arrayBuffer();
-  } catch (err) {
-    // NotReadableError on Android/Samsung means the photo is a cloud-only
-    // placeholder. Surface this distinctly so the UI can tell the user to
-    // download it to the device first.
-    throw new FileReadError(
-      "Couldn't read this photo. It might be saved to cloud storage (Samsung Cloud, Google Photos) — open it in your gallery to download it to your device, then try again.",
-      err,
-    );
-  }
-  const bytes = new Uint8Array(buffer);
+export type ImageValidationResult =
+  | { ok: true; file: File; format: DetectedFormat; recovered: boolean }
+  | { ok: false; error: string };
+
+function detectFormatFromBytes(bytes: Uint8Array): DetectedFormat {
+  if (bytes.length < 4) return null;
 
   if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return 'jpeg';
   if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return 'png';
@@ -63,12 +48,16 @@ async function detectImageFormat(file: File): Promise<DetectedFormat> {
 
   // RIFF....WEBP — bytes 0..3 = "RIFF", bytes 8..11 = "WEBP"
   if (
+    bytes.length >= 12 &&
     bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
     bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
   ) return 'webp';
 
   // HEIC/HEIF: ISO BMFF box — bytes 4..7 = "ftyp", bytes 8..11 = brand (4 chars)
-  if (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) {
+  if (
+    bytes.length >= 12 &&
+    bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70
+  ) {
     const brand = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
     if (HEIC_BRANDS.has(brand)) return 'heic';
   }
@@ -76,75 +65,98 @@ async function detectImageFormat(file: File): Promise<DetectedFormat> {
   return null;
 }
 
-export type ImageValidationResult = { ok: true; format: DetectedFormat } | { ok: false; error: string };
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve(null);
+    }, ms);
+    promise.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(null);
+      },
+    );
+  });
+}
 
-/**
- * Returns a structured result so callers can branch on format (e.g. trigger HEIC
- * conversion) without re-detecting. Use `validateImage` for the simpler error-or-null API.
- */
-export async function validateImageDetailed(file: File): Promise<ImageValidationResult> {
-  if (file.size > MAX_INPUT_SIZE) {
-    return { ok: false, error: `Image must be less than ${MAX_INPUT_SIZE_LABEL}` };
-  }
+// --- Recovery cascade --------------------------------------------------------
+// Different browser APIs go through different internal read paths inside
+// Chrome. When the Promise-based `Blob.arrayBuffer()` fails on a Samsung
+// Content URI, one of these alternative paths frequently still works.
+// Each helper returns a JS-owned File (decoupled from the original URI) or
+// null. They never throw.
 
-  // Magic bytes are authoritative — Samsung/Android pickers regularly mis-label
-  // valid JPEGs as `image/jpg`, `application/octet-stream`, or empty string. If
-  // the bytes are a real image we accept it regardless of MIME; only fall back
-  // to the MIME check when detection comes back null.
-  let format: DetectedFormat;
+async function recoverViaImageBitmap(file: File): Promise<File | null> {
+  if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') return null;
+  const bitmap = await withTimeout(createImageBitmap(file), IMAGE_LOAD_TIMEOUT_MS);
+  if (!bitmap) return null;
+
   try {
-    format = await detectImageFormat(file);
-  } catch (err) {
-    if (err instanceof FileReadError) {
-      return { ok: false, error: err.message };
-    }
-    throw err;
-  }
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0);
 
-  if (format) {
-    return { ok: true, format };
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
+    );
+    if (!blob) return null;
+    return new File([blob], renameToJpg(file.name), { type: 'image/jpeg' });
+  } finally {
+    if ('close' in bitmap) bitmap.close();
   }
-
-  if (file.type && ALLOWED_TYPES.has(file.type)) {
-    // Unknown header but a trusted MIME — accept and let the canvas pipeline
-    // handle it. Returning `null` keeps `convertHeicIfNeeded` a no-op.
-    return { ok: true, format: null };
-  }
-
-  return { ok: false, error: 'File does not appear to be a valid image' };
 }
 
-/**
- * Backwards-compatible wrapper — returns error string or null.
- */
-export async function validateImage(file: File): Promise<string | null> {
-  const result = await validateImageDetailed(file);
-  return result.ok ? null : result.error;
+async function recoverViaFileReader(file: File): Promise<File | null> {
+  if (typeof FileReader === 'undefined') return null;
+  const buffer = await withTimeout(
+    new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (result instanceof ArrayBuffer) resolve(result);
+        else reject(new Error('FileReader returned non-ArrayBuffer'));
+      };
+      reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'));
+      reader.readAsArrayBuffer(file);
+    }),
+    IMAGE_LOAD_TIMEOUT_MS,
+  );
+  if (!buffer) return null;
+  return new File([buffer], file.name, { type: file.type || 'image/jpeg' });
 }
 
-/**
- * Last-resort recovery for Samsung Cloud / Google Photos placeholder files.
- *
- * When `arrayBuffer()` fails because the bytes aren't on the device, the
- * picker still gives us a File reference. Loading that reference into an
- * `<img>` via `URL.createObjectURL` sometimes triggers the Android media
- * subsystem to actually fetch the cloud bytes — different code path from
- * the FileReader / Blob.arrayBuffer one that throws NotReadableError.
- *
- * If the image loads, we redraw it to a canvas and export a fresh JPEG.
- * The caller can treat the returned File like any other and skip
- * validation since we just rendered real pixels.
- *
- * Returns `null` if the recovery fails (cloud-only file truly inaccessible,
- * timeout, or browser doesn't support the trick) — caller should then
- * surface the original error.
- */
-export async function recoverUnreadableImage(file: File): Promise<File | null> {
+// `new Response(blob).arrayBuffer()` exercises the fetch stack rather than the
+// direct Blob read path. On some Android Chrome builds this succeeds when
+// `blob.arrayBuffer()` returns NotReadableError on the same Content URI.
+async function recoverViaResponseStream(file: File): Promise<File | null> {
+  if (typeof Response === 'undefined') return null;
+  const buffer = await withTimeout(new Response(file).arrayBuffer(), IMAGE_LOAD_TIMEOUT_MS);
+  if (!buffer) return null;
+  return new File([buffer], file.name, { type: file.type || 'image/jpeg' });
+}
+
+// Last resort: load the file through `<img src=createObjectURL>`. Even when
+// every byte-read API fails, the renderer sometimes materialises pixels by
+// going through the platform image decoder directly.
+async function recoverViaImageElement(file: File): Promise<File | null> {
   if (typeof URL === 'undefined' || typeof Image === 'undefined') return null;
-
   const objectUrl = URL.createObjectURL(file);
   try {
-    const img = await loadImage(objectUrl, 25_000);
+    const img = await withTimeout(loadImage(objectUrl), IMAGE_LOAD_TIMEOUT_MS);
     if (!img) return null;
 
     const canvas = document.createElement('canvas');
@@ -158,41 +170,105 @@ export async function recoverUnreadableImage(file: File): Promise<File | null> {
       canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
     );
     if (!blob) return null;
-
-    return new File([blob], `recovered-${Date.now()}.jpg`, { type: 'image/jpeg' });
-  } catch {
-    return null;
+    return new File([blob], renameToJpg(file.name), { type: 'image/jpeg' });
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
 }
 
-function loadImage(src: string, timeoutMs: number): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
     const img = new Image();
-    let resolved = false;
-    const timer = window.setTimeout(() => {
-      if (!resolved) { resolved = true; resolve(null); }
-    }, timeoutMs);
-    img.onload = () => {
-      if (resolved) return;
-      resolved = true;
-      window.clearTimeout(timer);
-      resolve(img);
-    };
-    img.onerror = () => {
-      if (resolved) return;
-      resolved = true;
-      window.clearTimeout(timer);
-      resolve(null);
-    };
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('image load failed'));
     img.src = src;
   });
 }
 
+function renameToJpg(name: string): string {
+  return name.replace(/\.[a-z0-9]+$/i, '') + '.jpg';
+}
+
+async function runRecoveryCascade(file: File): Promise<File | null> {
+  const deadline = Date.now() + RECOVERY_BUDGET_MS;
+  const stages: Array<(f: File) => Promise<File | null>> = [
+    recoverViaImageBitmap,
+    recoverViaFileReader,
+    recoverViaResponseStream,
+    recoverViaImageElement,
+  ];
+  for (const stage of stages) {
+    if (Date.now() >= deadline) return null;
+    try {
+      const recovered = await stage(file);
+      if (recovered) return recovered;
+    } catch {
+      // Try the next stage.
+    }
+  }
+  return null;
+}
+
+// --- Public API --------------------------------------------------------------
+
+/**
+ * Validates a picked image and returns a JS-owned `File` for downstream use.
+ *
+ * The returned `file` is always a fresh `File` backed by an in-memory buffer
+ * (or a recovered canvas re-render). This insulates callers from Android
+ * Content URI lifetime issues — once we hand back `validation.file`, the
+ * original picker URI can be revoked (e.g. via `input.value = ''`) without
+ * breaking subsequent reads.
+ */
+export async function validateImageDetailed(file: File): Promise<ImageValidationResult> {
+  if (file.size > MAX_INPUT_SIZE) {
+    return { ok: false, error: `Image must be less than ${MAX_INPUT_SIZE_LABEL}` };
+  }
+
+  // Fast path: read the bytes once, clone into a JS-owned File, detect format
+  // from magic bytes. A single read is friendlier to Samsung's ContentProvider
+  // than multiple slice reads, and the clone decouples downstream code from
+  // the original Content URI.
+  let buffer: ArrayBuffer | null = null;
+  try {
+    buffer = await file.arrayBuffer();
+  } catch {
+    // Falls through to the recovery cascade below.
+  }
+
+  if (buffer) {
+    const cloned = new File([buffer], file.name, { type: file.type || 'image/jpeg' });
+    const format = detectFormatFromBytes(new Uint8Array(buffer, 0, Math.min(16, buffer.byteLength)));
+    if (format) return { ok: true, file: cloned, format, recovered: false };
+    if (file.type && ALLOWED_TYPES.has(file.type)) {
+      // Unknown header but a trusted MIME — accept and let the canvas pipeline
+      // handle it.
+      return { ok: true, file: cloned, format: null, recovered: false };
+    }
+    return { ok: false, error: 'File does not appear to be a valid image' };
+  }
+
+  // arrayBuffer() failed — run the recovery cascade. Any successful stage
+  // produces a re-encoded JPEG (or a fresh JS-owned File with the original
+  // bytes), so we don't need to re-validate magic bytes after.
+  const recovered = await runRecoveryCascade(file);
+  if (recovered) return { ok: true, file: recovered, format: 'jpeg', recovered: true };
+
+  return { ok: false, error: UNREADABLE_MESSAGE };
+}
+
+/**
+ * Backwards-compatible wrapper — returns error string or null.
+ * Prefer `validateImageDetailed` so you can use the recovered `file`.
+ */
+export async function validateImage(file: File): Promise<string | null> {
+  const result = await validateImageDetailed(file);
+  return result.ok ? null : result.error;
+}
+
 export function validateImageSize(file: File): string | null {
   if (file.size > MAX_INPUT_SIZE) {
-    return 'Image must be less than 10MB';
+    return `Image must be less than ${MAX_INPUT_SIZE_LABEL}`;
   }
   return null;
 }

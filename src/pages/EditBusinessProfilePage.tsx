@@ -75,11 +75,20 @@ export default function EditBusinessProfilePage() {
 
   const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    // Reset value first — re-selecting the same file later still fires onChange.
-    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
 
+    // Validate (and read bytes into a JS-owned File) BEFORE clearing the
+    // input — clearing `input.value` can revoke the picker's Content URI
+    // permission on Samsung Android, breaking the read.
     const validation = await validateImageDetailed(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    if (validation.recovered) {
+      Sentry.captureMessage('business-logo: recovered unreadable file', {
+        level: 'info',
+        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
+      });
+    }
     if (!validation.ok) {
       Sentry.captureMessage('business-logo: validation rejected file', {
         level: 'info',
@@ -91,15 +100,15 @@ export default function EditBusinessProfilePage() {
 
     // HEIC photos (typical iPhone / WhatsApp share) need to be converted before
     // anything else can decode them — Android Chrome can't render HEIC natively.
-    let workingFile = file;
+    let workingFile = validation.file;
     if (validation.format === 'heic') {
       setLogoStatus('converting');
       try {
-        workingFile = await convertHeicIfNeeded(file, 'heic');
+        workingFile = await convertHeicIfNeeded(workingFile, 'heic');
       } catch (err) {
         Sentry.captureException(err, {
           tags: { feature: 'business-logo', stage: 'heic-convert' },
-          extra: { fileType: file.type, fileSize: file.size, fileName: file.name },
+          extra: { fileType: workingFile.type, fileSize: workingFile.size, fileName: workingFile.name },
         });
         showToast(
           "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",

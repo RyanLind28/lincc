@@ -10,7 +10,7 @@ import { usePWA } from '../../hooks/usePWA';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
-import { validateImageDetailed, convertHeicIfNeeded, recoverUnreadableImage } from '../../lib/imageCompression';
+import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
 
@@ -247,33 +247,27 @@ export default function OnboardingPage() {
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file || !user) return;
     setPhotoError(null);
 
-    let workingFile: File = file;
-    let validation = await validateImageDetailed(file);
+    // Validate (and read bytes into a JS-owned File) BEFORE clearing the
+    // input. On Samsung Android, clearing `input.value` can revoke the
+    // picker's Content URI permission, which makes the subsequent
+    // arrayBuffer() throw NotReadableError.
+    setIsRecovering(true);
+    let validation;
+    try {
+      validation = await validateImageDetailed(file);
+    } finally {
+      setIsRecovering(false);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
 
-    // Cloud-placeholder recovery: if validation failed because the bytes
-    // couldn't be read, try loading the file via <img>+canvas — the Android
-    // media subsystem often materialises Samsung Cloud / Google Photos
-    // bytes when accessed through createObjectURL even though arrayBuffer()
-    // throws NotReadableError.
-    if (!validation.ok && /cloud storage/i.test(validation.error)) {
-      setIsRecovering(true);
-      try {
-        const recovered = await recoverUnreadableImage(file);
-        if (recovered) {
-          Sentry.captureMessage('onboarding-avatar: recovered cloud-placeholder file', {
-            level: 'info',
-            extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: recovered.size },
-          });
-          workingFile = recovered;
-          validation = { ok: true, format: 'jpeg' };
-        }
-      } finally {
-        setIsRecovering(false);
-      }
+    if (validation.recovered) {
+      Sentry.captureMessage('onboarding-avatar: recovered unreadable file', {
+        level: 'info',
+        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
+      });
     }
 
     if (!validation.ok) {
@@ -284,6 +278,8 @@ export default function OnboardingPage() {
       setPhotoError(validation.error);
       return;
     }
+
+    let workingFile: File = validation.file;
 
     if (validation.format === 'heic') {
       setIsLoading(true);

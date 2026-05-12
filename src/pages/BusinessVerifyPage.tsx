@@ -68,7 +68,7 @@ function SlotCard({
 }: {
   slot: SlotConfig;
   path: string | null;
-  onUpload: (file: File) => void;
+  onUpload: (file: File) => Promise<void> | void;
   isUploading: boolean;
   locked: boolean;
 }) {
@@ -83,12 +83,17 @@ function SlotCard({
     return () => { cancelled = true; };
   }, [path]);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    // Reset value first — re-selecting the same file later still fires onChange,
-    // and avoids iOS Safari quirks with stale input state across re-renders.
-    if (inputRef.current) inputRef.current.value = '';
-    if (file) onUpload(file);
+    if (!file) return;
+    // Defer the input reset until after the upload pipeline has read the
+    // file — clearing `input.value` while bytes are still being read can
+    // revoke the picker's Content URI permission on Samsung Android.
+    try {
+      await onUpload(file);
+    } finally {
+      if (inputRef.current) inputRef.current.value = '';
+    }
   };
 
   const isImage = path && /\.(jpe?g|png|webp|gif|heic)$/i.test(path);
@@ -186,14 +191,20 @@ export default function BusinessVerifyPage() {
     setUploadingSlot(slot);
 
     // Image files (the three photo slots) get the same hardening as the rest
-    // of the app: magic-byte validation surfaces a friendly toast for Samsung
-    // Cloud / Google Photos placeholders, HEIC files get converted before
+    // of the app: validation reads bytes through a recovery cascade so flaky
+    // Android Content URIs still work, and HEIC files get converted before
     // upload. Registration docs are often PDFs, so skip validation when it's
     // not an image MIME.
     let workingFile = file;
     const isImage = file.type.startsWith('image/');
     if (isImage) {
       const validation = await validateImageDetailed(file);
+      if (validation.recovered) {
+        Sentry.captureMessage('verification-doc: recovered unreadable file', {
+          level: 'info',
+          extra: { slot, fileType: file.type, fileSize: file.size, recoveredSize: validation.file.size },
+        });
+      }
       if (!validation.ok) {
         Sentry.captureMessage('verification-doc: validation rejected file', {
           level: 'info',
@@ -203,13 +214,14 @@ export default function BusinessVerifyPage() {
         showToast(validation.error, 'error');
         return;
       }
+      workingFile = validation.file;
       if (validation.format === 'heic') {
         try {
-          workingFile = await convertHeicIfNeeded(file, 'heic');
+          workingFile = await convertHeicIfNeeded(workingFile, 'heic');
         } catch (err) {
           Sentry.captureException(err, {
             tags: { feature: 'verification-doc', stage: 'heic-convert' },
-            extra: { slot, fileType: file.type, fileSize: file.size },
+            extra: { slot, fileType: workingFile.type, fileSize: workingFile.size },
           });
           setUploadingSlot(null);
           showToast(

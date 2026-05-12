@@ -3,6 +3,10 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=srrubyupwiiqnehshszd"
+    },
+    "sentry": {
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp/lincc-9u"
     }
   }
 }
