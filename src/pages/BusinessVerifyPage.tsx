@@ -199,12 +199,6 @@ export default function BusinessVerifyPage() {
     const isImage = file.type.startsWith('image/');
     if (isImage) {
       const validation = await validateImageDetailed(file);
-      if (validation.recovered) {
-        Sentry.captureMessage('verification-doc: recovered unreadable file', {
-          level: 'info',
-          extra: { slot, fileType: file.type, fileSize: file.size, recoveredSize: validation.file.size },
-        });
-      }
       if (!validation.ok) {
         Sentry.captureMessage('verification-doc: validation rejected file', {
           level: 'info',
@@ -213,6 +207,12 @@ export default function BusinessVerifyPage() {
         setUploadingSlot(null);
         showToast(validation.error, 'error');
         return;
+      }
+      if (validation.recovered) {
+        Sentry.captureMessage('verification-doc: recovered unreadable file', {
+          level: 'info',
+          extra: { slot, fileType: file.type, fileSize: file.size, recoveredSize: validation.file.size },
+        });
       }
       workingFile = validation.file;
       if (validation.format === 'heic') {

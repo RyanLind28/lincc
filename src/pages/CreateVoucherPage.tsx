@@ -111,12 +111,6 @@ export default function CreateVoucherPage() {
     const validation = await validateImageDetailed(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    if (validation.recovered) {
-      Sentry.captureMessage('voucher-cover: recovered unreadable file', {
-        level: 'info',
-        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
-      });
-    }
     if (!validation.ok) {
       Sentry.captureMessage('voucher-cover: validation rejected file', {
         level: 'info',
@@ -124,6 +118,12 @@ export default function CreateVoucherPage() {
       });
       showToast(validation.error, 'error');
       return;
+    }
+    if (validation.recovered) {
+      Sentry.captureMessage('voucher-cover: recovered unreadable file', {
+        level: 'info',
+        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
+      });
     }
 
     let workingFile = validation.file;

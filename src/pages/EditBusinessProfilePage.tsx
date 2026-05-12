@@ -83,12 +83,6 @@ export default function EditBusinessProfilePage() {
     const validation = await validateImageDetailed(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    if (validation.recovered) {
-      Sentry.captureMessage('business-logo: recovered unreadable file', {
-        level: 'info',
-        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
-      });
-    }
     if (!validation.ok) {
       Sentry.captureMessage('business-logo: validation rejected file', {
         level: 'info',
@@ -96,6 +90,12 @@ export default function EditBusinessProfilePage() {
       });
       showToast(validation.error, 'error');
       return;
+    }
+    if (validation.recovered) {
+      Sentry.captureMessage('business-logo: recovered unreadable file', {
+        level: 'info',
+        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
+      });
     }
 
     // HEIC photos (typical iPhone / WhatsApp share) need to be converted before

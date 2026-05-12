@@ -263,13 +263,6 @@ export default function OnboardingPage() {
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    if (validation.recovered) {
-      Sentry.captureMessage('onboarding-avatar: recovered unreadable file', {
-        level: 'info',
-        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
-      });
-    }
-
     if (!validation.ok) {
       Sentry.captureMessage('onboarding-avatar: validation rejected file', {
         level: 'info',
@@ -277,6 +270,13 @@ export default function OnboardingPage() {
       });
       setPhotoError(validation.error);
       return;
+    }
+
+    if (validation.recovered) {
+      Sentry.captureMessage('onboarding-avatar: recovered unreadable file', {
+        level: 'info',
+        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
+      });
     }
 
     let workingFile: File = validation.file;

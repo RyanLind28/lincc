@@ -168,12 +168,6 @@ export default function CreateEventPage() {
     const validation = await validateImageDetailed(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    if (validation.recovered) {
-      Sentry.captureMessage('event-cover: recovered unreadable file', {
-        level: 'info',
-        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
-      });
-    }
     if (!validation.ok) {
       Sentry.captureMessage('event-cover: validation rejected file', {
         level: 'info',
@@ -181,6 +175,12 @@ export default function CreateEventPage() {
       });
       showToast(validation.error, 'error');
       return;
+    }
+    if (validation.recovered) {
+      Sentry.captureMessage('event-cover: recovered unreadable file', {
+        level: 'info',
+        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
+      });
     }
 
     let workingFile = validation.file;

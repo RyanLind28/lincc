@@ -66,12 +66,6 @@ export default function EditProfilePage() {
     const validation = await validateImageDetailed(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    if (validation.recovered) {
-      Sentry.captureMessage('avatar: recovered unreadable file', {
-        level: 'info',
-        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
-      });
-    }
     if (!validation.ok) {
       Sentry.captureMessage('avatar: validation rejected file', {
         level: 'info',
@@ -79,6 +73,12 @@ export default function EditProfilePage() {
       });
       showToast(validation.error, 'error');
       return;
+    }
+    if (validation.recovered) {
+      Sentry.captureMessage('avatar: recovered unreadable file', {
+        level: 'info',
+        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
+      });
     }
 
     // HEIC/HEIF won't decode in <img>/cropper in most browsers — convert first.
