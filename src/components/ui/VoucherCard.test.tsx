@@ -7,7 +7,6 @@ import type { VoucherWithDetails } from '../../types';
 const baseVoucher: VoucherWithDetails = {
   id: 'v1',
   business_id: 'b1',
-  category_id: null,
   title: 'Half-price flat white before 10am',
   description: null,
   discount_text: '50% off',
@@ -45,7 +44,6 @@ const baseVoucher: VoucherWithDetails = {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
-  category: null,
 };
 
 const renderCard = (voucher: VoucherWithDetails) =>
