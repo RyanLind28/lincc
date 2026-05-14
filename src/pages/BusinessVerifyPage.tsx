@@ -257,7 +257,7 @@ export default function BusinessVerifyPage() {
     const result = await submitVerification(verification.id);
     setIsSubmitting(false);
     if (result.success) {
-      showToast('Sent for review — we\'ll be in touch', 'success');
+      showToast("Sent for review. We'll be in touch", 'success');
       refresh();
       refreshBusiness();
       navigate('/business/dashboard');
@@ -374,7 +374,7 @@ export default function BusinessVerifyPage() {
 
         {!canEdit && status !== 'approved' && (
           <div className="text-center text-xs text-text-muted">
-            Submitted — locked while we review.
+            Submitted. Locked while we review.
           </div>
         )}
 

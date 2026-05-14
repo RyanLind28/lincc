@@ -23,7 +23,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getVoucherById, redeemVoucher, hasUserRedeemed, getActiveVouchersByBusiness } from '../services/voucherService';
 import { getLocationsByBusiness } from '../services/businessService';
-import { GradientButton, Spinner, CategoryIcon, ScratchCard, SwipeToRedeem, Avatar, Badge } from '../components/ui';
+import { GradientButton, Spinner, ScratchCard, SwipeToRedeem, Avatar, Badge } from '../components/ui';
 import { VoucherTile } from '../components/ui/VoucherTile';
 import { VerifiedTick } from '../components/business/VerifiedTick';
 import { ShareVoucherSheet } from '../components/vouchers/ShareVoucherSheet';
@@ -52,8 +52,6 @@ export default function VoucherDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRedeemed, setIsRedeemed] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
-  const [showCode, setShowCode] = useState(false);
-  const [codeRevealed, setCodeRevealed] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -81,28 +79,15 @@ export default function VoucherDetailPage() {
       if (!id || !user?.id) return;
       const redeemed = await hasUserRedeemed(id, user.id);
       setIsRedeemed(redeemed);
-      if (redeemed) {
-        setShowCode(true);
-        setCodeRevealed(true);
-      }
     };
     checkRedemption();
   }, [id, user?.id]);
 
-  const handleGetCode = () => {
-    if (!user?.id) {
-      showToast('Sign in to get voucher codes', 'error');
-      return;
-    }
-    setShowCode(true);
-  };
-
-  const handleScratchRevealed = useCallback(() => {
-    setCodeRevealed(true);
-  }, []);
-
   const handleSwipeConfirm = useCallback(async () => {
-    if (!voucher || !user?.id) return;
+    if (!voucher || !user?.id) {
+      showToast('Sign in to redeem vouchers', 'error');
+      throw new Error('not signed in');
+    }
     const result = await redeemVoucher(voucher.id, user.id);
     if (result.success) {
       setIsRedeemed(true);
@@ -171,8 +156,10 @@ export default function VoucherDetailPage() {
           </div>
         ) : (
           <div className="h-56 gradient-secondary flex items-center justify-center">
-            {voucher.category && (
-              <CategoryIcon icon={voucher.category.icon} size="xl" className="text-white" />
+            {voucher.business?.logo_url ? (
+              <img src={voucher.business.logo_url} alt={voucher.business.name} className="h-24 w-24 rounded-2xl object-cover" />
+            ) : (
+              <Building2 className="h-16 w-16 text-white/80" />
             )}
           </div>
         )}
@@ -180,9 +167,9 @@ export default function VoucherDetailPage() {
           <div className="px-4 py-2.5 rounded-xl bg-white/95 backdrop-blur shadow-lg">
             <span className="text-2xl font-extrabold gradient-text">{voucher.discount_text}</span>
           </div>
-          {voucher.category && (
+          {voucher.business?.category && (
             <span className="inline-flex items-center gap-1 text-xs font-medium text-white bg-black/50 backdrop-blur px-3 py-1.5 rounded-full">
-              <Tag className="h-3 w-3" /> {voucher.category.name}
+              <Tag className="h-3 w-3" /> {voucher.business.category}
             </span>
           )}
         </div>
@@ -306,7 +293,7 @@ export default function VoucherDetailPage() {
             <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
               <Tag className="h-3 w-3" /> Category
             </div>
-            <p className="text-sm font-semibold text-text">{voucher.category?.name ?? 'General'}</p>
+            <p className="text-sm font-semibold text-text">{voucher.business?.category ?? 'General'}</p>
           </div>
           <div className="bg-surface rounded-xl border border-border p-3">
             <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
@@ -388,29 +375,32 @@ export default function VoucherDetailPage() {
           </div>
         )}
 
-        {/* Redeem / Code section */}
+        {/* Redeem / Code section.
+            The code is only rendered once isRedeemed flips true — that prevents
+            a user from scratching/screenshotting the code without ever calling
+            the redeemVoucher RPC, which would let them bypass the per-user
+            unique constraint and the redemption_limit counter. */}
         {isRedeemed ? (
-          <div className="p-5 bg-success/10 rounded-xl border border-success/30 animate-fade-in">
+          <div className="p-5 bg-success/10 rounded-xl border border-success/30 animate-fade-in space-y-4">
             <div className="flex flex-col items-center gap-2">
               <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center">
                 <Check className="h-5 w-5 text-white" strokeWidth={3} />
               </div>
               <p className="text-sm font-semibold text-success">Voucher redeemed</p>
-              <p className="text-xs text-success/70">Show your code to staff at any participating location.</p>
+              <p className="text-xs text-success/70 text-center">
+                Show your code to staff at any participating location.
+              </p>
             </div>
+            {voucher.redemption_code && (
+              <ScratchCard code={voucher.redemption_code} initialRevealed />
+            )}
             <button
               onClick={() => setShowShareSheet(true)}
-              className="flex items-center justify-center gap-2 w-full mt-4 py-2 text-sm font-medium text-coral hover:bg-coral/5 rounded-lg transition-colors"
+              className="flex items-center justify-center gap-2 w-full py-2 text-sm font-medium text-coral hover:bg-coral/5 rounded-lg transition-colors"
             >
               <Share2 className="h-4 w-4" />
               Share with a friend
             </button>
-          </div>
-        ) : showCode && voucher.redemption_code ? (
-          <div className="p-4 bg-surface rounded-xl border-2 border-dashed border-coral animate-fade-in space-y-4">
-            <p className="text-xs text-text-muted text-center">Show this code to staff</p>
-            <ScratchCard code={voucher.redemption_code} onRevealed={handleScratchRevealed} />
-            {codeRevealed && <SwipeToRedeem onConfirm={handleSwipeConfirm} />}
           </div>
         ) : isExpired ? (
           <button disabled className="w-full py-3.5 rounded-xl bg-muted text-text-muted font-semibold text-center">
@@ -421,9 +411,16 @@ export default function VoucherDetailPage() {
             All redeemed
           </button>
         ) : (
-          <GradientButton fullWidth onClick={handleGetCode}>
-            Redeem voucher
-          </GradientButton>
+          <div className="space-y-2">
+            <SwipeToRedeem
+              onConfirm={handleSwipeConfirm}
+              label="Swipe to redeem voucher"
+              confirmedLabel="Redeemed!"
+            />
+            <p className="text-xs text-text-muted text-center">
+              Your code is revealed after you redeem.
+            </p>
+          </div>
         )}
 
         {/* Other vouchers from the same business */}

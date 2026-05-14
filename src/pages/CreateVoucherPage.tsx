@@ -169,9 +169,25 @@ export default function CreateVoucherPage() {
       case 'basics':
         if (!title.trim()) { showToast('Please enter a title', 'error'); return; }
         if (!discountText.trim()) { showToast('Please enter the discount text', 'error'); return; }
+        if (!description.trim() || description.trim().length < 10) {
+          showToast('Add a short description (at least 10 characters)', 'error');
+          return;
+        }
         setStep('pricing');
         break;
       case 'pricing':
+        if (!redemptionCode.trim()) {
+          showToast('Add a redemption code; staff will look for this', 'error');
+          return;
+        }
+        if (originalPrice && discountedPrice) {
+          const op = parseFloat(originalPrice);
+          const dp = parseFloat(discountedPrice);
+          if (!isNaN(op) && !isNaN(dp) && dp >= op) {
+            showToast('Discounted price must be lower than the original', 'error');
+            return;
+          }
+        }
         // Load locations for selected business before showing location step
         if (selectedBusiness) {
           setIsLoadingLocations(true);
@@ -180,6 +196,7 @@ export default function CreateVoucherPage() {
           // Auto-select if only one location
           if (locs.length === 1) {
             setSelectedLocation(locs[0]);
+            showToast(`Using your only location: ${locs[0].name}`, 'info');
           }
           setIsLoadingLocations(false);
         }
@@ -235,7 +252,7 @@ export default function CreateVoucherPage() {
 
         const fileName = `${user.id}/${Date.now()}.jpg`;
         const { error: uploadError } = await supabase.storage
-          .from('event-images')
+          .from('voucher-covers')
           .upload(fileName, compressed, { contentType: 'image/jpeg' });
 
         if (uploadError) {
@@ -255,7 +272,7 @@ export default function CreateVoucherPage() {
         }
 
         const { data: urlData } = supabase.storage
-          .from('event-images')
+          .from('voucher-covers')
           .getPublicUrl(fileName);
         finalCoverImageUrl = urlData.publicUrl;
         setIsUploading(false);
@@ -585,7 +602,7 @@ export default function CreateVoucherPage() {
                 )}
                 <div className="flex justify-between">
                   <span className="text-text-muted">Venue</span>
-                  <span className="text-text truncate ml-4">{selectedLocation?.name || '—'}</span>
+                  <span className="text-text truncate ml-4">{selectedLocation?.name || '–'}</span>
                 </div>
                 {expiryDate && (
                   <div className="flex justify-between">

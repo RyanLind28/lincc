@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { useNavigate } from 'react-router-dom';
-import { Locate, Clock, Users, MapPin } from 'lucide-react';
+import { Locate, Clock, Users, MapPin, Ticket, Tag } from 'lucide-react';
 import { CategoryIcon } from './CategoryIcon';
 import { useToast } from '../../contexts/ToastContext';
 import type { Coordinates } from '../../types';
@@ -28,8 +28,20 @@ export interface MapEvent {
   capacity: number;
 }
 
+export interface MapVoucher {
+  id: string;
+  title: string;
+  venue_name: string;
+  venue_lat: number;
+  venue_lng: number;
+  discount_text: string;
+  expires_at: string;
+  business_name: string;
+}
+
 export interface MapViewProps {
   events: MapEvent[];
+  vouchers?: MapVoucher[];
   userLocation: Coordinates | null;
   radiusKm?: number;
   onEventSelect?: (eventId: string) => void;
@@ -80,6 +92,26 @@ function createGeoJSONCircle(center: [number, number], radiusKm: number, points 
   };
 }
 
+// Convert vouchers to GeoJSON. Kept separate from events so the two sets get
+// independent clusters and distinct colours on the map.
+function vouchersToGeoJSON(vouchers: MapVoucher[]): GeoJSON.FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: vouchers.map((v) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [v.venue_lng, v.venue_lat] },
+      properties: {
+        id: v.id,
+        title: v.title,
+        venue_name: v.venue_name,
+        discount_text: v.discount_text,
+        expires_at: v.expires_at,
+        business_name: v.business_name,
+      },
+    })),
+  };
+}
+
 // Convert events to GeoJSON for clustering
 function eventsToGeoJSON(events: MapEvent[]): GeoJSON.FeatureCollection {
   return {
@@ -105,12 +137,13 @@ function eventsToGeoJSON(events: MapEvent[]): GeoJSON.FeatureCollection {
   };
 }
 
-export function MapView({ events, userLocation, radiusKm, className }: MapViewProps) {
+export function MapView({ events, vouchers = [], userLocation, radiusKm, className }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<MapEvent | null>(null);
+  const [selectedVoucher, setSelectedVoucher] = useState<MapVoucher | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -461,6 +494,125 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
     }
   }, [events, isLoaded, userLocation]);
 
+  // Voucher markers — separate source so the two pin types cluster and colour
+  // independently. Vouchers use a purple tile so users can tell at a glance
+  // which pins are deals vs which are events.
+  useEffect(() => {
+    if (!map.current || !isLoaded) return;
+
+    const m = map.current;
+    const sourceId = 'vouchers-source';
+    const geojson = vouchersToGeoJSON(vouchers);
+
+    if (m.getSource(sourceId)) {
+      (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(geojson);
+    } else {
+      m.addSource(sourceId, {
+        type: 'geojson',
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+      });
+
+      m.addLayer({
+        id: 'voucher-clusters',
+        type: 'circle',
+        source: sourceId,
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': '#845EF7',
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            18,
+            5, 22,
+            15, 28,
+          ],
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#ffffff',
+          'circle-opacity': 0.9,
+        },
+      });
+
+      m.addLayer({
+        id: 'voucher-cluster-count',
+        type: 'symbol',
+        source: sourceId,
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 12,
+        },
+        paint: { 'text-color': '#ffffff' },
+      });
+
+      m.addLayer({
+        id: 'voucher-unclustered-circle',
+        type: 'circle',
+        source: sourceId,
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-radius': 16,
+          'circle-color': '#845EF7',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+        },
+      });
+
+      m.addLayer({
+        id: 'voucher-unclustered-symbol',
+        type: 'symbol',
+        source: sourceId,
+        filter: ['!', ['has', 'point_count']],
+        layout: {
+          'text-field': '%',
+          'text-size': 16,
+          'text-allow-overlap': true,
+          'text-font': ['DIN Pro Bold', 'Arial Unicode MS Bold'],
+        },
+        paint: { 'text-color': '#ffffff' },
+      });
+
+      m.on('click', 'voucher-clusters', (e) => {
+        const features = m.queryRenderedFeatures(e.point, { layers: ['voucher-clusters'] });
+        if (!features.length) return;
+        const clusterId = features[0].properties?.cluster_id;
+        (m.getSource(sourceId) as mapboxgl.GeoJSONSource).getClusterExpansionZoom(
+          clusterId,
+          (err, zoom) => {
+            if (err || zoom == null) return;
+            const geometry = features[0].geometry;
+            if (geometry.type !== 'Point') return;
+            m.easeTo({ center: geometry.coordinates as [number, number], zoom });
+          },
+        );
+      });
+
+      const openVoucherPreview = (e: mapboxgl.MapMouseEvent) => {
+        const features = m.queryRenderedFeatures(e.point, {
+          layers: ['voucher-unclustered-circle', 'voucher-unclustered-symbol'],
+        });
+        if (!features.length) return;
+        const props = features[0].properties;
+        if (!props) return;
+        const voucher = vouchers.find((v) => v.id === props.id);
+        if (voucher) {
+          setSelectedVoucher(voucher);
+          setSelectedEvent(null);
+        }
+      };
+      m.on('click', 'voucher-unclustered-circle', openVoucherPreview);
+      m.on('click', 'voucher-unclustered-symbol', openVoucherPreview);
+
+      m.on('mouseenter', 'voucher-clusters', () => { m.getCanvas().style.cursor = 'pointer'; });
+      m.on('mouseleave', 'voucher-clusters', () => { m.getCanvas().style.cursor = ''; });
+      m.on('mouseenter', 'voucher-unclustered-circle', () => { m.getCanvas().style.cursor = 'pointer'; });
+      m.on('mouseleave', 'voucher-unclustered-circle', () => { m.getCanvas().style.cursor = ''; });
+    }
+  }, [vouchers, isLoaded]);
+
   // Close preview when clicking the map background
   useEffect(() => {
     if (!map.current || !isLoaded) return;
@@ -468,10 +620,14 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
 
     const handleClick = (e: mapboxgl.MapMouseEvent) => {
       const features = m.queryRenderedFeatures(e.point, {
-        layers: ['clusters', 'unclustered-point', 'unclustered-circle'],
+        layers: [
+          'clusters', 'unclustered-point', 'unclustered-circle',
+          'voucher-clusters', 'voucher-unclustered-circle', 'voucher-unclustered-symbol',
+        ],
       });
       if (features.length === 0) {
         setSelectedEvent(null);
+        setSelectedVoucher(null);
       }
     };
 
@@ -509,6 +665,17 @@ export function MapView({ events, userLocation, radiusKm, className }: MapViewPr
             event={selectedEvent}
             onTap={() => navigate(`/event/${selectedEvent.id}`)}
             onClose={() => setSelectedEvent(null)}
+          />
+        </div>
+      )}
+
+      {/* Voucher Preview Card */}
+      {selectedVoucher && (
+        <div className="absolute bottom-20 left-3 right-3 z-20 animate-slide-up">
+          <VoucherPreviewCard
+            voucher={selectedVoucher}
+            onTap={() => navigate(`/voucher/${selectedVoucher.id}`)}
+            onClose={() => setSelectedVoucher(null)}
           />
         </div>
       )}
@@ -576,6 +743,68 @@ function EventPreviewCard({
             </div>
             <span className="ml-auto text-[10px] font-medium text-purple bg-purple/10 px-2 py-0.5 rounded-full">
               {event.category.name}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Voucher Preview Card — shown when tapping a voucher pin
+function VoucherPreviewCard({
+  voucher,
+  onTap,
+  onClose,
+}: {
+  voucher: MapVoucher;
+  onTap: () => void;
+  onClose: () => void;
+}) {
+  const daysLeft = Math.max(
+    0,
+    Math.floor((new Date(voucher.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+  );
+
+  return (
+    <div
+      onClick={onTap}
+      className="bg-surface rounded-2xl shadow-xl border border-border p-4 cursor-pointer active:scale-[0.98] transition-transform"
+    >
+      <div className="flex gap-3">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple to-coral flex items-center justify-center flex-shrink-0">
+          <Ticket className="h-6 w-6 text-white" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold text-text text-sm truncate">{voucher.title}</h3>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="text-text-light hover:text-text-muted text-lg leading-none flex-shrink-0 -mt-0.5"
+            >
+              &times;
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 text-xs text-text-muted mt-0.5">
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{voucher.venue_name}</span>
+          </div>
+
+          <div className="flex items-center gap-3 mt-2">
+            <div className="flex items-center gap-1 text-xs font-bold text-purple">
+              <Tag className="h-3 w-3" />
+              {voucher.discount_text}
+            </div>
+            <div className="text-xs text-text-muted">
+              {daysLeft === 0 ? 'Last day' : daysLeft === 1 ? '1 day left' : `${daysLeft} days left`}
+            </div>
+            <span className="ml-auto text-[10px] font-medium text-coral bg-coral/10 px-2 py-0.5 rounded-full truncate max-w-[40%]">
+              {voucher.business_name}
             </span>
           </div>
         </div>

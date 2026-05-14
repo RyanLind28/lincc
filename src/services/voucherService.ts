@@ -6,7 +6,7 @@ import { cached, invalidatePrefix } from '../lib/cache';
 import type { VoucherWithDetails } from '../types';
 
 /**
- * Fetch all active, non-expired vouchers with business profile + category
+ * Fetch all active, non-expired vouchers with their business profile
  */
 export async function getActiveVouchers(): Promise<VoucherWithDetails[]> {
   return cached('vouchers:active', async () => {
@@ -14,9 +14,8 @@ export async function getActiveVouchers(): Promise<VoucherWithDetails[]> {
       .from('vouchers')
       .select(`
         *,
-        business:businesses!business_id(*),
-        category:categories!category_id(*)
-      `)
+        business:businesses!business_id(*)
+`)
       .eq('status', 'active')
       .gte('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false });
@@ -38,9 +37,8 @@ export async function getVoucherById(id: string): Promise<VoucherWithDetails | n
     .from('vouchers')
     .select(`
       *,
-      business:businesses!business_id(*),
-      category:categories!category_id(*)
-    `)
+      business:businesses!business_id(*)
+`)
     .eq('id', id)
     .single();
 
@@ -101,22 +99,6 @@ export async function hasUserRedeemed(voucherId: string, userId: string): Promis
 }
 
 /**
- * Get vouchers near a location (Haversine filter)
- */
-export async function getNearbyVouchers(
-  lat: number,
-  lng: number,
-  radiusKm: number = 10
-): Promise<VoucherWithDetails[]> {
-  const allVouchers = await getActiveVouchers();
-
-  return allVouchers.filter((v) => {
-    const distance = haversineDistance(lat, lng, v.venue_lat, v.venue_lng);
-    return distance <= radiusKm;
-  });
-}
-
-/**
  * Fetch ALL vouchers by a business (any status) — for the business owner's profile
  */
 export async function getVouchersByBusiness(businessId: string): Promise<VoucherWithDetails[]> {
@@ -124,9 +106,8 @@ export async function getVouchersByBusiness(businessId: string): Promise<Voucher
     .from('vouchers')
     .select(`
       *,
-      business:businesses!business_id(*),
-      category:categories!category_id(*)
-    `)
+      business:businesses!business_id(*)
+`)
     .eq('business_id', businessId)
     .order('created_at', { ascending: false });
 
@@ -139,6 +120,39 @@ export async function getVouchersByBusiness(businessId: string): Promise<Voucher
 }
 
 /**
+ * Fetch active vouchers for many businesses in a single query and group by
+ * business_id. Used by the directory page so it doesn't N+1 a request per
+ * business per keystroke.
+ */
+export async function getActiveVouchersForBusinesses(
+  businessIds: string[],
+): Promise<Record<string, VoucherWithDetails[]>> {
+  if (businessIds.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from('vouchers')
+    .select(`
+      *,
+      business:businesses!business_id(*)
+`)
+    .in('business_id', businessIds)
+    .eq('status', 'active')
+    .gte('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    logger.error('Error fetching vouchers for businesses:', error);
+    return {};
+  }
+
+  const grouped: Record<string, VoucherWithDetails[]> = {};
+  for (const row of (data || []) as unknown as VoucherWithDetails[]) {
+    (grouped[row.business_id] ??= []).push(row);
+  }
+  return grouped;
+}
+
+/**
  * Fetch active vouchers by a business — for public display on their profile
  */
 export async function getActiveVouchersByBusiness(businessId: string): Promise<VoucherWithDetails[]> {
@@ -146,9 +160,8 @@ export async function getActiveVouchersByBusiness(businessId: string): Promise<V
     .from('vouchers')
     .select(`
       *,
-      business:businesses!business_id(*),
-      category:categories!category_id(*)
-    `)
+      business:businesses!business_id(*)
+`)
     .eq('business_id', businessId)
     .eq('status', 'active')
     .gte('expires_at', new Date().toISOString())
@@ -162,22 +175,3 @@ export async function getActiveVouchersByBusiness(businessId: string): Promise<V
   return (data || []) as unknown as VoucherWithDetails[];
 }
 
-/**
- * Haversine distance in km between two lat/lng points
- */
-function haversineDistance(
-  lat1: number, lng1: number,
-  lat2: number, lng2: number
-): number {
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function toRad(deg: number): number {
-  return (deg * Math.PI) / 180;
-}

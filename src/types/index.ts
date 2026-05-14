@@ -261,6 +261,7 @@ export type NotificationType =
   | 'event_cancelled'
   | 'nearby_event'
   | 'voucher_shared'
+  | 'voucher_redeemed'
   | 'participant_removed'
   | 'participant_left'
   | 'participant_rejoined'
@@ -372,7 +373,6 @@ export type VoucherStatus = 'active' | 'expired' | 'redeemed' | 'deleted';
 export interface Voucher {
   id: string;
   business_id: string;
-  category_id: string | null;
   title: string;
   description: string | null;
   discount_text: string;
@@ -394,5 +394,4 @@ export interface Voucher {
 
 export interface VoucherWithDetails extends Voucher {
   business: Business;
-  category: Category | null;
 }

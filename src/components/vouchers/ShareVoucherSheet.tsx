@@ -48,7 +48,7 @@ export function ShareVoucherSheet({ isOpen, onClose, voucher }: ShareVoucherShee
     const shareUrl = `${window.location.origin}/voucher/${voucher.id}`;
     const shareData = {
       title: voucher.title,
-      text: `Check out this deal: ${voucher.discount_text} at ${voucher.venue_name}!`,
+      text: `Check out this voucher: ${voucher.discount_text} at ${voucher.venue_name}!`,
       url: shareUrl,
     };
 
@@ -95,11 +95,13 @@ export function ShareVoucherSheet({ isOpen, onClose, voucher }: ShareVoucherShee
         // DM tables may not exist yet — continue with notification
       }
 
-      // Also send notification
+      // Also send notification. If the sender owns the voucher's business,
+      // show the business name; otherwise it's just a friend passing it along.
+      const isBusinessOwner = user.id === voucher.business?.owner_id;
       const result = await createNotification(
         friend.id,
         'voucher_shared' as NotificationType,
-        `${user.id === voucher.business_id ? voucher.venue_name : 'A friend'} shared a voucher`,
+        `${isBusinessOwner ? voucher.venue_name : 'A friend'} shared a voucher`,
         `${voucher.discount_text} - ${voucher.title} at ${voucher.venue_name}`,
         { voucher_id: voucher.id, sender_id: user.id }
       );

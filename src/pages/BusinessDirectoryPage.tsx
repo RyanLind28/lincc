@@ -4,7 +4,7 @@ import { Input, Badge, ChatListSkeleton, VoucherTile } from '../components/ui';
 import { Search, Store, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getActiveBusinesses } from '../services/businessService';
-import { getActiveVouchersByBusiness } from '../services/voucherService';
+import { getActiveVouchersForBusinesses } from '../services/voucherService';
 import { BUSINESS_CATEGORIES } from '../types';
 import type { Business, VoucherWithDetails } from '../types';
 
@@ -21,13 +21,9 @@ export default function BusinessDirectoryPage() {
       const results = await getActiveBusinesses(query.trim() || undefined, categoryFilter || undefined);
       setBusinesses(results);
 
-      // Fetch vouchers for first 10 businesses
-      const voucherMap: Record<string, VoucherWithDetails[]> = {};
-      await Promise.all(
-        results.slice(0, 10).map(async (biz) => {
-          const v = await getActiveVouchersByBusiness(biz.id);
-          if (v.length > 0) voucherMap[biz.id] = v;
-        })
+      // Single batched query for vouchers across all visible businesses
+      const voucherMap = await getActiveVouchersForBusinesses(
+        results.slice(0, 10).map((b) => b.id),
       );
       setVouchers(voucherMap);
       setIsLoading(false);

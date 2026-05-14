@@ -57,6 +57,7 @@ const EditBusinessProfilePage = lazy(() => import('./pages/EditBusinessProfilePa
 const BusinessPage = lazy(() => import('./pages/BusinessPage'));
 const BusinessDashboardPage = lazy(() => import('./pages/BusinessDashboardPage'));
 const BusinessVerifyPage = lazy(() => import('./pages/BusinessVerifyPage'));
+const BecomeBusinessPage = lazy(() => import('./pages/BecomeBusinessPage'));
 
 // Lazy-loaded admin pages
 const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage'));
@@ -222,6 +223,7 @@ function App() {
           >
             <Route path="/business/edit" element={<ErrorBoundary><EditBusinessProfilePage /></ErrorBoundary>} />
             <Route path="/business/verify" element={<ErrorBoundary><BusinessVerifyPage /></ErrorBoundary>} />
+            <Route path="/become-a-business" element={<ErrorBoundary><BecomeBusinessPage /></ErrorBoundary>} />
           </Route>
 
           {/* Admin routes */}

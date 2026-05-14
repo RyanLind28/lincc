@@ -503,6 +503,16 @@ export default function HomePage() {
               }>
                 <LazyMapView
                   events={scoredEvents}
+                  vouchers={nearbyVouchers.map((v) => ({
+                    id: v.id,
+                    title: v.title,
+                    venue_name: v.venue_name,
+                    venue_lat: v.venue_lat,
+                    venue_lng: v.venue_lng,
+                    discount_text: v.discount_text,
+                    expires_at: v.expires_at,
+                    business_name: v.business?.name ?? v.venue_name,
+                  }))}
                   userLocation={effectiveLocation}
                   radiusKm={distance}
                   className="absolute inset-0"

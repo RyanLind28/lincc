@@ -365,8 +365,8 @@ export default function BusinessPage() {
               <p className="text-[11px] text-text-muted uppercase tracking-wide">Vouchers</p>
             </div>
             <div className="text-center border-l border-border">
-              <p className="text-xl font-bold text-text">{Math.max(locations.length, 1)}</p>
-              <p className="text-[11px] text-text-muted uppercase tracking-wide">Location{Math.max(locations.length, 1) === 1 ? '' : 's'}</p>
+              <p className="text-xl font-bold text-text">{locations.length}</p>
+              <p className="text-[11px] text-text-muted uppercase tracking-wide">Location{locations.length === 1 ? '' : 's'}</p>
             </div>
             <div className="text-center border-l border-border">
               <p className="text-xl font-bold text-text">{stats.reviewCount}</p>
@@ -395,7 +395,7 @@ export default function BusinessPage() {
         {vouchers.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-text">Deals</h2>
+              <h2 className="text-lg font-bold text-text">Vouchers</h2>
               <span className="text-xs text-text-muted">{vouchers.length} live</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -35,6 +35,26 @@ export async function updateBusiness(
 }
 
 /**
+ * Convert a personal account into a business: creates a pending_approval
+ * businesses row and flips profiles.account_type. Returns the new business id
+ * so the caller can route the user into the verification flow.
+ */
+export async function convertToBusiness(
+  name: string,
+  category: string,
+): Promise<{ success: boolean; error?: string; businessId?: string }> {
+  const { data, error } = await supabase.rpc('convert_to_business', {
+    p_name: name,
+    p_category: category,
+  });
+  if (error) {
+    logger.error('convertToBusiness:', error);
+    return { success: false, error: error.message };
+  }
+  return { success: true, businessId: data as string };
+}
+
+/**
  * Owner moves a rejected application back into pending. Called from the
  * pending-approval page after edits.
  */

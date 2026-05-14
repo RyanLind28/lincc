@@ -297,14 +297,14 @@ export default function BusinessDashboardPage() {
           <StatCard label="Total redemptions" value={stats.totalRedemptions} accent="success" icon={TrendingUp} />
           <StatCard
             label={stats.hostRatingCount > 0 ? `Avg rating · ${stats.hostRatingCount} reviews` : 'No reviews yet'}
-            value={stats.hostRatingAvg ? stats.hostRatingAvg.toFixed(1) : '—'}
+            value={stats.hostRatingAvg ? stats.hostRatingAvg.toFixed(1) : '–'}
             accent="warning"
             icon={Star}
           />
         </div>
 
         {/* Quick actions — only when approved */}
-        {isBusinessApproved && (
+        {isBusinessApproved ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Link to="/event/new">
               <div className="flex flex-col items-center gap-2 p-4 bg-surface rounded-xl border border-border hover:border-coral transition-colors">
@@ -328,6 +328,34 @@ export default function BusinessDashboardPage() {
                 <span className="text-xs font-medium text-text">Edit profile</span>
               </div>
             </Link>
+          </div>
+        ) : (
+          <div className="bg-warning/5 border border-warning/20 rounded-2xl p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+              <div className="space-y-2">
+                <h3 className="font-semibold text-text">
+                  {business.status === 'rejected' ? 'Application needs changes' : 'Waiting on verification'}
+                </h3>
+                <p className="text-sm text-text-muted">
+                  {business.status === 'rejected'
+                    ? 'Update your details based on the feedback above and re-submit. We usually re-review within 24 hours.'
+                    : 'You can publish events and vouchers once your business is approved. Upload your documents to speed it up.'}
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Link to="/business/verify">
+                    <GradientButton size="sm">
+                      {business.status === 'rejected' ? 'Re-submit' : 'Complete verification'}
+                    </GradientButton>
+                  </Link>
+                  <Link to="/business/edit">
+                    <button className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-border text-text-muted hover:text-text text-sm font-medium">
+                      <Pencil className="h-3.5 w-3.5" /> Edit profile
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -396,8 +424,8 @@ export default function BusinessDashboardPage() {
               <div className="bg-surface rounded-xl border border-border p-4">
                 <h3 className="text-xs font-semibold text-text-muted uppercase mb-2">Reviews</h3>
                 <div className="space-y-1 text-sm">
-                  <div className="flex justify-between"><span className="text-text-muted">As host</span><span className="text-text font-medium">{stats.hostRatingAvg ? `${stats.hostRatingAvg} (${stats.hostRatingCount})` : '—'}</span></div>
-                  <div className="flex justify-between"><span className="text-text-muted">Event quality</span><span className="text-text font-medium">{stats.eventRatingAvg ? `${stats.eventRatingAvg} (${stats.eventRatingCount})` : '—'}</span></div>
+                  <div className="flex justify-between"><span className="text-text-muted">As host</span><span className="text-text font-medium">{stats.hostRatingAvg ? `${stats.hostRatingAvg} (${stats.hostRatingCount})` : '–'}</span></div>
+                  <div className="flex justify-between"><span className="text-text-muted">Event quality</span><span className="text-text font-medium">{stats.eventRatingAvg ? `${stats.eventRatingAvg} (${stats.eventRatingCount})` : '–'}</span></div>
                 </div>
               </div>
             </section>
@@ -584,12 +612,12 @@ export default function BusinessDashboardPage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="bg-surface rounded-xl border border-border p-4 text-center">
                 <p className="text-xs text-text-muted uppercase">Host rating</p>
-                <p className="text-3xl font-bold text-text mt-1">{stats.hostRatingAvg?.toFixed(1) ?? '—'}</p>
+                <p className="text-3xl font-bold text-text mt-1">{stats.hostRatingAvg?.toFixed(1) ?? '–'}</p>
                 <p className="text-xs text-text-light">{stats.hostRatingCount} review{stats.hostRatingCount === 1 ? '' : 's'}</p>
               </div>
               <div className="bg-surface rounded-xl border border-border p-4 text-center">
                 <p className="text-xs text-text-muted uppercase">Event rating</p>
-                <p className="text-3xl font-bold text-text mt-1">{stats.eventRatingAvg?.toFixed(1) ?? '—'}</p>
+                <p className="text-3xl font-bold text-text mt-1">{stats.eventRatingAvg?.toFixed(1) ?? '–'}</p>
                 <p className="text-xs text-text-light">{stats.eventRatingCount} review{stats.eventRatingCount === 1 ? '' : 's'}</p>
               </div>
             </div>

@@ -320,12 +320,12 @@ export default function SettingsPage() {
         </section>
 
         {/* Business */}
-        {profile?.account_type === 'business' && (
-          <section>
-            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
-              Business
-            </h2>
-            <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+        <section>
+          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
+            Business
+          </h2>
+          <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
+            {profile?.account_type === 'business' ? (
               <button
                 onClick={() => navigate('/business/dashboard')}
                 className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
@@ -339,9 +339,23 @@ export default function SettingsPage() {
                 </div>
                 <ChevronRight className="h-5 w-5 text-text-muted" />
               </button>
-            </div>
-          </section>
-        )}
+            ) : (
+              <button
+                onClick={() => navigate('/become-a-business')}
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
+              >
+                <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Store className="h-5 w-5 text-coral" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-text">Become a business</h3>
+                  <p className="text-sm text-text-muted">Post deals and offers to people nearby</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-text-muted" />
+              </button>
+            )}
+          </div>
+        </section>
 
         {/* Notifications */}
         <section>
