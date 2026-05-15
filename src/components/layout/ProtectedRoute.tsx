@@ -44,10 +44,13 @@ export function ProtectedRoute({
     return <Navigate to="/terms" state={{ from: location }} replace />;
   }
 
-  // Check profile completion (all required fields: first_name, dob, gender, tags, avatar_url)
+  // Check profile completion (all required fields: first_name, dob, gender, tags, avatar_url).
+  // Business accounts have their own multi-step wizard at /onboarding/business
+  // (verify → logo+bio → location → install).
   if (requireProfile && !isProfileComplete) {
-    logger.log(LOG_PREFIX, location.pathname, '→ redirect to /onboarding (profile incomplete)');
-    return <Navigate to="/onboarding" state={{ from: location }} replace />;
+    const target = profile?.account_type === 'business' ? '/onboarding/business' : '/onboarding';
+    logger.log(LOG_PREFIX, location.pathname, '→ redirect to', target, '(profile incomplete)');
+    return <Navigate to={target} state={{ from: location }} replace />;
   }
 
   // Pending business accounts can roam freely; the DB publish triggers and per-page

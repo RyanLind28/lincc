@@ -42,6 +42,7 @@ const MOCK_PROFILE: Profile = {
   account_type: 'personal',
   welcomed_at: new Date().toISOString(),
   onboarding_step: null,
+  business_onboarding_completed_at: null,
   allow_dms: true,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
@@ -52,10 +53,11 @@ const log = (...args: unknown[]) => { if (DEV_MODE) console.log('[Auth]', ...arg
 
 function checkProfileComplete(profile: Profile | null): boolean {
   if (!profile) return false;
-  // Business accounts only need first_name (= contact name); demographics are
-  // not asked. Personal accounts need the full set.
+  // Business accounts walk through /onboarding/business (welcome → verify →
+  // logo+bio → location+hours → install). business_onboarding_completed_at is
+  // set when they finish; until then we redirect them into the wizard.
   if (profile.account_type === 'business') {
-    return !!profile.first_name?.trim();
+    return !!profile.first_name?.trim() && !!profile.business_onboarding_completed_at;
   }
   return (
     !!profile.first_name?.trim() &&
@@ -329,11 +331,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (options.businessName) metadata.business_name = options.businessName.trim();
       if (options.businessCategory) metadata.business_category = options.businessCategory;
     }
-    // Business accounts land on /business/verify after clicking the email link
-    // so they upload their documents before hitting the dashboard. Personal
-    // accounts use the default redirect (Site URL → /).
+    // Business accounts land on the multi-step /onboarding/business wizard
+    // after clicking the email link — that wizard's first interactive step is
+    // the verification document upload. Personal accounts use the default
+    // redirect (Site URL → /).
     const emailRedirectTo = options.accountType === 'business'
-      ? `${window.location.origin}/business/verify`
+      ? `${window.location.origin}/onboarding/business`
       : undefined;
 
     const { data, error } = await supabase.auth.signUp({

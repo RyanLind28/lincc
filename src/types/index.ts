@@ -27,6 +27,7 @@ export interface Profile {
   last_lng: number | null;
   welcomed_at: string | null;
   onboarding_step: string | null;
+  business_onboarding_completed_at: string | null;
   allow_dms: boolean;
   created_at: string;
   updated_at: string;

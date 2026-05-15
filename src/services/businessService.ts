@@ -1,6 +1,6 @@
 import { logger } from '../lib/utils';
 import { supabase } from '../lib/supabase';
-import type { Business, BusinessWithOwner, BusinessLocation, BusinessOpeningHours } from '../types';
+import type { Business, BusinessWithOwner, BusinessLocation, BusinessOpeningHours, BusinessSocialLinks } from '../types';
 
 interface ServiceResult {
   success: boolean;
@@ -19,6 +19,7 @@ export async function updateBusiness(
     address: string | null;
     logo_url: string | null;
     opening_hours: BusinessOpeningHours | null;
+    social_links: BusinessSocialLinks | null;
   }>
 ): Promise<ServiceResult> {
   const { error } = await supabase

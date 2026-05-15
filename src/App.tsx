@@ -24,6 +24,7 @@ const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
 const TermsPage = lazy(() => import('./pages/auth/TermsPage'));
 const PendingApprovalPage = lazy(() => import('./pages/auth/PendingApprovalPage'));
 const OnboardingPage = lazy(() => import('./pages/onboarding/OnboardingPage'));
+const BusinessOnboardingPage = lazy(() => import('./pages/onboarding/BusinessOnboardingPage'));
 
 // Lazy-loaded main pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -157,6 +158,14 @@ function App() {
             element={
               <ProtectedRoute requireProfile={false}>
                 <OnboardingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding/business"
+            element={
+              <ProtectedRoute requireProfile={false}>
+                <BusinessOnboardingPage />
               </ProtectedRoute>
             }
           />

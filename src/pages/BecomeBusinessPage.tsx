@@ -37,8 +37,8 @@ export default function BecomeBusinessPage() {
       return;
     }
     await Promise.all([refreshProfile(), refreshBusiness()]);
-    showToast('Business created. Please complete verification', 'success');
-    navigate('/business/verify');
+    showToast("Business created. Let's get you set up", 'success');
+    navigate('/onboarding/business');
   };
 
   return (
@@ -85,7 +85,7 @@ export default function BecomeBusinessPage() {
               Continue <ArrowRight className="h-4 w-4 ml-1" />
             </GradientButton>
             <p className="text-xs text-text-muted text-center mt-3">
-              You'll be asked to upload proof of business next.
+              We'll walk you through verification and a quick profile setup next.
             </p>
           </div>
         </form>

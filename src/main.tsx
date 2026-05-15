@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { getBrowserEnv } from './lib/browserEnv';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -48,6 +49,20 @@ Sentry.init({
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors
 });
+
+// Register the PWA service worker ourselves so registration failures surface
+// in Sentry with the underlying reason, instead of being swallowed as an
+// unhandled "Rejected" promise by the plugin's auto-injected snippet.
+if (import.meta.env.PROD) {
+  registerSW({
+    immediate: true,
+    onRegisterError(error) {
+      Sentry.captureException(error, {
+        tags: { feature: 'pwa', stage: 'register' },
+      });
+    },
+  });
+}
 
 // Tag every Sentry event with browser/device info so we can filter by, e.g.,
 // browser:"samsung-internet" when triaging upload or auth issues.
