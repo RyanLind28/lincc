@@ -35,9 +35,31 @@ const UNREADABLE_MESSAGE =
   "Couldn't open this photo. Try opening it in your gallery and tapping Share → Lincc, " +
   "or pick a different photo.";
 
+export type RecoveryAttempt = {
+  stage: 'imageBitmap' | 'fileReader' | 'responseStream' | 'imageElement';
+  outcome: 'recovered' | 'timeout' | 'unsupported' | 'null-result' | 'error';
+  detail?: string;
+};
+
 export type ImageValidationResult =
-  | { ok: true; file: File; format: DetectedFormat; recovered: boolean }
-  | { ok: false; error: string };
+  | {
+      ok: true;
+      file: File;
+      format: DetectedFormat;
+      recovered: boolean;
+      arrayBufferError?: string;
+      recoveryAttempts?: RecoveryAttempt[];
+    }
+  | {
+      ok: false;
+      error: string;
+      arrayBufferError?: string;
+      recoveryAttempts?: RecoveryAttempt[];
+    };
+
+type RecoveryStageResult =
+  | { ok: true; file: File }
+  | { ok: false; outcome: Exclude<RecoveryAttempt['outcome'], 'recovered'>; detail?: string };
 
 function detectFormatFromBytes(bytes: Uint8Array): DetectedFormat {
   if (bytes.length < 4) return null;
@@ -65,13 +87,23 @@ function detectFormatFromBytes(bytes: Uint8Array): DetectedFormat {
   return null;
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
-  return new Promise((resolve) => {
+// Sentinel thrown by raceTimeout when the inner promise hasn't settled in time.
+// Distinguishing this from a regular rejection lets the cascade record
+// "timeout" vs "error" separately in Sentry breadcrumbs.
+class TimeoutError extends Error {
+  constructor(message = 'timeout') {
+    super(message);
+    this.name = 'TimeoutError';
+  }
+}
+
+function raceTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
     let settled = false;
     const timer = window.setTimeout(() => {
       if (settled) return;
       settled = true;
-      resolve(null);
+      reject(new TimeoutError());
     }, ms);
     promise.then(
       (value) => {
@@ -80,14 +112,30 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
         window.clearTimeout(timer);
         resolve(value);
       },
-      () => {
+      (error) => {
         if (settled) return;
         settled = true;
         window.clearTimeout(timer);
-        resolve(null);
+        reject(error);
       },
     );
   });
+}
+
+// Squashes any unknown thrown value into a short, Sentry-friendly string.
+// Keep the result bounded so it can't blow out the event payload.
+function summariseError(err: unknown): string {
+  if (err instanceof Error) {
+    const name = err.name || 'Error';
+    const message = err.message ? `: ${err.message}` : '';
+    return `${name}${message}`.slice(0, 200);
+  }
+  return String(err).slice(0, 200);
+}
+
+function stageFailure(err: unknown): RecoveryStageResult {
+  if (err instanceof TimeoutError) return { ok: false, outcome: 'timeout' };
+  return { ok: false, outcome: 'error', detail: summariseError(err) };
 }
 
 // --- Recovery cascade --------------------------------------------------------
@@ -97,80 +145,99 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
 // Each helper returns a JS-owned File (decoupled from the original URI) or
 // null. They never throw.
 
-async function recoverViaImageBitmap(file: File): Promise<File | null> {
-  if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') return null;
-  const bitmap = await withTimeout(createImageBitmap(file), IMAGE_LOAD_TIMEOUT_MS);
-  if (!bitmap) return null;
-
+async function recoverViaImageBitmap(file: File): Promise<RecoveryStageResult> {
+  if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') {
+    return { ok: false, outcome: 'unsupported' };
+  }
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await raceTimeout(createImageBitmap(file), IMAGE_LOAD_TIMEOUT_MS);
+  } catch (err) {
+    return stageFailure(err);
+  }
   try {
     const canvas = document.createElement('canvas');
     canvas.width = bitmap.width;
     canvas.height = bitmap.height;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+    if (!ctx) return { ok: false, outcome: 'error', detail: 'no-canvas-2d-context' };
     ctx.drawImage(bitmap, 0, 0);
 
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
     );
-    if (!blob) return null;
-    return new File([blob], renameToJpg(file.name), { type: 'image/jpeg' });
+    if (!blob) return { ok: false, outcome: 'null-result', detail: 'canvas-toBlob-null' };
+    return { ok: true, file: new File([blob], renameToJpg(file.name), { type: 'image/jpeg' }) };
+  } catch (err) {
+    return stageFailure(err);
   } finally {
     if ('close' in bitmap) bitmap.close();
   }
 }
 
-async function recoverViaFileReader(file: File): Promise<File | null> {
-  if (typeof FileReader === 'undefined') return null;
-  const buffer = await withTimeout(
-    new Promise<ArrayBuffer>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result;
-        if (result instanceof ArrayBuffer) resolve(result);
-        else reject(new Error('FileReader returned non-ArrayBuffer'));
-      };
-      reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'));
-      reader.readAsArrayBuffer(file);
-    }),
-    IMAGE_LOAD_TIMEOUT_MS,
-  );
-  if (!buffer) return null;
-  return new File([buffer], file.name, { type: file.type || 'image/jpeg' });
+async function recoverViaFileReader(file: File): Promise<RecoveryStageResult> {
+  if (typeof FileReader === 'undefined') {
+    return { ok: false, outcome: 'unsupported' };
+  }
+  try {
+    const buffer = await raceTimeout(
+      new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          if (result instanceof ArrayBuffer) resolve(result);
+          else reject(new Error('FileReader returned non-ArrayBuffer'));
+        };
+        reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'));
+        reader.readAsArrayBuffer(file);
+      }),
+      IMAGE_LOAD_TIMEOUT_MS,
+    );
+    return { ok: true, file: new File([buffer], file.name, { type: file.type || 'image/jpeg' }) };
+  } catch (err) {
+    return stageFailure(err);
+  }
 }
 
 // `new Response(blob).arrayBuffer()` exercises the fetch stack rather than the
 // direct Blob read path. On some Android Chrome builds this succeeds when
 // `blob.arrayBuffer()` returns NotReadableError on the same Content URI.
-async function recoverViaResponseStream(file: File): Promise<File | null> {
-  if (typeof Response === 'undefined') return null;
-  const buffer = await withTimeout(new Response(file).arrayBuffer(), IMAGE_LOAD_TIMEOUT_MS);
-  if (!buffer) return null;
-  return new File([buffer], file.name, { type: file.type || 'image/jpeg' });
+async function recoverViaResponseStream(file: File): Promise<RecoveryStageResult> {
+  if (typeof Response === 'undefined') {
+    return { ok: false, outcome: 'unsupported' };
+  }
+  try {
+    const buffer = await raceTimeout(new Response(file).arrayBuffer(), IMAGE_LOAD_TIMEOUT_MS);
+    return { ok: true, file: new File([buffer], file.name, { type: file.type || 'image/jpeg' }) };
+  } catch (err) {
+    return stageFailure(err);
+  }
 }
 
 // Last resort: load the file through `<img src=createObjectURL>`. Even when
 // every byte-read API fails, the renderer sometimes materialises pixels by
 // going through the platform image decoder directly.
-async function recoverViaImageElement(file: File): Promise<File | null> {
-  if (typeof URL === 'undefined' || typeof Image === 'undefined') return null;
+async function recoverViaImageElement(file: File): Promise<RecoveryStageResult> {
+  if (typeof URL === 'undefined' || typeof Image === 'undefined') {
+    return { ok: false, outcome: 'unsupported' };
+  }
   const objectUrl = URL.createObjectURL(file);
   try {
-    const img = await withTimeout(loadImage(objectUrl), IMAGE_LOAD_TIMEOUT_MS);
-    if (!img) return null;
-
+    const img = await raceTimeout(loadImage(objectUrl), IMAGE_LOAD_TIMEOUT_MS);
     const canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+    if (!ctx) return { ok: false, outcome: 'error', detail: 'no-canvas-2d-context' };
     ctx.drawImage(img, 0, 0);
 
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
     );
-    if (!blob) return null;
-    return new File([blob], renameToJpg(file.name), { type: 'image/jpeg' });
+    if (!blob) return { ok: false, outcome: 'null-result', detail: 'canvas-toBlob-null' };
+    return { ok: true, file: new File([blob], renameToJpg(file.name), { type: 'image/jpeg' }) };
+  } catch (err) {
+    return stageFailure(err);
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
@@ -189,24 +256,35 @@ function renameToJpg(name: string): string {
   return name.replace(/\.[a-z0-9]+$/i, '') + '.jpg';
 }
 
-async function runRecoveryCascade(file: File): Promise<File | null> {
+async function runRecoveryCascade(
+  file: File,
+): Promise<{ file: File | null; attempts: RecoveryAttempt[] }> {
   const deadline = Date.now() + RECOVERY_BUDGET_MS;
-  const stages: Array<(f: File) => Promise<File | null>> = [
-    recoverViaImageBitmap,
-    recoverViaFileReader,
-    recoverViaResponseStream,
-    recoverViaImageElement,
+  const stages: Array<{ name: RecoveryAttempt['stage']; run: (f: File) => Promise<RecoveryStageResult> }> = [
+    { name: 'imageBitmap', run: recoverViaImageBitmap },
+    { name: 'fileReader', run: recoverViaFileReader },
+    { name: 'responseStream', run: recoverViaResponseStream },
+    { name: 'imageElement', run: recoverViaImageElement },
   ];
+  const attempts: RecoveryAttempt[] = [];
   for (const stage of stages) {
-    if (Date.now() >= deadline) return null;
-    try {
-      const recovered = await stage(file);
-      if (recovered) return recovered;
-    } catch {
-      // Try the next stage.
+    if (Date.now() >= deadline) {
+      attempts.push({ stage: stage.name, outcome: 'timeout', detail: 'cascade-budget-exhausted' });
+      break;
     }
+    let result: RecoveryStageResult;
+    try {
+      result = await stage.run(file);
+    } catch (err) {
+      result = stageFailure(err);
+    }
+    if (result.ok) {
+      attempts.push({ stage: stage.name, outcome: 'recovered' });
+      return { file: result.file, attempts };
+    }
+    attempts.push({ stage: stage.name, outcome: result.outcome, detail: result.detail });
   }
-  return null;
+  return { file: null, attempts };
 }
 
 // --- Public API --------------------------------------------------------------
@@ -230,10 +308,11 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
   // than multiple slice reads, and the clone decouples downstream code from
   // the original Content URI.
   let buffer: ArrayBuffer | null = null;
+  let arrayBufferError: string | undefined;
   try {
     buffer = await file.arrayBuffer();
-  } catch {
-    // Falls through to the recovery cascade below.
+  } catch (err) {
+    arrayBufferError = summariseError(err);
   }
 
   if (buffer) {
@@ -251,10 +330,24 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
   // arrayBuffer() failed — run the recovery cascade. Any successful stage
   // produces a re-encoded JPEG (or a fresh JS-owned File with the original
   // bytes), so we don't need to re-validate magic bytes after.
-  const recovered = await runRecoveryCascade(file);
-  if (recovered) return { ok: true, file: recovered, format: 'jpeg', recovered: true };
+  const { file: recovered, attempts } = await runRecoveryCascade(file);
+  if (recovered) {
+    return {
+      ok: true,
+      file: recovered,
+      format: 'jpeg',
+      recovered: true,
+      arrayBufferError,
+      recoveryAttempts: attempts,
+    };
+  }
 
-  return { ok: false, error: UNREADABLE_MESSAGE };
+  return {
+    ok: false,
+    error: UNREADABLE_MESSAGE,
+    arrayBufferError,
+    recoveryAttempts: attempts,
+  };
 }
 
 /**

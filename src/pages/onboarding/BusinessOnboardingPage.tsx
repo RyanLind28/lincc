@@ -171,10 +171,30 @@ export default function BusinessOnboardingPage() {
     if (!validation.ok) {
       Sentry.captureMessage('business-onboarding-logo: validation rejected file', {
         level: 'info',
-        extra: { reason: validation.error, fileType: file.type, fileSize: file.size },
+        extra: {
+          reason: validation.error,
+          fileType: file.type,
+          fileSize: file.size,
+          fileName: file.name,
+          arrayBufferError: validation.arrayBufferError,
+          recoveryAttempts: validation.recoveryAttempts,
+        },
       });
       showToast(validation.error, 'error');
       return;
+    }
+    if (validation.recovered) {
+      Sentry.captureMessage('business-onboarding-logo: recovered unreadable file', {
+        level: 'info',
+        extra: {
+          fileType: file.type,
+          fileSize: file.size,
+          fileName: file.name,
+          recoveredSize: validation.file.size,
+          arrayBufferError: validation.arrayBufferError,
+          recoveryAttempts: validation.recoveryAttempts,
+        },
+      });
     }
     let workingFile = validation.file;
     if (validation.format === 'heic') {

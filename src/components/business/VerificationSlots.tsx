@@ -179,7 +179,14 @@ export function useVerificationUpload(
       if (!validation.ok) {
         Sentry.captureMessage('verification-doc: validation rejected file', {
           level: 'info',
-          extra: { slot, reason: validation.error, fileType: file.type, fileSize: file.size },
+          extra: {
+            slot,
+            reason: validation.error,
+            fileType: file.type,
+            fileSize: file.size,
+            arrayBufferError: validation.arrayBufferError,
+            recoveryAttempts: validation.recoveryAttempts,
+          },
         });
         setUploadingSlot(null);
         showToast(validation.error, 'error');
@@ -188,7 +195,14 @@ export function useVerificationUpload(
       if (validation.recovered) {
         Sentry.captureMessage('verification-doc: recovered unreadable file', {
           level: 'info',
-          extra: { slot, fileType: file.type, fileSize: file.size, recoveredSize: validation.file.size },
+          extra: {
+            slot,
+            fileType: file.type,
+            fileSize: file.size,
+            recoveredSize: validation.file.size,
+            arrayBufferError: validation.arrayBufferError,
+            recoveryAttempts: validation.recoveryAttempts,
+          },
         });
       }
       workingFile = validation.file;

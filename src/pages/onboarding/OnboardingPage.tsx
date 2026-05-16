@@ -266,7 +266,14 @@ export default function OnboardingPage() {
     if (!validation.ok) {
       Sentry.captureMessage('onboarding-avatar: validation rejected file', {
         level: 'info',
-        extra: { reason: validation.error, fileType: file.type, fileSize: file.size, fileName: file.name },
+        extra: {
+          reason: validation.error,
+          fileType: file.type,
+          fileSize: file.size,
+          fileName: file.name,
+          arrayBufferError: validation.arrayBufferError,
+          recoveryAttempts: validation.recoveryAttempts,
+        },
       });
       setPhotoError(validation.error);
       return;
@@ -275,7 +282,14 @@ export default function OnboardingPage() {
     if (validation.recovered) {
       Sentry.captureMessage('onboarding-avatar: recovered unreadable file', {
         level: 'info',
-        extra: { fileType: file.type, fileSize: file.size, fileName: file.name, recoveredSize: validation.file.size },
+        extra: {
+          fileType: file.type,
+          fileSize: file.size,
+          fileName: file.name,
+          recoveredSize: validation.file.size,
+          arrayBufferError: validation.arrayBufferError,
+          recoveryAttempts: validation.recoveryAttempts,
+        },
       });
     }
 
