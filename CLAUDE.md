@@ -251,6 +251,8 @@ Located in `supabase/migrations/`:
 - `029_fix_delete_account.sql` — Fixed column names + added REVOKE/GRANT
 - `030_security_hardening.sql` — Notification INSERT restriction, storage policies, host/participant event visibility
 - `031_fix_circular_rls.sql` — is_admin() + user_is_event_participant() SECURITY DEFINER functions
+- `059_security_advisor_fixes.sql` — Locks down `create_notification` (was callable by any authenticated user); revokes EXECUTE on trigger/internal SECURITY DEFINER functions from anon + authenticated; pins `search_path` on 8 functions; replaces broad public SELECT policies on `avatars` / `business-logos` / `event-images` / `voucher-covers` with owner-scoped policies (public URL reads still work via `bucket.public=true`); adds missing admin SELECT policies for the three non-avatar buckets.
+- `060_revoke_public_execute_on_internal_functions.sql` — Follow-up to 059. `REVOKE FROM anon, authenticated` is a no-op while `CREATE FUNCTION`'s implicit `GRANT TO PUBLIC` is intact; this migration revokes `EXECUTE FROM PUBLIC` on the 19 internal functions so anon/authenticated truly cannot call them. `is_admin()` and `user_is_event_participant()` intentionally keep PUBLIC EXECUTE because they're referenced inside RLS USING clauses.
 
 ### Realtime
 Enabled for: `messages`, `notifications`, `event_participants`, `events`, `conversations`, `direct_messages`

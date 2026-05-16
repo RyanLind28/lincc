@@ -73,6 +73,49 @@ Source: `docs/Meeting started 2026_05_08 16_34 BST – Notes by Gemini.pdf`. Tha
 
 ---
 
+## Session Changelog — 2026-05-16
+
+Sentry triage drove an instrumentation enhancement on the image upload pipeline. Supabase advisor audit found one real bug (`create_notification` was open to spoofing) plus a long tail of hygiene issues; two migrations applied live (059 + 060) cleared 56 of 75 advisor findings.
+
+### Image upload pipeline — per-stage recovery telemetry
+
+Sentry showed three `*-logo: validation rejected file` events from a Bahrain Samsung user (Android 10, Chrome 148) hitting both `/business/edit` and `/onboarding/business` within 6 minutes — both ~1–3 MB JPEGs, both reaching the cascade-exhausted failure path. The instrumentation only told us "everything failed"; we couldn't tell which read API (arrayBuffer / ImageBitmap / FileReader / Response.arrayBuffer / `<img>`) was the actual blocker, so we couldn't decide whether to add a 5th recovery path or accept the file as genuinely unreadable.
+
+- **`src/lib/imageCompression.ts` refactored** — `withTimeout` (which silently swallowed both timeouts and rejections into `null`) replaced with `raceTimeout` (throws on either, with a `TimeoutError` sentinel so the cascade can distinguish the two). Each `recoverVia*` helper now returns a `RecoveryStageResult` carrying `{ outcome: 'recovered' | 'timeout' | 'unsupported' | 'null-result' | 'error', detail? }` plus a short `summariseError()` string for thrown errors. `runRecoveryCascade` collects per-stage `RecoveryAttempt[]`. `validateImageDetailed` now surfaces `arrayBufferError?` (what `file.arrayBuffer()` threw before the cascade ran) and `recoveryAttempts?` on the result.
+- **Seven call sites updated** to include `arrayBufferError` + `recoveryAttempts` in Sentry extras on both the rejection capture and the recovered-file capture: `EditBusinessProfilePage`, `BusinessOnboardingPage`, `CreateEventPage`, `CreateVoucherPage`, `EditProfilePage`, `OnboardingPage` (avatar), `VerificationSlots`.
+- **`BusinessOnboardingPage` gained the missing `recovered unreadable file` capture** — the edit-business equivalent had it from day one; onboarding never did. Recovery-rate parity restored.
+- **Audited every image upload entry point**: 7 `<input type="file">` elements + 7 Supabase storage upload call sites + no drag-drop, paste, camera-capture, or indirect picker abstractions in the app. All flows now go through the hardened pipeline.
+- `npx tsc --noEmit` clean. `npm run test:run` 57/57 pass.
+
+### Supabase security advisor pass — 75 → 19 findings
+
+Real bug: **`create_notification` had no auth check and was callable by any authenticated user** via `/rest/v1/rpc/create_notification`. Anyone could spoof a notification (and the function's `pg_net` push call) into any user's inbox. No frontend caller — only triggers and service_role legitimately invoke it.
+
+- **Migration `059_security_advisor_fixes.sql`**:
+  - Revoke EXECUTE from anon + authenticated on 16 trigger / pg_cron-only functions (`handle_new_user`, all `notify_*`, all `update_*`, `events_publish_gate`, `vouchers_publish_gate`, `send_event_reminders`, the two dispute triggers).
+  - Revoke EXECUTE on `create_notification` from anon + authenticated.
+  - Revoke from anon on 7 auth-required RPCs (`admin_delete_user_account`, `delete_user_account`, `convert_to_business`, `export_user_data`, `redeem_voucher`, `suggest_users`, `search_events`) — defense in depth; each already raises on null `auth.uid()`.
+  - Pin `search_path = public, pg_temp` on 8 functions flagged by advisor 0011.
+  - Drop the four broad `bucket_id = '<name>'` public SELECT policies on `storage.objects`; replace with owner-scoped SELECT (matches the existing UPDATE/DELETE pattern). Add the three missing admin SELECT policies (`admin_business_logo_select`, `admin_event_image_select`, `admin_voucher_cover_select`). Public URL reads continue to work because all four buckets have `bucket.public = true`.
+- **Migration `060_revoke_public_execute_on_internal_functions.sql`** — caught mid-flight: `REVOKE FROM anon, authenticated` is a **no-op** while `CREATE FUNCTION`'s implicit `GRANT EXECUTE TO PUBLIC` is intact (the PUBLIC grant covers every role transitively). 060 revokes EXECUTE from PUBLIC on the 19 functions that still had it, so the 059 intent actually applies. `is_admin()` and `user_is_event_participant()` keep PUBLIC EXECUTE deliberately — both are referenced inside RLS USING clauses; revoking would break every signed-in table read.
+
+### Remaining advisor findings (19, all explainable)
+- 5 PostGIS-related (extension in `public`, `spatial_ref_sys` RLS, 3× `st_estimatedextent` SECURITY DEFINER) — deferred; moving PostGIS to `extensions` schema touches every spatial column + function call site.
+- 4 false positives on `is_admin()` / `user_is_event_participant()` — kept by design (used in RLS).
+- 8 intentional `authenticated_security_definer_function_executable` flags on RPCs with verified internal auth checks (`admin_delete_user_account`, `convert_to_business`, `delete_user_account`, `export_user_data`, `get_cron_health`, `redeem_voucher`, `search_events`, `suggest_users`). Switching to `SECURITY INVOKER` would break their elevated-privilege needs.
+- 1 `business_waitlist` always-true INSERT — intentional for anonymous waitlist submission.
+- 1 HaveIBeenPwned check disabled — Supabase Pro-tier feature; bundling with password length/complexity rules at Pro upgrade.
+
+### Sentry status after pass
+- `JAVASCRIPT-REACT-4` (`Error: Rejected` / service worker register at `/business/verify`) — bot noise; user agent is `Google-Read-Aloud`. Not fixed; consider filtering bot UAs in Sentry `beforeSend`.
+- `JAVASCRIPT-REACT-5` + `JAVASCRIPT-REACT-A` — now decorated with the new `arrayBufferError` + `recoveryAttempts` metadata; next firing will tell us which read path the Samsung Content URI actually refuses.
+
+### Migrations applied today
+- 059 — security_advisor_fixes
+- 060 — revoke_public_execute_on_internal_functions
+
+---
+
 ## Session Changelog — 2026-05-06
 
 Two production fixes — one auth regression, one image-upload reliability pass driven by a real Sentry event from a Samsung user. Migration 047 applied live, no TypeScript regressions.

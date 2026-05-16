@@ -67,18 +67,47 @@ function SlotCard({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Optimistic preview from the just-picked File. Rendered immediately so the
+  // user sees their selection while the upload + signed-URL round-trip runs;
+  // we've seen the signed URL fetch occasionally fail right after upload
+  // (storage consistency lag), and only a refresh recovers — this side-steps
+  // that entirely and also makes the picker feel instant.
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
   const Icon = slot.icon;
 
   useEffect(() => {
     let cancelled = false;
     if (!path) { setPreviewUrl(null); return; }
-    getDocSignedUrl(path).then((url) => { if (!cancelled) setPreviewUrl(url); });
+    getDocSignedUrl(path).then((url) => {
+      if (cancelled) return;
+      setPreviewUrl(url);
+      // Signed URL is now the source of truth — drop the blob URL so we
+      // don't keep a stale local copy around.
+      setLocalPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+    });
     return () => { cancelled = true; };
   }, [path]);
+
+  // Revoke the local preview URL when the component unmounts.
+  useEffect(() => () => {
+    if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
+  }, [localPreviewUrl]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Show the picked file instantly. The signed-URL fetch swap happens
+    // once `path` updates from the parent's refresh.
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setLocalPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
+    }
     // Defer the input reset until after the upload pipeline has read the
     // file — clearing input.value while bytes are still being read can
     // revoke the picker's Content URI permission on Samsung Android.
@@ -89,7 +118,9 @@ function SlotCard({
     }
   };
 
-  const isImage = path && /\.(jpe?g|png|webp|gif|heic)$/i.test(path);
+  const displayUrl = localPreviewUrl ?? previewUrl;
+  const isImage = !!localPreviewUrl || (path && /\.(jpe?g|png|webp|gif|heic)$/i.test(path));
+  const hasContent = !!(path || localPreviewUrl);
   const inputId = `verify-doc-${slot.key}`;
   const disabled = locked || isUploading;
 
@@ -108,13 +139,13 @@ function SlotCard({
         </div>
       </div>
 
-      {path && (
+      {hasContent && (
         <div className="mt-3 rounded-lg overflow-hidden border border-border bg-background">
-          {isImage && previewUrl ? (
-            <img src={previewUrl} alt={slot.title} className="w-full max-h-64 object-contain" />
+          {isImage && displayUrl ? (
+            <img src={displayUrl} alt={slot.title} className="w-full max-h-64 object-contain" />
           ) : (
             <div className="p-3 text-xs text-text-muted flex items-center gap-2">
-              <FileText className="h-4 w-4" /> {path.split('/').pop()}
+              <FileText className="h-4 w-4" /> {path?.split('/').pop() ?? 'New file'}
               {previewUrl && <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-coral ml-auto">View</a>}
             </div>
           )}
