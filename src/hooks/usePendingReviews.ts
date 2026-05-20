@@ -40,5 +40,7 @@ export function usePendingReviews() {
     );
   }, []);
 
-  return { items, isLoading, refresh, removeFromQueue };
+  const clearQueue = useCallback(() => setItems([]), []);
+
+  return { items, isLoading, refresh, removeFromQueue, clearQueue };
 }

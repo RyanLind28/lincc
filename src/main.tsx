@@ -34,26 +34,45 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   });
 }
 
+const BOT_UA = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|read-aloud|lighthouse|headlesschrome/i;
+const isBot = typeof navigator !== 'undefined' && BOT_UA.test(navigator.userAgent);
+
 // Initialize Sentry error monitoring
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
-  enabled: import.meta.env.PROD, // Only enable in production
+  enabled: import.meta.env.PROD && !isBot,
   integrations: [
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
   ],
-  // Tracing
-  tracesSampleRate: 0.1, // Sample 10% of transactions in production
+  tracesSampleRate: 0.1,
   tracePropagationTargets: ['localhost', /^https:\/\/.*\.supabase\.co/],
-  // Session Replay
   replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors
+  replaysOnErrorSampleRate: 1.0,
 });
 
-// Register the PWA service worker ourselves so registration failures surface
-// in Sentry with the underlying reason, instead of being swallowed as an
-// unhandled "Rejected" promise by the plugin's auto-injected snippet.
-if (import.meta.env.PROD) {
+// When a new deploy replaces the JS chunks the cached app shell (especially iOS
+// standalone PWAs) still references, dynamic import() 404s. Reload once to pick
+// up the fresh index.html. Guard with sessionStorage so we never loop.
+const PRELOAD_RELOAD_KEY = 'lincc-preload-reloaded';
+window.addEventListener('vite:preloadError', (event) => {
+  if (sessionStorage.getItem(PRELOAD_RELOAD_KEY)) {
+    Sentry.captureException(event.payload, {
+      tags: { feature: 'pwa', stage: 'preload-after-reload' },
+    });
+    return;
+  }
+  sessionStorage.setItem(PRELOAD_RELOAD_KEY, '1');
+  event.preventDefault();
+  window.location.reload();
+});
+window.addEventListener('load', () => {
+  sessionStorage.removeItem(PRELOAD_RELOAD_KEY);
+});
+
+// Skip SW registration for bots — Google-Read-Aloud et al. reject the call and
+// we don't want them caching anything anyway.
+if (import.meta.env.PROD && !isBot) {
   registerSW({
     immediate: true,
     onRegisterError(error) {

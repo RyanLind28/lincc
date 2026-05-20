@@ -48,7 +48,7 @@ export async function submitHostReview(
       comment: comment.trim() || null,
     });
   if (error?.code === '23505') {
-    return { success: false, error: 'You already reviewed this host' };
+    return { success: true, alreadyExists: true };
   }
   return { success: !error, error: error?.message };
 }

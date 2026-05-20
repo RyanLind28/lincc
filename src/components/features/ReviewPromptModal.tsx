@@ -94,7 +94,7 @@ export function ReviewPromptModal({ items, onClose, onItemHandled }: ReviewPromp
         showToast(result.error || 'Failed to submit', 'error');
         return;
       }
-      showToast('Thanks for your review', 'success');
+      showToast(result.alreadyExists ? 'Already submitted — moving on' : 'Thanks for your review', 'success');
       advance(current);
     } else {
       if (guestRating === 0) {
@@ -114,7 +114,7 @@ export function ReviewPromptModal({ items, onClose, onItemHandled }: ReviewPromp
         showToast(result.error || 'Failed to submit', 'error');
         return;
       }
-      showToast('Guest rated', 'success');
+      showToast(result.alreadyExists ? 'Already submitted — moving on' : 'Guest rated', 'success');
       advance(current);
     }
   };

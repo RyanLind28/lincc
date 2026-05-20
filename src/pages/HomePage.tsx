@@ -79,7 +79,7 @@ function isLocationQuery(term: string): boolean {
 
 export default function HomePage() {
   const { viewMode } = useViewMode();
-  const { items: pendingReviews, removeFromQueue, refresh: refreshPendingReviews } = usePendingReviews();
+  const { items: pendingReviews, removeFromQueue, clearQueue: clearReviewQueue, refresh: refreshPendingReviews } = usePendingReviews();
   const [isReviewPromptOpen, setIsReviewPromptOpen] = useState(false);
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [distance, setDistance] = useState(10);
@@ -246,6 +246,7 @@ export default function HomePage() {
           items={pendingReviews}
           onClose={() => {
             pendingReviews.forEach(dismissReviewForSession);
+            clearReviewQueue();
             setIsReviewPromptOpen(false);
           }}
           onItemHandled={removeFromQueue}
