@@ -39,9 +39,9 @@ export function BusinessApprovalBanner() {
 
   let tone: 'warning' | 'error' = 'warning';
   let icon = Clock;
-  let title = 'Awaiting approval';
-  let body = "We're reviewing your business. You can browse Lincc as usual; you'll be able to publish events and vouchers once approved.";
-  let cta = { to: '/business/verify', label: 'Verify business' };
+  let title = 'Awaiting review';
+  let body = "We're reviewing your business. You can browse Lincc as usual; you'll be able to publish events and vouchers once verified.";
+  let cta = { to: '/business/verify', label: 'Get verified' };
 
   if (isRejectedApp) {
     tone = 'error';
@@ -52,9 +52,7 @@ export function BusinessApprovalBanner() {
   } else if (verifRejected) {
     tone = 'error';
     icon = AlertTriangle;
-    title = 'Verification needs another look';
-    // Surface the admin's notes verbatim so the user knows what to fix without
-    // an extra click. Falls back to generic copy when notes weren't provided.
+    title = 'Needs another look';
     body = rejectionNotes?.trim()
       ? rejectionNotes
       : 'Replace any flagged documents and re-submit to get the verified tick.';
@@ -62,15 +60,15 @@ export function BusinessApprovalBanner() {
   } else if (verifSubmitted) {
     tone = 'warning';
     icon = Clock;
-    title = 'Verification under review';
+    title = 'Under review';
     body = 'Most reviews finish within 24 hours. You can keep building your profile in the meantime.';
     cta = { to: '/business/dashboard', label: 'Open dashboard' };
   } else if (verificationStatus === 'draft' || verificationStatus === null) {
     tone = 'warning';
     icon = ShieldCheck;
-    title = 'Finish verifying your business';
+    title = 'Get verified';
     body = 'Upload your ID and business documents to get the verified tick and unlock publishing.';
-    cta = { to: '/business/verify', label: 'Verify now' };
+    cta = { to: '/business/verify', label: 'Get verified' };
   }
 
   const Icon = icon;

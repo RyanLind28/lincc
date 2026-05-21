@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -7,7 +7,7 @@ import { Header } from '../components/layout';
 import { Input, TextArea, GradientButton, PlacesAutocomplete, AvatarCropper } from '../components/ui';
 import type { PlaceDetails } from '../services/placesService';
 import { useUserLocation } from '../hooks/useUserLocation';
-import { Camera, X, Loader2, AlertTriangle } from 'lucide-react';
+import { Camera, X, Loader2, AlertTriangle, Settings } from 'lucide-react';
 import { updateBusiness } from '../services/businessService';
 import { supabase } from '../lib/supabase';
 import { compressImage, validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
@@ -276,8 +276,20 @@ export default function EditBusinessProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-8">
-      <Header showBack showLogo />
+    <div className="min-h-screen bg-background pb-24">
+      <Header
+        showBack
+        showLogo
+        rightContent={
+          <Link
+            to="/settings"
+            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
+            aria-label="Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </Link>
+        }
+      />
 
       {cropSrc && (
         <AvatarCropper

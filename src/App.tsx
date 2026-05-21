@@ -222,6 +222,17 @@ function App() {
             <Route path="/dm/:id" element={<DMChatRoomPage />} />
           </Route>
 
+          {/* Business edit page — keeps bottom nav like other in-app routes */}
+          <Route
+            element={
+              <ProtectedRoute requireProfile={false}>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/business/edit" element={<ErrorBoundary><EditBusinessProfilePage /></ErrorBoundary>} />
+          </Route>
+
           {/* Full-screen routes that don't require profile completion (business onboarding) */}
           <Route
             element={
@@ -230,7 +241,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/business/edit" element={<ErrorBoundary><EditBusinessProfilePage /></ErrorBoundary>} />
             <Route path="/business/verify" element={<ErrorBoundary><BusinessVerifyPage /></ErrorBoundary>} />
             <Route path="/become-a-business" element={<ErrorBoundary><BecomeBusinessPage /></ErrorBoundary>} />
           </Route>

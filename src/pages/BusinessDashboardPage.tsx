@@ -25,8 +25,8 @@ import type { PlaceDetails } from '../services/placesService';
 type Tab = 'overview' | 'events' | 'vouchers' | 'locations' | 'reviews' | 'profile';
 
 const STATUS_COPY: Record<string, { label: string; tone: 'success' | 'warning' | 'error' | 'default' }> = {
-  pending_approval: { label: 'Pending approval', tone: 'warning' },
-  approved: { label: 'Approved', tone: 'success' },
+  pending_approval: { label: 'Unverified', tone: 'warning' },
+  approved: { label: 'Verified', tone: 'success' },
   rejected: { label: 'Rejected', tone: 'error' },
   suspended: { label: 'Suspended', tone: 'error' },
   inactive: { label: 'Inactive', tone: 'default' },
@@ -270,7 +270,7 @@ export default function BusinessDashboardPage() {
                 </Link>
                 <Link to="/business/verify">
                   <button className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-border text-text-muted hover:text-text text-sm font-medium">
-                    <ShieldCheck className="h-3.5 w-3.5" /> Verification
+                    <ShieldCheck className="h-3.5 w-3.5" /> Verified
                   </button>
                 </Link>
                 {isBusinessApproved && (
@@ -335,17 +335,17 @@ export default function BusinessDashboardPage() {
               <ShieldCheck className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
               <div className="space-y-2">
                 <h3 className="font-semibold text-text">
-                  {business.status === 'rejected' ? 'Application needs changes' : 'Waiting on verification'}
+                  {business.status === 'rejected' ? 'Application needs changes' : 'Get verified'}
                 </h3>
                 <p className="text-sm text-text-muted">
                   {business.status === 'rejected'
                     ? 'Update your details based on the feedback above and re-submit. We usually re-review within 24 hours.'
-                    : 'You can publish events and vouchers once your business is approved. Upload your documents to speed it up.'}
+                    : 'You can publish events and vouchers once your business is verified. Upload your documents to speed it up.'}
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <Link to="/business/verify">
                     <GradientButton size="sm">
-                      {business.status === 'rejected' ? 'Re-submit' : 'Complete verification'}
+                      {business.status === 'rejected' ? 'Re-submit' : 'Get verified'}
                     </GradientButton>
                   </Link>
                   <Link to="/business/edit">
@@ -436,7 +436,7 @@ export default function BusinessDashboardPage() {
           <div className="space-y-3">
             {!isBusinessApproved && (
               <p className="text-sm text-text-muted bg-warning/10 border border-warning/30 rounded-xl p-3">
-                Your business needs to be approved before you can publish events.
+                Your business needs to be verified before you can publish events.
               </p>
             )}
             <div className="flex items-center justify-between">
@@ -471,7 +471,7 @@ export default function BusinessDashboardPage() {
           <div className="space-y-3">
             {!isBusinessApproved && (
               <p className="text-sm text-text-muted bg-warning/10 border border-warning/30 rounded-xl p-3">
-                Your business needs to be approved before you can publish vouchers.
+                Your business needs to be verified before you can publish vouchers.
               </p>
             )}
             <div className="flex items-center justify-between">
