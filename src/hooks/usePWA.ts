@@ -39,26 +39,40 @@ export function usePWA() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Check for waiting service worker (update available)
+    // Check for waiting service worker (update available).
+    // NOTE: our sw.ts calls self.skipWaiting() in its install handler and
+    // self.clients.claim() on activate, so new SWs normally take over
+    // automatically and never sit in the "waiting" state. The prompt should
+    // only appear in the rare case a worker is genuinely stuck waiting
+    // (e.g. an older SW shipped before auto-activation, or skipWaiting failed).
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
-        // Check if there's already a waiting worker
-        if (registration.waiting) {
+        // Existing waiting worker at mount — show the prompt.
+        if (registration.waiting && navigator.serviceWorker.controller) {
           setWaitingWorker(registration.waiting);
           setHasUpdate(true);
         }
 
-        // Listen for new updates
+        // Listen for new updates.
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          if (!newWorker) return;
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state !== 'installed' || !navigator.serviceWorker.controller) return;
+
+            // Give the SW a beat to run skipWaiting() from its install handler.
+            // If it does, the worker transitions past 'installed' (activating →
+            // activated) and registration.waiting clears — no prompt needed.
+            // If it's still waiting after the delay, the user actually needs
+            // to trigger the update manually.
+            setTimeout(() => {
+              if (registration.waiting === newWorker && newWorker.state === 'installed') {
                 setWaitingWorker(newWorker);
                 setHasUpdate(true);
               }
-            });
-          }
+            }, 1500);
+          });
         });
       });
     }

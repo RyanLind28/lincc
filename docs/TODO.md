@@ -1,6 +1,52 @@
 # LINCC TODO
 
-Last updated: 2026-05-09
+Last updated: 2026-05-22
+
+---
+
+## UI/UX Overhaul (P1, in progress — added 2026-05-22)
+
+Big polish + key-screen rework pass. Goal: feel tidy, considered, premium. Same brand (coral → purple gradient, Lucide icons, current bottom nav structure). Refresh layouts where the current design feels rushed; lift the bar on spacing, typography, motion, and accessibility across the board.
+
+### Foundations
+- [ ] **Design token audit** — spacing scale, radii, shadows, z-index, animation timing all consistent via Tailwind tokens / CSS vars. Hunt down hardcoded `gap-3`/`p-4`/`rounded-2xl` one-offs and pull them into a rhythm.
+- [ ] **Typography pass** — define a type scale (display / h1 / h2 / h3 / body / caption / mono). Audit every page; replace ad-hoc font sizes. Verify line-height, tracking, weight on each. Confirm Inter is loading reliably (Google Fonts CacheFirst is in `sw.ts`).
+- [ ] **Colour pass** — every surface uses semantic tokens (`bg-background`, `bg-surface`, `bg-muted`, `text-text`, `text-text-muted`, `border-border`). Sweep for residual `gray-*`/`zinc-*` hex values. Re-check dark mode contrast (WCAG AA) on cards, chips, disabled states, placeholders.
+- [ ] **Iconography consistency** — Lucide sizes (16 / 20 / 24) and strokes (1.5 / 2) standardised by context. CategoryIcon component handles gradient/solid/ghost variants uniformly.
+- [ ] **Component library inventory** — list every reusable component in `src/components/ui/`. Document props + variants. Kill duplicates.
+- [ ] **Motion language** — define duration tokens (fast 120ms / base 200ms / slow 320ms) + easing (`cubic-bezier(0.2, 0.8, 0.2, 1)` for entrances, ease-out for exits). Apply across BottomSheet, Toast, modals, page fades. Respect `prefers-reduced-motion`.
+- [ ] **Accessibility sweep** — keyboard nav across all flows, visible focus rings on every interactive element, ARIA labels on icon-only buttons, semantic landmarks (`<main>`, `<nav>`, `<header>`), colour contrast WCAG AA, skip-to-content link.
+
+### Key screen rework
+- [ ] **Home feed (`HomePage`)** — rework the hierarchy: hero section / filter strip / "Near you" / "Further away" / vouchers. Tighter card grid on desktop, refined filter pills, sticky filter bar on scroll. Map toggle button gets a clearer affordance.
+- [ ] **Event detail (`EventDetailPage`)** — single cohesive scroll: hero cover → key facts strip → host card → description → location/map → guests → reviews → bottom action bar. Reduce visual noise, more whitespace, larger CTAs.
+- [ ] **Profile (personal + business)** — already redesigned in April; polish remaining: tighten stats strip, refine chips, smooth tab transitions, audit the menu row (Follow / Message / Share / More) on mobile.
+- [ ] **Onboarding** — progress bar + step transitions feel premium. Each step has its own illustration or visual anchor. Keyboard navigation between steps. Reduce vertical jump between steps.
+- [ ] **Chat (event + DM)** — message bubbles tightened, header sticky and clean, send composer with proper safe-area handling on iOS, attachment affordance if/when we add images. Date dividers redesigned.
+
+### Components
+- [ ] **Buttons** — audit all variants (primary gradient, secondary, ghost, outline, destructive). Consistent height tokens (h-10 / h-12). Loading state with proper spinner alignment. Disabled state visually clear in light + dark.
+- [ ] **Inputs** — text, textarea, select, date picker, time picker, search. Consistent height, focus ring, error state, helper text, label position. Single `<Input />` wrapper across the app.
+- [ ] **Cards** — event card (grid + mini + row), voucher card, user card, business card all share the same border, radius, shadow, hover treatment. Single Card primitive underneath.
+- [ ] **BottomSheet / Modal / Dialog** — single sheet/modal primitive, consistent header, close affordance, backdrop, safe-area padding, focus trap, escape to close.
+- [ ] **Toast** — refined visual, icon variants (success / error / info / warning), stacking behaviour, swipe-to-dismiss on mobile.
+- [ ] **Header rightContent** — every page's Header use of `rightContent` follows the same pattern (icon-only buttons, 40×40 hit target, consistent spacing).
+- [ ] **Filter pills + chips** — selected/unselected/disabled states uniform; tap target ≥ 40px; horizontal scroll with edge fade.
+- [ ] **Skeleton loaders** — review all 6 variants in `Skeleton.tsx`, ensure each matches the real component's footprint exactly (no layout shift on hydrate).
+
+### Polish details
+- [ ] **Page transitions** — light fade or slide between routes (with reduced-motion guard). Avoid jarring snap on lazy-load Suspense fallback.
+- [ ] **Image handling** — every `<img>` has aspect-ratio set, blur-up or skeleton placeholder, native lazy loading, fallback for failed loads. Avatar fallback (initials) sized consistently.
+- [ ] **Spacing rhythm** — vertical breathing room audit page by page. Common offenders: cramped settings rows, voucher detail crowding, chat list density.
+- [ ] **Mobile vs desktop** — every screen checked on iPhone SE width (375px), iPhone 14 (390px), iPad (768px), laptop (1280px), wide desktop (1536px). Persistent SideNav transitions cleanly.
+- [ ] **Microinteractions** — press-effect on all tappable cards, hover lift on desktop, optimistic state on follow/save/join, haptic feedback on key actions (already partially wired via `src/lib/haptics.ts`).
+- [ ] **Bottom safe area** — every fixed bottom UI uses `.safe-bottom` class. Verify on iPhone notch/dynamic-island devices.
+
+### QA + ship
+- [ ] **Visual regression pass** — capture before/after screenshots of every key screen, light + dark. Share with Thameena for sign-off.
+- [ ] **Lighthouse re-run** — accessibility score ≥ 95 on all key pages.
+- [ ] **Browser matrix** — Safari iOS, Chrome Android, Samsung Internet, Chrome desktop, Safari desktop, Firefox desktop. Quick smoke on each.
+- [ ] **Update changelog + release notes** for users when shipped.
 
 ---
 
