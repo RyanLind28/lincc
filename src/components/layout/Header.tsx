@@ -31,7 +31,7 @@ function LinccLogo({ className, size = 'md' }: { className?: string; size?: 'sm'
 }
 
 // Root tabs — these are the main navigation destinations, no back button needed
-const ROOT_TABS = new Set(['/', '/chats', '/my-events', '/profile', '/explore']);
+const ROOT_TABS = new Set(['/', '/chats', '/my-events', '/profile', '/explore', '/notifications', '/vouchers', '/settings', '/saved', '/businesses', '/people']);
 
 export interface HeaderProps {
   /** Optional title shown next to logo on desktop */

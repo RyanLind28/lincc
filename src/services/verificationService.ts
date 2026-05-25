@@ -72,6 +72,21 @@ export async function uploadVerificationDoc(
   return { success: true, path };
 }
 
+export async function removeVerificationDoc(
+  businessId: string,
+  slot: VerificationDocSlot,
+  currentPath: string,
+): Promise<{ success: boolean; error?: string }> {
+  const { error: updateErr } = await supabase
+    .from('business_verifications')
+    .update({ [COLUMN_FOR_SLOT[slot]]: null })
+    .eq('business_id', businessId);
+  if (updateErr) return { success: false, error: updateErr.message };
+
+  await supabase.storage.from(BUCKET).remove([currentPath]).catch(() => {});
+  return { success: true };
+}
+
 export async function submitVerification(verificationId: string) {
   const { error } = await supabase
     .from('business_verifications')

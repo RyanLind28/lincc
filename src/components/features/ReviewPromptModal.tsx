@@ -37,7 +37,7 @@ function StarRow({
           className="p-0.5 cursor-pointer"
           aria-label={`${i} star${i === 1 ? '' : 's'}`}
         >
-          <Star className={`${dim} ${i <= rating ? 'fill-warning text-warning' : 'text-gray-300'}`} />
+          <Star className={`${dim} ${i <= rating ? 'fill-warning text-warning' : 'text-muted'}`} />
         </button>
       ))}
     </div>

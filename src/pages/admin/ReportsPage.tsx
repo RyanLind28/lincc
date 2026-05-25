@@ -322,8 +322,8 @@ export default function AdminReportsPage() {
           <ChatListSkeleton count={4} />
         ) : reports.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 mt-8">
-            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
-              <Flag className="h-8 w-8 text-green-500" />
+            <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mb-4">
+              <Flag className="h-8 w-8 text-success" />
             </div>
             <h2 className="text-lg font-semibold text-text mb-1">No reports</h2>
             <p className="text-text-muted text-center text-sm">
@@ -407,7 +407,7 @@ export default function AdminReportsPage() {
                     {[1, 2, 3, 4, 5].map((i) => (
                       <Star
                         key={i}
-                        className={`h-4 w-4 ${i <= selectedReport.host_review!.host_rating ? 'fill-warning text-warning' : 'text-gray-200'}`}
+                        className={`h-4 w-4 ${i <= selectedReport.host_review!.host_rating ? 'fill-warning text-warning' : 'text-muted'}`}
                       />
                     ))}
                   </span>
@@ -416,7 +416,7 @@ export default function AdminReportsPage() {
                     {[1, 2, 3, 4, 5].map((i) => (
                       <Star
                         key={i}
-                        className={`h-4 w-4 ${i <= selectedReport.host_review!.event_rating ? 'fill-warning text-warning' : 'text-gray-200'}`}
+                        className={`h-4 w-4 ${i <= selectedReport.host_review!.event_rating ? 'fill-warning text-warning' : 'text-muted'}`}
                       />
                     ))}
                   </span>
@@ -446,7 +446,7 @@ export default function AdminReportsPage() {
                   {[1, 2, 3, 4, 5].map((i) => (
                     <Star
                       key={i}
-                      className={`h-4 w-4 ${i <= selectedReport.guest_review!.guest_rating ? 'fill-warning text-warning' : 'text-gray-200'}`}
+                      className={`h-4 w-4 ${i <= selectedReport.guest_review!.guest_rating ? 'fill-warning text-warning' : 'text-muted'}`}
                     />
                   ))}
                 </div>
@@ -595,7 +595,7 @@ export default function AdminReportsPage() {
                 onChange={(e) => setActionReason(e.target.value)}
                 placeholder={pendingAction === 'warn'
                   ? 'Explain what behaviour broke the rules and what they need to change.'
-                  : 'Reason — visible to the user and admin audit log.'}
+                  : 'Reason (visible to the user and admin audit log).'}
                 rows={3}
                 maxLength={500}
                 showCount

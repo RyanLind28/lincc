@@ -147,7 +147,7 @@ export default function ExplorePage() {
     const cat = categories.find((c) => c.value === selectedCategory);
 
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background max-w-7xl mx-auto">
         <div className="sticky top-0 z-40 bg-surface border-b border-border">
           <div className="flex items-center gap-3 px-4 py-3">
             <button
@@ -160,7 +160,7 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        <div className="p-4">
+        <div className="p-4 lg:p-6">
           {isLoading ? (
             <div className="grid grid-cols-2 gap-3">
               {[1, 2, 3, 4].map((i) => (
@@ -205,7 +205,7 @@ export default function ExplorePage() {
 
   // Category grid view
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background max-w-7xl mx-auto">
       <Header showBack title="Explore" />
 
       <div className="p-4 space-y-4">

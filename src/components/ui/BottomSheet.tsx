@@ -1,4 +1,4 @@
-import { useEffect, useCallback, type ReactNode } from 'react';
+import { useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../lib/utils';
 import { X } from 'lucide-react';
@@ -14,6 +14,8 @@ export interface BottomSheetProps {
   className?: string;
 }
 
+const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 function BottomSheet({
   isOpen,
   onClose,
@@ -24,11 +26,33 @@ function BottomSheet({
   showCloseButton = true,
   className,
 }: BottomSheetProps) {
-  // Handle escape key
-  const handleEscape = useCallback(
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !sheetRef.current) return;
+
+      const focusable = sheetRef.current.querySelectorAll<HTMLElement>(FOCUSABLE);
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     },
     [onClose]
@@ -36,15 +60,22 @@ function BottomSheet({
 
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
+
+      requestAnimationFrame(() => {
+        const first = sheetRef.current?.querySelector<HTMLElement>(FOCUSABLE);
+        first?.focus();
+      });
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
+      previousFocusRef.current?.focus();
     };
-  }, [isOpen, handleEscape]);
+  }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
 
@@ -56,7 +87,7 @@ function BottomSheet({
 
   const sheetContent = (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'sheet-title' : undefined}
@@ -70,6 +101,7 @@ function BottomSheet({
 
       {/* Sheet */}
       <div
+        ref={sheetRef}
         className={cn(
           'relative w-full bg-surface rounded-t-2xl shadow-xl',
           'animate-sheet-up',
@@ -97,7 +129,7 @@ function BottomSheet({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg text-text-muted hover:text-text hover:bg-background transition-colors ml-auto"
+                className="p-1.5 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors ml-auto focus-ring"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />

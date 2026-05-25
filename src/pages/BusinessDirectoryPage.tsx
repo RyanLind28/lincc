@@ -33,7 +33,7 @@ export default function BusinessDirectoryPage() {
   }, [query, categoryFilter]);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 max-w-6xl mx-auto">
       <Header showBack />
 
       <div className="p-4 space-y-4">
@@ -95,7 +95,7 @@ export default function BusinessDirectoryPage() {
                 >
                   <div className="w-12 h-12 rounded-xl bg-background overflow-hidden flex-shrink-0">
                     {biz.logo_url ? (
-                      <img src={biz.logo_url} alt={biz.name} className="w-full h-full object-cover" />
+                      <img src={biz.logo_url} alt={biz.name} loading="lazy" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full gradient-primary flex items-center justify-center text-white font-bold text-lg">
                         {biz.name.charAt(0)}

@@ -52,7 +52,7 @@ export function EngagementChart({ days }: EngagementChartProps) {
         {
           key: 'messages',
           label: 'Messages',
-          colorClass: 'bg-green-500',
+          colorClass: 'bg-success',
           values: dates.map((d) => data?.messagesByDate[d] ?? 0),
         },
       ]}

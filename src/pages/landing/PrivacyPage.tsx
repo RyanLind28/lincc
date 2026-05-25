@@ -2,23 +2,23 @@ import { Link } from 'react-router-dom';
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <LandingNav />
 
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <p className="text-purple font-semibold text-sm uppercase tracking-wider mb-3">Legal</p>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
-          <p className="text-gray-500 mb-12">Last updated: February 2026</p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-text mb-4">Privacy Policy</h1>
+          <p className="text-text-light mb-12">Last updated: February 2026</p>
 
-          <div className="prose prose-lg text-gray-600 space-y-8">
+          <div className="prose prose-lg text-text-muted space-y-8">
             <p className="text-xl leading-relaxed">
               Your privacy matters to us. This policy explains what data we collect,
               how we use it, and your rights.
             </p>
 
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Information We Collect</h2>
+              <h2 className="text-2xl font-semibold text-text mb-4">Information We Collect</h2>
               <p className="mb-4">We collect information you provide directly:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Name and email when you join our waitlist</li>
@@ -30,7 +30,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">How We Use Your Information</h2>
+              <h2 className="text-2xl font-semibold text-text mb-4">How We Use Your Information</h2>
               <ul className="list-disc pl-6 space-y-2">
                 <li>To provide and improve Lincc's services</li>
                 <li>To send you updates about our launch (you can opt out)</li>
@@ -41,7 +41,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Data Sharing</h2>
+              <h2 className="text-2xl font-semibold text-text mb-4">Data Sharing</h2>
               <p>
                 We do not sell your personal information. Ever. We may share data with
                 service providers who help us operate Lincc (hosting, analytics, etc.),
@@ -51,7 +51,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Rights</h2>
+              <h2 className="text-2xl font-semibold text-text mb-4">Your Rights</h2>
               <p className="mb-4">You have the right to:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Access your personal data</li>
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
             </div>
 
             <div id="delete-data">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Delete Your Data</h2>
+              <h2 className="text-2xl font-semibold text-text mb-4">Delete Your Data</h2>
               <p className="mb-4">
                 You can delete your Lincc account and all associated data at any time. This is permanent and cannot be undone.
               </p>
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Data Security</h2>
+              <h2 className="text-2xl font-semibold text-text mb-4">Data Security</h2>
               <p>
                 We use industry-standard security measures to protect your data,
                 including encryption in transit and at rest. However, no method of
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Us</h2>
+              <h2 className="text-2xl font-semibold text-text mb-4">Contact Us</h2>
               <p>
                 Questions about this privacy policy? Email us at{' '}
                 <a href="mailto:hello@lincc.live" className="text-purple hover:underline">
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
 
 function LandingNav() {
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <nav className="fixed top-0 left-0 right-0 z-[var(--z-header)] bg-surface/80 backdrop-blur-md border-b border-border">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link to="/landing" className="flex items-center">
@@ -130,19 +130,19 @@ function LandingNav() {
 
 function LandingFooter() {
   return (
-    <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-200">
+    <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-border">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <Link to="/landing" className="flex items-center">
             <img src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp" alt="Lincc" className="h-10" />
           </Link>
-          <div className="flex items-center gap-6 text-gray-600">
+          <div className="flex items-center gap-6 text-text-muted">
             <Link to="/landing/about" className="hover:text-purple transition-colors">About</Link>
             <Link to="/landing/privacy" className="hover:text-purple transition-colors">Privacy</Link>
             <Link to="/landing/terms" className="hover:text-purple transition-colors">Terms</Link>
             <Link to="/landing/contact" className="hover:text-purple transition-colors">Contact</Link>
           </div>
-          <p className="text-gray-500 text-sm">&copy; 2026 Lincc. All rights reserved.</p>
+          <p className="text-text-light text-sm">&copy; 2026 Lincc. All rights reserved.</p>
         </div>
       </div>
     </footer>

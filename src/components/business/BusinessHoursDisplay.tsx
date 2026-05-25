@@ -33,7 +33,7 @@ export function BusinessHoursDisplay({ hours, compact = false }: Props) {
       <div className="flex items-center gap-1.5 text-sm">
         <Clock className="h-3.5 w-3.5 text-text-muted" />
         {todayHours ? (
-          <span className="text-green-500 font-medium">
+          <span className="text-success font-medium">
             Open today {todayHours.open} – {todayHours.close}
           </span>
         ) : (

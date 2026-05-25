@@ -150,7 +150,7 @@ export default function ProfilePage() {
   const handleShare = async () => {
     const url = `${window.location.origin}/user/${user?.id}`;
     if (navigator.share) {
-      navigator.share({ title: profile.first_name, url }).catch(() => {});
+      navigator.share({ title: profile.profile_name || profile.first_name, url }).catch(() => {});
     } else {
       navigator.clipboard.writeText(url);
       showToast('Link copied', 'success');
@@ -162,30 +162,15 @@ export default function ProfilePage() {
       <Header
         showLogo
         transparent
+        showNotifications
         rightContent={
-          <div className="flex items-center gap-1">
-            <button
-              onClick={handleShare}
-              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
-              aria-label="Share profile"
-            >
-              <Share2 className="h-5 w-5" />
-            </button>
-            <Link
-              to="/people"
-              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
-              aria-label="Find people"
-            >
-              <Users className="h-5 w-5" />
-            </Link>
-            <Link
-              to="/settings"
-              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
-              aria-label="Settings"
-            >
-              <Settings className="h-5 w-5" />
-            </Link>
-          </div>
+          <Link
+            to="/settings"
+            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
+            aria-label="Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </Link>
         }
       />
 
@@ -203,7 +188,7 @@ export default function ProfilePage() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
         </div>
 
-        <div className="relative pt-20 sm:pt-32 px-4 max-w-4xl mx-auto">
+        <div className="relative pt-20 sm:pt-32 px-4 max-w-5xl mx-auto">
           {/* Avatar + identity row */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:gap-6 items-center">
             <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-surface ring-4 ring-surface shadow-2xl overflow-hidden flex-shrink-0">
@@ -212,7 +197,7 @@ export default function ProfilePage() {
 
             <div className="flex-1 min-w-0 mt-4 sm:mt-0 text-center sm:text-left">
               <h1 className="text-3xl sm:text-4xl font-extrabold text-text tracking-tight">
-                {profile.first_name}{age ? `, ${age}` : ''}
+                {profile.profile_name || profile.first_name}{age ? `, ${age}` : ''}
               </h1>
 
               <div className="flex items-center gap-2 mt-2 flex-wrap justify-center sm:justify-start">
@@ -254,6 +239,20 @@ export default function ProfilePage() {
                     <Edit2 className="h-4 w-4 mr-1" /> Edit profile
                   </GradientButton>
                 </Link>
+                <button
+                  onClick={handleShare}
+                  className="h-[var(--height-button-md)] w-[var(--height-button-md)] rounded-xl border border-border text-text-muted hover:text-text hover:border-text-muted flex items-center justify-center transition-colors"
+                  aria-label="Share profile"
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
+                <Link
+                  to="/people"
+                  className="h-[var(--height-button-md)] w-[var(--height-button-md)] rounded-xl border border-border text-text-muted hover:text-text hover:border-text-muted flex items-center justify-center transition-colors"
+                  aria-label="Find people"
+                >
+                  <Users className="h-4 w-4" />
+                </Link>
               </div>
             </div>
           </div>
@@ -281,12 +280,12 @@ export default function ProfilePage() {
       </div>
 
       {/* Install app card */}
-      <div className="px-4 max-w-4xl mx-auto mt-6">
+      <div className="px-4 max-w-5xl mx-auto mt-6">
         <InstallAppCard />
       </div>
 
       {/* Events section */}
-      <div className="px-4 mt-6 max-w-4xl mx-auto">
+      <div className="px-4 mt-6 max-w-5xl mx-auto">
         <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">
           My Events
         </h2>
@@ -296,7 +295,7 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('hosting')}
             className={`
-              flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all
+              flex-1 h-[var(--height-tap-target)] px-4 rounded-xl text-sm font-semibold transition-all press-effect
               ${activeTab === 'hosting'
                 ? 'gradient-primary text-white shadow-sm'
                 : 'bg-surface border border-border text-text-muted hover:border-coral hover:text-coral'
@@ -308,7 +307,7 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('joined')}
             className={`
-              flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all
+              flex-1 h-[var(--height-tap-target)] px-4 rounded-xl text-sm font-semibold transition-all press-effect
               ${activeTab === 'joined'
                 ? 'gradient-primary text-white shadow-sm'
                 : 'bg-surface border border-border text-text-muted hover:border-coral hover:text-coral'
@@ -320,7 +319,7 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('saved')}
             className={`
-              flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5
+              flex-1 h-[var(--height-tap-target)] px-4 rounded-xl text-sm font-semibold transition-all press-effect flex items-center justify-center gap-1.5
               ${activeTab === 'saved'
                 ? 'gradient-primary text-white shadow-sm'
                 : 'bg-surface border border-border text-text-muted hover:border-coral hover:text-coral'
@@ -337,7 +336,7 @@ export default function ProfilePage() {
           <div className="flex gap-2 mb-4">
             <button
               onClick={() => setTimeFilter('upcoming')}
-              className={`flex-1 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              className={`flex-1 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors press-effect ${
                 timeFilter === 'upcoming'
                   ? 'bg-coral/10 text-coral border border-coral/30'
                   : 'bg-surface border border-border text-text-muted hover:text-text'
@@ -347,7 +346,7 @@ export default function ProfilePage() {
             </button>
             <button
               onClick={() => setTimeFilter('past')}
-              className={`flex-1 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              className={`flex-1 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors press-effect ${
                 timeFilter === 'past'
                   ? 'bg-coral/10 text-coral border border-coral/30'
                   : 'bg-surface border border-border text-text-muted hover:text-text'

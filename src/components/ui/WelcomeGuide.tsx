@@ -169,7 +169,7 @@ export function WelcomeGuide() {
     <>
       {/* Overlay with spotlight cutout */}
       <div
-        className="fixed inset-0 z-[60] transition-opacity duration-300"
+        className="fixed inset-0 z-[var(--z-toast)] transition-opacity duration-300"
         onClick={handleNext}
         style={{ pointerEvents: 'auto' }}
       >
@@ -188,7 +188,7 @@ export function WelcomeGuide() {
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        className="fixed z-[61] animate-slide-up"
+        className="fixed z-[var(--z-tooltip)] animate-slide-up"
         style={tooltipStyle}
       >
         <div className="bg-surface rounded-xl border border-border shadow-xl p-4 relative">

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Camera, IdCard, FileText, UserCircle, Loader2, Upload,
+  Camera, IdCard, FileText, UserCircle, Loader2, Upload, X,
 } from 'lucide-react';
 import * as Sentry from '@sentry/react';
 import { Badge } from '../ui';
 import { useToast } from '../../contexts/ToastContext';
 import {
   uploadVerificationDoc,
+  removeVerificationDoc,
   getDocSignedUrl,
   type VerificationDocSlot,
 } from '../../services/verificationService';
@@ -56,12 +57,14 @@ function SlotCard({
   slot,
   path,
   onUpload,
+  onRemove,
   isUploading,
   locked,
 }: {
   slot: SlotConfig;
   path: string | null;
   onUpload: (file: File) => Promise<void> | void;
+  onRemove?: () => void;
   isUploading: boolean;
   locked: boolean;
 }) {
@@ -74,6 +77,7 @@ function SlotCard({
   // that entirely and also makes the picker feel instant.
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
   const Icon = slot.icon;
+  const showCamera = slot.key !== 'registration_doc';
 
   useEffect(() => {
     let cancelled = false;
@@ -140,7 +144,7 @@ function SlotCard({
       </div>
 
       {hasContent && (
-        <div className="mt-3 rounded-lg overflow-hidden border border-border bg-background">
+        <div className="mt-3 rounded-lg overflow-hidden border border-border bg-background relative group">
           {isImage && displayUrl ? (
             <img src={displayUrl} alt={slot.title} className="w-full max-h-64 object-contain" />
           ) : (
@@ -149,12 +153,20 @@ function SlotCard({
               {previewUrl && <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-coral ml-auto">View</a>}
             </div>
           )}
+          {path && onRemove && !disabled && (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-error/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error shadow-md"
+              aria-label={`Remove ${slot.title}`}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       )}
 
-      <div className="mt-3">
-        {/* Hidden but kept in layout — display:none breaks programmatic .click()
-            on iOS Safari, so we use sr-only and trigger via <label htmlFor>. */}
+      <div className="mt-3 flex gap-2">
         <input
           ref={inputRef}
           id={inputId}
@@ -167,7 +179,7 @@ function SlotCard({
         <label
           htmlFor={inputId}
           aria-disabled={disabled}
-          className={`w-full flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-border text-sm font-medium transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-border text-sm font-medium transition-colors ${
             disabled
               ? 'opacity-50 cursor-not-allowed text-text-muted'
               : 'text-text-muted hover:border-coral hover:text-coral cursor-pointer'
@@ -176,6 +188,22 @@ function SlotCard({
           {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           {path ? 'Replace' : 'Upload'}
         </label>
+        {showCamera && !disabled && (
+          <label
+            className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-border text-sm font-medium text-text-muted hover:border-purple hover:text-purple cursor-pointer transition-colors"
+          >
+            <Camera className="h-4 w-4" />
+            Camera
+            <input
+              type="file"
+              accept="image/*"
+              capture={slot.key === 'operator_selfie' || slot.key === 'selfie_with_id' ? 'user' : 'environment'}
+              onChange={handleFile}
+              className="hidden"
+              disabled={disabled}
+            />
+          </label>
+        )}
       </div>
     </div>
   );
@@ -273,7 +301,21 @@ export function useVerificationUpload(
     }
   }, [ownerId, businessId, onUploaded, showToast]);
 
-  return { uploadingSlot, handleUpload };
+  const handleRemove = useCallback(async (slot: VerificationDocSlot, currentPath: string) => {
+    if (!businessId) return;
+    setUploadingSlot(slot);
+    const result = await removeVerificationDoc(businessId, slot, currentPath);
+    if (result.success) {
+      await onUploaded();
+      setUploadingSlot(null);
+      showToast('Removed', 'info');
+    } else {
+      setUploadingSlot(null);
+      showToast(result.error || 'Failed to remove', 'error');
+    }
+  }, [businessId, onUploaded, showToast]);
+
+  return { uploadingSlot, handleUpload, handleRemove };
 }
 
 interface VerificationSlotsProps {
@@ -281,6 +323,7 @@ interface VerificationSlotsProps {
   uploadingSlot: VerificationDocSlot | null;
   locked: boolean;
   onUpload: (slot: VerificationDocSlot, file: File) => void;
+  onRemove?: (slot: VerificationDocSlot, currentPath: string) => void;
 }
 
 export function VerificationSlots({
@@ -288,19 +331,24 @@ export function VerificationSlots({
   uploadingSlot,
   locked,
   onUpload,
+  onRemove,
 }: VerificationSlotsProps) {
   return (
     <div className="space-y-3">
-      {VERIFICATION_SLOTS.map((slot) => (
-        <SlotCard
-          key={slot.key}
-          slot={slot}
-          path={(verification?.[slot.column] as string | null) ?? null}
-          isUploading={uploadingSlot === slot.key}
-          locked={locked}
-          onUpload={(file) => onUpload(slot.key, file)}
-        />
-      ))}
+      {VERIFICATION_SLOTS.map((slot) => {
+        const path = (verification?.[slot.column] as string | null) ?? null;
+        return (
+          <SlotCard
+            key={slot.key}
+            slot={slot}
+            path={path}
+            isUploading={uploadingSlot === slot.key}
+            locked={locked}
+            onUpload={(file) => onUpload(slot.key, file)}
+            onRemove={path && onRemove ? () => onRemove(slot.key, path) : undefined}
+          />
+        );
+      })}
     </div>
   );
 }

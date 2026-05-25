@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
-import { Avatar, Button, Input, TextArea, ChipGroup, AvatarCropper } from '../components/ui';
+import { Avatar, Button, Input, TextArea, ChipGroup, AvatarCropper, ImagePickerButtons } from '../components/ui';
 import { Camera, Mail, Lock, ChevronRight, Loader2 } from 'lucide-react';
 import { validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
 import * as Sentry from '@sentry/react';
@@ -39,6 +39,8 @@ export default function EditProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
   const [firstName, setFirstName] = useState(profile?.first_name || '');
+  const [lastName, setLastName] = useState(profile?.last_name || '');
+  const [profileName, setProfileName] = useState(profile?.profile_name || '');
   const [dob, setDob] = useState(profile?.dob || '');
   const [bio, setBio] = useState(profile?.bio || '');
   const [tags, setTags] = useState<string[]>(profile?.tags || []);
@@ -151,7 +153,7 @@ export default function EditProfilePage() {
           showToast('File too large for the storage limits', 'error');
         } else if (uploadError.message?.toLowerCase().includes('not authorized')
           || uploadError.message?.toLowerCase().includes('permission')) {
-          showToast('Permission denied — please sign in again', 'error');
+          showToast('Permission denied. Please sign in again', 'error');
         } else {
           showToast(`Upload failed: ${uploadError.message}`, 'error');
         }
@@ -232,6 +234,8 @@ export default function EditProfilePage() {
 
     const updateData: Record<string, unknown> = {
       first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      profile_name: profileName.trim() || `${firstName.trim()} ${lastName.trim()}`.trim() || 'User',
       bio: bio.trim() || null,
       tags,
       avatar_url: avatarUrl || null,
@@ -340,13 +344,13 @@ export default function EditProfilePage() {
             className="sr-only"
             disabled={isUploadingAvatar}
           />
-          {avatarUrl && !isUploadingAvatar && (
-            <label
-              htmlFor="profile-avatar-input"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-coral cursor-pointer hover:underline"
-            >
-              <Camera className="h-3.5 w-3.5" /> Replace photo
-            </label>
+          {!isUploadingAvatar && (
+            <ImagePickerButtons
+              fileInputRef={fileInputRef}
+              onCameraSelect={handlePhotoSelect}
+              galleryLabel={avatarUrl ? 'Replace photo' : 'Choose photo'}
+              size="sm"
+            />
           )}
         </div>
 
@@ -368,6 +372,21 @@ export default function EditProfilePage() {
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
           placeholder="Your first name"
+        />
+
+        <Input
+          label="Last Name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          placeholder="Your last name"
+        />
+
+        <Input
+          label="Profile Name"
+          value={profileName}
+          onChange={(e) => setProfileName(e.target.value)}
+          placeholder="How your name appears to others"
+          helperText="This is the name shown on your profile"
         />
 
         {/* Date of Birth */}

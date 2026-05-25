@@ -23,7 +23,7 @@ export function UpdateNotification() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="update-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/95 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[var(--z-tooltip)] flex items-center justify-center p-4 bg-background/95 backdrop-blur-sm animate-fade-in"
     >
       <div className="w-full max-w-md bg-surface rounded-3xl border border-border shadow-2xl p-8 text-center">
         <div className="w-20 h-20 mx-auto rounded-3xl gradient-primary flex items-center justify-center mb-5 shadow-lg">

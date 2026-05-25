@@ -53,7 +53,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-[var(--z-header)] bg-surface/95 backdrop-blur-sm border-t border-border safe-bottom lg:hidden" aria-label="Main navigation">
       <div className="flex items-stretch justify-around h-16">
         {/* Discover slot — on the home page it toggles map/list; elsewhere it navigates home */}
         {isOnHomePage ? (

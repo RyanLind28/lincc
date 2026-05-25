@@ -36,7 +36,7 @@ export default function BusinessVerifyPage() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const { uploadingSlot, handleUpload } = useVerificationUpload(business?.id, user?.id, refresh);
+  const { uploadingSlot, handleUpload, handleRemove } = useVerificationUpload(business?.id, user?.id, refresh);
 
   if (profile && profile.account_type !== 'business') {
     return <Navigate to="/" replace />;
@@ -149,6 +149,7 @@ export default function BusinessVerifyPage() {
           uploadingSlot={uploadingSlot}
           locked={!canEdit}
           onUpload={handleUpload}
+          onRemove={handleRemove}
         />
 
         {canEdit && (

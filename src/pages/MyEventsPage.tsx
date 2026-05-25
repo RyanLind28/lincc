@@ -283,7 +283,7 @@ export default function MyEventsPage() {
   const isEmpty = !isLoading && events.length === 0;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 max-w-6xl mx-auto">
       <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       {/* Tabs */}
@@ -348,7 +348,7 @@ export default function MyEventsPage() {
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-4 lg:p-6">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Spinner size="lg" />

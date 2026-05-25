@@ -43,20 +43,20 @@ export default function ChatsPage() {
     <div className="flex gap-2 mb-4">
       <button
         onClick={() => setActiveTab('events')}
-        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+        className={`flex-1 h-[var(--height-tap-target)] rounded-xl text-sm font-semibold transition-colors press-effect ${
           activeTab === 'events'
-            ? 'gradient-primary text-white'
-            : 'bg-surface border border-border text-text-muted hover:text-text'
+            ? 'gradient-primary text-white shadow-sm'
+            : 'bg-surface border border-border text-text-muted hover:border-coral hover:text-coral'
         }`}
       >
         Events
       </button>
       <button
         onClick={() => setActiveTab('friends')}
-        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+        className={`flex-1 h-[var(--height-tap-target)] rounded-xl text-sm font-semibold transition-colors press-effect ${
           activeTab === 'friends'
-            ? 'gradient-primary text-white'
-            : 'bg-surface border border-border text-text-muted hover:text-text'
+            ? 'gradient-primary text-white shadow-sm'
+            : 'bg-surface border border-border text-text-muted hover:border-coral hover:text-coral'
         }`}
       >
         Friends
@@ -66,9 +66,9 @@ export default function ChatsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background max-w-5xl mx-auto">
         <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
-        <div className="p-4">
+        <div className="p-4 lg:p-6">
           <h1 className="text-2xl font-bold text-text mb-4">Chats</h1>
           {renderTabButtons()}
           <ChatListSkeleton count={5} />
@@ -79,9 +79,9 @@ export default function ChatsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background max-w-5xl mx-auto">
         <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
-        <div className="p-4">
+        <div className="p-4 lg:p-6">
           <h1 className="text-2xl font-bold text-text mb-4">Chats</h1>
           {renderTabButtons()}
           <div className="flex flex-col items-center justify-center p-8">
@@ -98,7 +98,7 @@ export default function ChatsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background" {...pullHandlers}>
+    <div className="min-h-screen bg-background max-w-5xl mx-auto" {...pullHandlers}>
       <Header showLogo showCreateEvent showNotifications rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
       {/* Pull-to-refresh indicator */}
@@ -114,7 +114,7 @@ export default function ChatsPage() {
         </div>
       )}
 
-      <div className="p-4">
+      <div className="p-4 lg:p-6">
         <h1 className="text-2xl font-bold text-text mb-4">Chats</h1>
 
         {renderTabButtons()}

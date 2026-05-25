@@ -43,11 +43,11 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
           value={value}
           maxLength={maxLength}
           className={cn(
-            'block w-full rounded-lg border bg-surface text-text placeholder:text-text-light',
-            'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
+            'block w-full rounded-xl border bg-surface text-text placeholder:text-text-light',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:border-transparent',
             'disabled:bg-background disabled:cursor-not-allowed',
             'transition-colors resize-none',
-            error ? 'border-error focus:ring-error' : 'border-border',
+            error ? 'border-error focus-visible:ring-error' : 'border-border',
             'px-4 py-2.5',
             className
           )}

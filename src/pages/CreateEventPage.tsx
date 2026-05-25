@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Spar
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
-import { Input, TextArea, GradientButton, Slider, DatePicker, CategoryIcon, PlacesAutocomplete } from '../components/ui';
+import { Input, TextArea, GradientButton, Slider, DatePicker, CategoryIcon, PlacesAutocomplete, ImagePickerButtons } from '../components/ui';
 import { CATEGORIES, type Category, type SubCategory } from '../data/categories';
 import { createEvent } from '../services/events';
 import { cn } from '../lib/utils';
@@ -698,18 +698,14 @@ export default function CreateEventPage() {
                   className="sr-only"
                 />
               </div>
-              {coverImageFile ? (
-                <label
-                  htmlFor="event-cover-input"
-                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-coral cursor-pointer hover:underline"
-                >
-                  <Camera className="h-3.5 w-3.5" /> Replace photo
-                </label>
-              ) : (
-                <p className="text-xs text-text-muted mt-1">
-                  Tap the camera to upload your own photo
-                </p>
-              )}
+              <div className="mt-2">
+                <ImagePickerButtons
+                  fileInputRef={fileInputRef}
+                  onCameraSelect={handleCoverImageUpload}
+                  galleryLabel={coverImageFile ? 'Replace photo' : 'Choose photo'}
+                  size="sm"
+                />
+              </div>
             </div>
 
             <Input

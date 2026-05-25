@@ -21,18 +21,18 @@ function Chip({
   const variants = {
     default: 'bg-background text-text-muted hover:bg-border',
     primary: 'bg-primary/10 text-primary hover:bg-primary/20',
-    selected: 'bg-primary text-white',
+    selected: 'gradient-primary text-white shadow-sm',
   };
 
   const sizes = {
-    sm: 'px-2 py-0.5 text-xs gap-1',
-    md: 'px-3 py-1.5 text-sm gap-1.5',
+    sm: 'px-2.5 py-1 text-xs gap-1',
+    md: 'px-3 h-[var(--height-tap-target)] text-sm gap-1.5',
   };
 
   return (
     <div
       className={cn(
-        'inline-flex items-center font-medium rounded-full cursor-pointer transition-colors',
+        'inline-flex items-center font-medium rounded-full cursor-pointer transition-colors press-effect',
         variants[variant],
         sizes[size],
         className
@@ -82,7 +82,7 @@ function ChipGroup({
   };
 
   return (
-    <div className={cn('flex flex-wrap gap-2', className)}>
+    <div className={cn('flex flex-wrap gap-2', className)} role="group">
       {options.map((option) => {
         const isSelected = selected.includes(option.value);
         return (
@@ -90,6 +90,7 @@ function ChipGroup({
             key={option.value}
             variant={isSelected ? 'selected' : 'default'}
             onClick={() => handleToggle(option.value)}
+            aria-pressed={isSelected}
             icon={option.icon ? <span>{option.icon}</span> : undefined}
           >
             {option.label}

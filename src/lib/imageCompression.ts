@@ -32,11 +32,11 @@ type DetectedFormat = 'jpeg' | 'png' | 'gif' | 'webp' | 'heic' | null;
 // intent — that route hands Chrome a fresh Content URI from the source app,
 // which side-steps the picker URI that just failed us.
 const UNREADABLE_MESSAGE =
-  "Couldn't open this photo. Try opening it in your gallery and tapping Share → Lincc, " +
-  "or pick a different photo.";
+  "This photo couldn't be opened. It may be stored in the cloud and not downloaded to your device yet. " +
+  "Try taking a fresh photo with your camera, or open the photo in your gallery first to download it.";
 
 export type RecoveryAttempt = {
-  stage: 'imageBitmap' | 'fileReader' | 'responseStream' | 'imageElement';
+  stage: 'imageBitmap' | 'fileReader' | 'stream' | 'responseStream' | 'imageElement';
   outcome: 'recovered' | 'timeout' | 'unsupported' | 'null-result' | 'error';
   detail?: string;
 };
@@ -214,6 +214,38 @@ async function recoverViaResponseStream(file: File): Promise<RecoveryStageResult
   }
 }
 
+// ReadableStream API — exercises a different Chrome I/O pipe than arrayBuffer()
+// or FileReader. On some Android builds this path stays open when others fail.
+async function recoverViaStream(file: File): Promise<RecoveryStageResult> {
+  if (typeof file.stream !== 'function') {
+    return { ok: false, outcome: 'unsupported' };
+  }
+  try {
+    const reader = file.stream().getReader();
+    const chunks: Uint8Array[] = [];
+    let done = false;
+    while (!done) {
+      const result = await raceTimeout(reader.read(), IMAGE_LOAD_TIMEOUT_MS);
+      if (result.done) {
+        done = true;
+      } else {
+        chunks.push(result.value);
+      }
+    }
+    const totalLength = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+    if (totalLength === 0) return { ok: false, outcome: 'null-result', detail: 'stream-empty' };
+    const merged = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      merged.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return { ok: true, file: new File([merged], file.name, { type: file.type || 'image/jpeg' }) };
+  } catch (err) {
+    return stageFailure(err);
+  }
+}
+
 // Last resort: load the file through `<img src=createObjectURL>`. Even when
 // every byte-read API fails, the renderer sometimes materialises pixels by
 // going through the platform image decoder directly.
@@ -263,6 +295,7 @@ async function runRecoveryCascade(
   const stages: Array<{ name: RecoveryAttempt['stage']; run: (f: File) => Promise<RecoveryStageResult> }> = [
     { name: 'imageBitmap', run: recoverViaImageBitmap },
     { name: 'fileReader', run: recoverViaFileReader },
+    { name: 'stream' as RecoveryAttempt['stage'], run: recoverViaStream },
     { name: 'responseStream', run: recoverViaResponseStream },
     { name: 'imageElement', run: recoverViaImageElement },
   ];
@@ -327,9 +360,30 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
     return { ok: false, error: 'File does not appear to be a valid image' };
   }
 
-  // arrayBuffer() failed — run the recovery cascade. Any successful stage
-  // produces a re-encoded JPEG (or a fresh JS-owned File with the original
-  // bytes), so we don't need to re-validate magic bytes after.
+  // arrayBuffer() failed — before the full cascade, try one more direct read:
+  // slice the entire Blob and read the slice. On some Android versions this
+  // goes through a different ContentProvider code path that stays open.
+  try {
+    const sliced = file.slice(0, file.size, file.type);
+    buffer = await raceTimeout(sliced.arrayBuffer(), 5000);
+    if (buffer && buffer.byteLength > 0) {
+      const cloned = new File([buffer], file.name, { type: file.type || 'image/jpeg' });
+      const format = detectFormatFromBytes(new Uint8Array(buffer, 0, Math.min(16, buffer.byteLength)));
+      return {
+        ok: true,
+        file: cloned,
+        format: format ?? null,
+        recovered: true,
+        arrayBufferError,
+        recoveryAttempts: [{ stage: 'stream' as RecoveryAttempt['stage'], outcome: 'recovered', detail: 'blob-slice-reread' }],
+      };
+    }
+  } catch {
+    // Slice re-read also failed — continue to full cascade
+  }
+
+  // Run the full recovery cascade. Any successful stage produces a re-encoded
+  // JPEG (or a fresh JS-owned File), so we don't need to re-validate magic bytes.
   const { file: recovered, attempts } = await runRecoveryCascade(file);
   if (recovered) {
     return {

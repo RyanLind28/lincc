@@ -112,7 +112,7 @@ export default function SignupPage() {
 
   const handleGoogleSignup = async () => {
     if (accountType === 'business') {
-      showToast('Business accounts must sign up with email — Google sign-up coming soon', 'error');
+      showToast('Business accounts must sign up with email. Google sign-up coming soon', 'error');
       return;
     }
     if (!termsAccepted || !ageConfirmed) {
@@ -146,7 +146,7 @@ export default function SignupPage() {
               </p>
             )}
             <p className="text-xs text-text-light mb-6">
-              Didn't get it? Check your <strong>spam / junk folder</strong> — it can take a minute or two.
+              Didn't get it? Check your <strong>spam / junk folder</strong>. It can take a minute or two.
             </p>
             <GradientButton
               variant="outline"

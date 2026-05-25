@@ -231,19 +231,18 @@ export default function ChatRoomPage() {
                 </div>
 
                 {/* Messages for this date */}
-                <div className="space-y-3">
+                <div className="space-y-1">
                   {dateMessages.map((msg, index) => {
                     const isMe = msg.sender_id === user?.id;
-                    const showAvatar =
-                      !isMe &&
-                      (index === 0 ||
-                        dateMessages[index - 1].sender_id !== msg.sender_id);
+                    const prevMsg = index > 0 ? dateMessages[index - 1] : null;
+                    const sameSenderAsPrev = prevMsg?.sender_id === msg.sender_id;
+                    const showAvatar = !isMe && !sameSenderAsPrev;
                     const showName = showAvatar;
 
                     return (
                       <div
                         key={msg.id}
-                        className={`flex gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}
+                        className={`flex gap-2 ${isMe ? 'justify-end' : 'justify-start'} ${!sameSenderAsPrev && index > 0 ? 'mt-3' : ''}`}
                       >
                         {/* Avatar (for others' messages) — tap to visit profile */}
                         {!isMe && (
@@ -327,7 +326,7 @@ export default function ChatRoomPage() {
           )}
           {isPastEventEnd && (
             <p className="text-xs text-text-muted text-center mb-2">
-              This event has ended — the chat is read-only until it archives.
+              This event has ended. The chat is read-only until it archives.
             </p>
           )}
           <div className="flex gap-2 items-end">

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -16,6 +17,20 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+const TOAST_ICONS = {
+  success: CheckCircle,
+  error: AlertCircle,
+  warning: AlertTriangle,
+  info: Info,
+} as const;
+
+const TOAST_COLORS = {
+  success: 'bg-success',
+  error: 'bg-error',
+  warning: 'bg-warning',
+  info: 'bg-primary',
+} as const;
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -25,7 +40,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
     setToasts((prev) => [...prev, toast]);
 
-    // Auto-dismiss after 4 seconds
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
@@ -35,7 +49,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Listen for toast events from contexts that can't use useToast (e.g. AuthContext)
   useEffect(() => {
     const handler = (e: Event) => {
       const { message, type } = (e as CustomEvent).detail;
@@ -63,9 +76,9 @@ function ToastContainer({
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 flex flex-col gap-2 pointer-events-none md:left-auto md:right-4 md:w-96">
-      {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
+    <div className="fixed bottom-4 left-4 right-4 z-[var(--z-toast)] flex flex-col gap-2 pointer-events-none safe-bottom md:left-auto md:right-4 md:w-96">
+      {toasts.map((toast, i) => (
+        <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} index={i} />
       ))}
     </div>
   );
@@ -74,40 +87,28 @@ function ToastContainer({
 function ToastItem({
   toast,
   onDismiss,
+  index,
 }: {
   toast: Toast;
   onDismiss: (id: string) => void;
+  index: number;
 }) {
-  const bgColor = {
-    success: 'bg-success',
-    error: 'bg-error',
-    warning: 'bg-warning',
-    info: 'bg-primary',
-  }[toast.type];
+  const Icon = TOAST_ICONS[toast.type];
 
   return (
     <div
-      className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg pointer-events-auto flex items-center justify-between animate-slide-up-sm`}
+      className={`${TOAST_COLORS[toast.type]} text-white px-4 py-3 rounded-xl shadow-lg pointer-events-auto flex items-center gap-3 animate-slide-up-sm`}
+      style={{ animationDelay: `${index * 50}ms` }}
       role="alert"
     >
-      <span className="text-sm font-medium">{toast.message}</span>
+      <Icon className="h-5 w-5 flex-shrink-0" />
+      <span className="text-sm font-medium flex-1">{toast.message}</span>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="ml-4 text-white/80 hover:text-white"
+        className="text-white/80 hover:text-white flex-shrink-0 focus-ring rounded-lg"
         aria-label="Dismiss"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
+        <X className="h-4 w-4" />
       </button>
     </div>
   );

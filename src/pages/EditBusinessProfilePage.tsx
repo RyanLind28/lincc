@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Header } from '../components/layout';
-import { Input, TextArea, GradientButton, PlacesAutocomplete, AvatarCropper } from '../components/ui';
+import { Input, TextArea, GradientButton, PlacesAutocomplete, AvatarCropper, ImagePickerButtons } from '../components/ui';
 import type { PlaceDetails } from '../services/placesService';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { Camera, X, Loader2, AlertTriangle, Settings } from 'lucide-react';
@@ -55,7 +55,7 @@ export default function EditBusinessProfilePage() {
   // Access guard
   if (profile && profile.account_type !== 'business') {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background max-w-2xl mx-auto">
         <Header showBack showLogo />
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <AlertTriangle className="h-8 w-8 text-error mb-4" />
@@ -67,7 +67,7 @@ export default function EditBusinessProfilePage() {
   }
   if (!business) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center max-w-2xl mx-auto">
         <Loader2 className="h-6 w-6 text-coral animate-spin" />
       </div>
     );
@@ -276,7 +276,7 @@ export default function EditBusinessProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 max-w-2xl mx-auto">
       <Header
         showBack
         showLogo
@@ -332,10 +332,13 @@ export default function EditBusinessProfilePage() {
             {/* sr-only keeps the input clickable on iOS Safari, where
                 display:none breaks programmatic file-picker triggers. */}
             <input ref={fileInputRef} id="business-logo-input" type="file" accept="image/*,.heic,.heif" onChange={handleLogoSelect} className="sr-only" />
-            {logoUrl && logoStatus === 'idle' && (
-              <label htmlFor="business-logo-input" className="inline-flex items-center gap-1.5 text-sm font-medium text-coral cursor-pointer hover:underline">
-                <Camera className="h-4 w-4" /> Replace logo
-              </label>
+            {logoStatus === 'idle' && (
+              <ImagePickerButtons
+                fileInputRef={fileInputRef}
+                onCameraSelect={handleLogoSelect}
+                galleryLabel={logoUrl ? 'Replace logo' : 'Choose logo'}
+                size="sm"
+              />
             )}
             {logoStatus === 'converting' && (
               <p className="text-xs text-text-muted">Converting iPhone photo…</p>
@@ -392,7 +395,7 @@ export default function EditBusinessProfilePage() {
                   ) : (
                     <span className="text-sm text-text-light flex-1">Closed</span>
                   )}
-                  <button type="button" onClick={() => toggleDay(day)} className={cn('text-xs font-medium px-2 py-1 rounded-lg transition-colors', isOpen ? 'text-error bg-error/10' : 'text-green-500 bg-green-500/10')}>
+                  <button type="button" onClick={() => toggleDay(day)} className={cn('text-xs font-medium px-2 py-1 rounded-lg transition-colors', isOpen ? 'text-error bg-error/10' : 'text-success bg-success/10')}>
                     {isOpen ? 'Close' : 'Open'}
                   </button>
                 </div>

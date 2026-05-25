@@ -1,20 +1,18 @@
 import { logger } from '../lib/utils';
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { SlidersHorizontal, MapPin, Ticket, Clock, LayoutGrid, Calendar, RotateCcw, Loader2, Settings, Navigation, X } from 'lucide-react';
+import { SlidersHorizontal, MapPin, Ticket, Calendar, RotateCcw, Loader2, Settings, Navigation, X } from 'lucide-react';
 import {
   SearchBar,
   FilterPills,
   EventCardGrid,
-  BottomSheet,
   GradientButton,
-  Slider,
-  DatePicker,
   CategoryIcon,
   VoucherTile,
   EventCardGridSkeleton,
-  QUICK_DATE_OPTIONS,
+  SectionHeader,
 } from '../components/ui';
+import { FilterSheet } from '../components/features/FilterSheet';
 
 // Lazy-load MapView so Mapbox GL JS (~1MB) is only downloaded when map view is active
 const LazyMapView = lazy(() => import('../components/ui/MapView'));
@@ -259,7 +257,7 @@ export default function HomePage() {
       <AnnouncementBanner />
 
       {/* Search and Filters */}
-      <div className="px-4 py-3 space-y-3 bg-background">
+      <div className="px-4 py-3 space-y-3 bg-background sticky top-14 z-[var(--z-sticky)]">
         {/* Search bar with filter button */}
         <div className="flex gap-2">
           <SearchBar
@@ -360,16 +358,12 @@ export default function HomePage() {
               <>
                 {/* Vouchers Near You section */}
                 {nearbyVouchers.length > 0 && !filters.search && (
-                  <div className="mb-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Ticket className="h-4 w-4 text-coral" />
-                      <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
-                        Vouchers Near You
-                      </h2>
-                      {locationName && (
-                        <span className="ml-auto text-xs text-text-muted">{locationName}</span>
-                      )}
-                    </div>
+                  <div className="mb-6">
+                    <SectionHeader
+                      icon={<Ticket className="h-4 w-4" />}
+                      title="Vouchers Near You"
+                      trailing={locationName}
+                    />
                     <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
                       {nearbyVouchers.map((voucher) => (
                         <VoucherTile key={voucher.id} voucher={voucher} />
@@ -380,16 +374,13 @@ export default function HomePage() {
 
                 {/* Vouchers Further Away */}
                 {farVouchers.length > 0 && !filters.search && (
-                  <div className="mb-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Ticket className="h-4 w-4 text-purple" />
-                      <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
-                        Vouchers Further Away
-                      </h2>
-                      <span className="px-2 py-0.5 text-[10px] font-medium bg-purple/10 text-purple rounded-full">
-                        {farVouchers.length} available
-                      </span>
-                    </div>
+                  <div className="mb-6">
+                    <SectionHeader
+                      icon={<Ticket className="h-4 w-4" />}
+                      iconColor="text-purple"
+                      title="Vouchers Further Away"
+                      badge={<span className="px-2 py-0.5 text-[10px] font-medium bg-purple/10 text-purple rounded-full">{farVouchers.length} available</span>}
+                    />
                     <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
                       {farVouchers.map((voucher) => (
                         <VoucherTile key={voucher.id} voucher={voucher} />
@@ -425,15 +416,11 @@ export default function HomePage() {
                     {/* Events Near You */}
                     {nearbyEvents.length > 0 && (
                       <div className="mb-6">
-                        <div className="flex items-center gap-2 mb-3">
-                          <MapPin className="h-4 w-4 text-coral" />
-                          <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
-                            Events Near You
-                          </h2>
-                          {locationName && (
-                            <span className="ml-auto text-xs text-text-muted">{locationName}</span>
-                          )}
-                        </div>
+                        <SectionHeader
+                          icon={<MapPin className="h-4 w-4" />}
+                          title="Events Near You"
+                          trailing={locationName}
+                        />
                         <EventCardGrid
                           events={nearbyEvents}
                           onToggleSave={toggleSave}
@@ -445,15 +432,12 @@ export default function HomePage() {
                     {/* Events Further Away */}
                     {furtherEvents.length > 0 && (
                       <div className="mb-6">
-                        <div className="flex items-center gap-2 mb-3">
-                          <MapPin className="h-4 w-4 text-purple" />
-                          <h2 className="text-sm font-semibold text-text uppercase tracking-wide">
-                            {nearbyEvents.length > 0 ? 'Events Further Away' : 'Events Near You'}
-                          </h2>
-                          <span className="px-2 py-0.5 text-[10px] font-medium bg-purple/10 text-purple rounded-full">
-                            {furtherEvents.length}
-                          </span>
-                        </div>
+                        <SectionHeader
+                          icon={<MapPin className="h-4 w-4" />}
+                          iconColor="text-purple"
+                          title={nearbyEvents.length > 0 ? 'Events Further Away' : 'Events Near You'}
+                          badge={<span className="px-2 py-0.5 text-[10px] font-medium bg-purple/10 text-purple rounded-full">{furtherEvents.length}</span>}
+                        />
                         <EventCardGrid
                           events={furtherEvents}
                           onToggleSave={toggleSave}
@@ -525,200 +509,34 @@ export default function HomePage() {
       </div>
 
       {/* Filter Bottom Sheet */}
-      <BottomSheet
+      <FilterSheet
         isOpen={isFilterSheetOpen}
         onClose={() => setIsFilterSheetOpen(false)}
-        title="Filters"
-      >
-        {/* When */}
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock className="h-4 w-4 text-coral" />
-            <span className="text-sm font-semibold text-text">When</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {QUICK_DATE_OPTIONS.slice(0, -1).map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  updateFilter('timeRange', option.value);
-                  setShowDatePicker(false);
-                  setSelectedDate(null);
-                }}
-                className={`
-                  px-4 py-2 rounded-full text-sm font-medium transition-all
-                  ${
-                    filters.timeRange === option.value && !selectedDate
-                      ? 'gradient-primary text-white shadow-sm'
-                      : 'bg-background text-text-muted hover:bg-border'
-                  }
-                `}
-              >
-                {option.label}
-              </button>
-            ))}
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className={`
-                inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all
-                ${
-                  showDatePicker || selectedDate
-                    ? 'gradient-primary text-white shadow-sm'
-                    : 'bg-background text-text-muted hover:bg-border'
-                }
-              `}
-            >
-              <Calendar className="h-3.5 w-3.5" />
-              {selectedDate
-                ? selectedDate.toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })
-                : 'Pick a date'}
-            </button>
-          </div>
-          {showDatePicker && (
-            <DatePicker
-              value={selectedDate}
-              onChange={(date) => {
-                setSelectedDate(date);
-                if (date) {
-                  updateFilter('timeRange', null);
-                }
-              }}
-              className="mt-3"
-            />
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="h-px bg-border mb-5" />
-
-        {/* Distance */}
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-1">
-            <MapPin className="h-4 w-4 text-coral" />
-            <span className="text-sm font-semibold text-text">Distance</span>
-            <span className="ml-auto text-lg font-bold gradient-text">{distance} km</span>
-          </div>
-          {hasLocation && locationName ? (
-            <p className="text-xs text-text-muted mb-3 ml-6">from {locationName}</p>
-          ) : isLocationLoading ? (
-            <p className="text-xs text-text-muted mb-3 ml-6 flex items-center gap-1.5">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Finding your location…
-            </p>
-          ) : locationPermission === 'denied' ? (
-            <div className="ml-6 mb-3">
-              <p className="text-xs text-warning mb-1">Location is blocked in your browser.</p>
-              <p className="text-[11px] text-text-muted leading-snug">
-                Click the lock/info icon in the address bar, allow Location for this site, then reload.
-              </p>
-            </div>
-          ) : (
-            <div className="ml-6 mb-3">
-              <p className="text-xs text-text-muted mb-1.5">
-                {locationError ? 'Couldn\'t get your location.' : 'Location not enabled.'}
-              </p>
-              <button
-                type="button"
-                onClick={handleEnableLocation}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-coral bg-coral/10 hover:bg-coral/15 rounded-full transition-colors"
-              >
-                <Navigation className="h-3 w-3" />
-                Enable location
-              </button>
-            </div>
-          )}
-          <Slider
-            value={distance}
-            onChange={setDistance}
-            min={1}
-            max={100}
-            step={1}
-            showValue={false}
-          />
-          <div className="flex justify-between mt-1">
-            <span className="text-[10px] text-text-light">1 km</span>
-            <span className="text-[10px] text-text-light">100 km</span>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="h-px bg-border mb-5" />
-
-        {/* Categories */}
-        <div className="pb-24">
-          <div className="flex items-center gap-2 mb-3">
-            <LayoutGrid className="h-4 w-4 text-coral" />
-            <span className="text-sm font-semibold text-text">Categories</span>
-            {filters.categories.length > 0 && (
-              <span className="ml-auto text-xs font-medium text-coral bg-coral/10 px-2 py-0.5 rounded-full">
-                {filters.categories.length} selected
-              </span>
-            )}
-          </div>
-          <div className="grid grid-cols-4 lg:grid-cols-6 gap-2">
-            {ALL_CATEGORIES.map((category) => {
-              const isSelected = filters.categories.includes(category.value);
-              return (
-                <button
-                  key={category.value}
-                  onClick={() => {
-                    if (isSelected) {
-                      updateFilter('categories', []);
-                    } else {
-                      updateFilter('categories', [category.value]);
-                    }
-                  }}
-                  className={`
-                    flex flex-col items-center gap-1.5 p-2.5 rounded-xl transition-all
-                    ${
-                      isSelected
-                        ? 'gradient-primary text-white shadow-sm scale-[0.97]'
-                        : 'bg-background text-text-muted hover:bg-border border border-transparent hover:border-border'
-                    }
-                  `}
-                >
-                  <CategoryIcon icon={category.icon} size="lg" />
-                  <span className="text-[11px] font-medium leading-tight text-center">{category.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Actions — pinned to bottom */}
-        <div className="sticky bottom-[-16px] z-10 bg-surface pt-3 pb-5 border-t border-border -mx-4 px-4">
-          <p className="text-xs text-text-muted text-center mb-2">
-            {resultCount} of {totalAvailable} events match
-          </p>
-          <div className="flex gap-3">
-            {hasFiltersToReset && (
-              <button
-                onClick={() => {
-                  clearAll();
-                  setDistance(10);
-                  setSelectedDate(null);
-                  setShowDatePicker(false);
-                }}
-                className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl border border-border text-sm font-medium text-text-muted hover:text-coral hover:border-coral transition-colors"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Reset
-              </button>
-            )}
-            <GradientButton
-              fullWidth
-              onClick={() => setIsFilterSheetOpen(false)}
-              className="flex-1"
-            >
-              Show {resultCount} {resultCount === 1 ? 'Event' : 'Events'}
-            </GradientButton>
-          </div>
-        </div>
-      </BottomSheet>
+        filters={filters}
+        updateFilter={updateFilter}
+        distance={distance}
+        setDistance={setDistance}
+        showDatePicker={showDatePicker}
+        setShowDatePicker={setShowDatePicker}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        hasLocation={hasLocation}
+        locationName={locationName}
+        isLocationLoading={isLocationLoading}
+        locationPermission={locationPermission}
+        locationError={locationError}
+        onEnableLocation={handleEnableLocation}
+        resultCount={resultCount}
+        totalAvailable={totalAvailable}
+        hasFiltersToReset={hasFiltersToReset}
+        onReset={() => {
+          clearAll();
+          setDistance(10);
+          setSelectedDate(null);
+          setShowDatePicker(false);
+        }}
+        categories={ALL_CATEGORIES}
+      />
     </div>
   );
 }

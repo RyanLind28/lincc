@@ -16,7 +16,7 @@ export function MainLayout({ showBottomNav = true, className }: MainLayoutProps)
   return (
     <div className={cn('min-h-screen bg-background lg:flex', className)}>
       {/* Skip to content link (accessibility) */}
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-coral focus:text-white focus:rounded-lg">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-[var(--z-tooltip)] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-coral focus:text-white focus:rounded-lg">
         Skip to content
       </a>
 
@@ -24,7 +24,7 @@ export function MainLayout({ showBottomNav = true, className }: MainLayoutProps)
       <SideNav />
 
       {/* Main content area — always shifted right of the sidebar on desktop. Bottom-padding only when the mobile bottom nav is visible. */}
-      <main id="main-content" className={cn('flex-1 animate-fade-in lg:pl-16', showBottomNav && 'pb-20 lg:pb-0')}>
+      <main id="main-content" className={cn('flex-1 animate-fade-in lg:pl-16 lg:transition-[padding] lg:duration-200', showBottomNav && 'pb-20 lg:pb-0')}>
         <BusinessApprovalBanner />
         <NotificationPermissionPrompt />
         <Outlet />

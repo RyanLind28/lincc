@@ -214,7 +214,7 @@ export default function AdminUserDetailPage() {
           {isSelf && (
             <p className="text-xs text-warning mb-3">
               <AlertTriangle className="h-3.5 w-3.5 inline mr-1" />
-              This is your own account — role and status changes are disabled to prevent lockout.
+              This is your own account. Role and status changes are disabled to prevent lockout.
             </p>
           )}
 

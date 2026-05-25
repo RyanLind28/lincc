@@ -50,7 +50,7 @@ export function InstallBanner() {
 
   return (
     <>
-      <div className="fixed bottom-22 left-4 right-4 z-50 lg:bottom-6 lg:left-auto lg:right-6 lg:max-w-sm animate-slide-up">
+      <div className="fixed bottom-22 left-4 right-4 z-[var(--z-overlay)] lg:bottom-6 lg:left-auto lg:right-6 lg:max-w-sm animate-slide-up">
         <div className="bg-surface border border-border rounded-2xl shadow-lg p-4 flex items-center gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
             <Smartphone className="h-5 w-5 text-white" />

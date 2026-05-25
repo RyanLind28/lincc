@@ -68,7 +68,7 @@ export default function AdminBusinessDetailPage() {
   const statCards = [
     { label: 'Vouchers', value: detail.vouchers.total, icon: Ticket, color: 'bg-coral/10 text-coral' },
     { label: 'Redemptions', value: detail.redemptions.total, icon: Gift, color: 'bg-purple/10 text-purple' },
-    { label: 'Events', value: detail.events.total, icon: Calendar, color: 'bg-green-500/10 text-green-500' },
+    { label: 'Events', value: detail.events.total, icon: Calendar, color: 'bg-success/10 text-success' },
   ];
 
   return (

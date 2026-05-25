@@ -20,8 +20,8 @@ const typeIcons: Record<string, { icon: typeof Users; color: string }> = {
   event: { icon: Calendar, color: 'bg-purple/10 text-purple' },
   report: { icon: Flag, color: 'bg-warning/10 text-warning' },
   category: { icon: Tag, color: 'bg-blue/10 text-blue' },
-  business: { icon: Store, color: 'bg-green-500/10 text-green-500' },
-  business_verification: { icon: BadgeCheck, color: 'bg-green-500/10 text-green-500' },
+  business: { icon: Store, color: 'bg-success/10 text-success' },
+  business_verification: { icon: BadgeCheck, color: 'bg-success/10 text-success' },
   image: { icon: ImageIcon, color: 'bg-purple/10 text-purple' },
 };
 

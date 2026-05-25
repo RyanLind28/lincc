@@ -10,7 +10,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 import {
-  GradientButton, Input, TextArea, PlacesAutocomplete, AvatarCropper,
+  GradientButton, Input, TextArea, PlacesAutocomplete, AvatarCropper, ImagePickerButtons,
 } from '../../components/ui';
 import { VerificationSlots, useVerificationUpload } from '../../components/business/VerificationSlots';
 import { usePWA } from '../../hooks/usePWA';
@@ -74,7 +74,7 @@ export default function BusinessOnboardingPage() {
     setVerification(await getMyVerification(business.id));
   }, [business?.id]);
   useEffect(() => { refreshVerification(); }, [refreshVerification]);
-  const { uploadingSlot, handleUpload } = useVerificationUpload(business?.id, user?.id, refreshVerification);
+  const { uploadingSlot, handleUpload, handleRemove } = useVerificationUpload(business?.id, user?.id, refreshVerification);
 
   // Step 3 — logo + description
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -446,7 +446,7 @@ export default function BusinessOnboardingPage() {
                 <h1 className="text-xl font-bold text-text">Verify your business</h1>
               </div>
               <p className="text-sm text-text-muted">
-                Verified businesses get an official tick. Documents stay private — only admins reviewing your application can see them.
+                Verified businesses get an official tick. Documents stay private. Only admins reviewing your application can see them.
               </p>
             </div>
             <VerificationSlots
@@ -454,6 +454,7 @@ export default function BusinessOnboardingPage() {
               uploadingSlot={uploadingSlot}
               locked={false}
               onUpload={handleUpload}
+              onRemove={handleRemove}
             />
             <p className="text-xs text-text-light">
               All four documents are needed before we can review your business.
@@ -499,9 +500,12 @@ export default function BusinessOnboardingPage() {
                   onChange={handleLogoSelect}
                   className="sr-only"
                 />
-                <label htmlFor="business-onboarding-logo-input" className="inline-flex items-center gap-1.5 text-sm font-medium text-coral cursor-pointer hover:underline">
-                  {logoUrl ? 'Change logo' : 'Upload logo'}
-                </label>
+                <ImagePickerButtons
+                  fileInputRef={logoInputRef}
+                  onCameraSelect={handleLogoSelect}
+                  galleryLabel={logoUrl ? 'Change logo' : 'Choose logo'}
+                  size="sm"
+                />
               </div>
             </div>
 
@@ -682,7 +686,7 @@ export default function BusinessOnboardingPage() {
                 type="button"
                 onClick={async () => {
                   const accepted = await promptInstall();
-                  if (!accepted) showToast('Install dismissed — you can do this later from the home screen.', 'info');
+                  if (!accepted) showToast('Install dismissed. You can do this later from the home screen.', 'info');
                 }}
                 className="w-full flex items-center justify-between gap-3 p-4 rounded-2xl border border-coral bg-coral/5 hover:bg-coral/10 transition-colors"
               >

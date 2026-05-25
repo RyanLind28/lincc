@@ -30,7 +30,7 @@ function StarRow({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' }
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} className={`${dim} ${i <= rating ? 'fill-warning text-warning' : 'text-gray-300'}`} />
+        <Star key={i} className={`${dim} ${i <= rating ? 'fill-warning text-warning' : 'text-muted'}`} />
       ))}
     </div>
   );
@@ -293,13 +293,13 @@ export default function BusinessPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
         </div>
 
-        <div className="relative pt-20 sm:pt-32 px-4 max-w-4xl mx-auto">
+        <div className="relative pt-20 sm:pt-32 px-4 max-w-5xl mx-auto">
           {/* Logo + identity row — stacked on mobile, side-by-side on sm+ */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:gap-6 items-center sm:items-start">
             {/* Logo */}
             <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-surface ring-4 ring-surface shadow-2xl overflow-hidden flex-shrink-0">
               {business.logo_url ? (
-                <img src={business.logo_url} alt={business.name} className="w-full h-full object-cover" />
+                <img src={business.logo_url} alt={business.name} loading="lazy" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full gradient-primary flex items-center justify-center text-white font-bold text-5xl">
                   {business.name.charAt(0)}
@@ -377,9 +377,9 @@ export default function BusinessPage() {
       </div>
 
       {/* MAIN BODY */}
-      <div className="px-4 max-w-4xl mx-auto mt-8 space-y-10">
-        {/* What's on — all upcoming events */}
-        {upcomingEvents.length > 0 && (
+      <div className="px-4 max-w-5xl mx-auto mt-8 space-y-10">
+        {/* What's on — upcoming events or owner prompt */}
+        {upcomingEvents.length > 0 ? (
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-bold text-text">What's on</h2>
@@ -389,7 +389,21 @@ export default function BusinessPage() {
               {upcomingEvents.map((e) => <EventTile key={e.id} event={e} />)}
             </div>
           </section>
-        )}
+        ) : isOwner && vouchers.length > 0 ? (
+          <Link
+            to="/event/new"
+            className="flex items-center gap-4 p-5 bg-surface rounded-2xl border border-dashed border-border hover:border-coral/40 transition-colors group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-coral/10 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="h-5 w-5 text-coral" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-text group-hover:text-coral transition-colors">Create your first event</p>
+              <p className="text-xs text-text-muted">Post an activity and start attracting visitors</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-text-light" />
+          </Link>
+        ) : null}
 
         {/* Deals — full responsive grid (no fixed-width tiles) */}
         {vouchers.length > 0 && (
@@ -411,7 +425,7 @@ export default function BusinessPage() {
                   >
                     <div className="w-28 sm:w-32 flex-shrink-0 relative">
                       {v.cover_image_url ? (
-                        <img src={v.cover_image_url} alt={v.title} className="w-full h-full object-cover" />
+                        <img src={v.cover_image_url} alt={v.title} loading="lazy" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full gradient-secondary flex items-center justify-center">
                           <Ticket className="h-7 w-7 text-white" />
@@ -590,13 +604,93 @@ export default function BusinessPage() {
           </section>
         )}
 
-        {/* Empty state */}
+        {/* Empty state — owner vs visitor */}
         {events.length === 0 && vouchers.length === 0 && (
-          <div className="text-center py-12 bg-surface rounded-2xl border border-border">
-            <Sparkles className="h-8 w-8 text-text-light mx-auto mb-2" />
-            <p className="text-text-muted">Nothing live yet</p>
-            <p className="text-xs text-text-light">Check back soon for events and offers from {business.name}.</p>
-          </div>
+          isOwner ? (
+            <section className="space-y-4">
+              <div className="text-center py-6">
+                <h2 className="text-xl font-bold text-text mb-2">Get started with {business.name}</h2>
+                <p className="text-text-muted max-w-md mx-auto">
+                  Your business page is live. Start posting to let people know what you offer.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Link
+                  to="/event/new"
+                  className="flex items-center gap-4 p-5 bg-surface rounded-2xl border border-border hover:border-coral/40 hover:shadow-md transition-all group"
+                >
+                  <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-text group-hover:text-coral transition-colors">Create your first event</p>
+                    <p className="text-xs text-text-muted mt-0.5">Post an activity, class, opening, or meetup</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
+                </Link>
+                <Link
+                  to="/voucher/new"
+                  className="flex items-center gap-4 p-5 bg-surface rounded-2xl border border-border hover:border-coral/40 hover:shadow-md transition-all group"
+                >
+                  <div className="w-12 h-12 rounded-xl gradient-secondary flex items-center justify-center flex-shrink-0">
+                    <Ticket className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-text group-hover:text-coral transition-colors">Create a voucher or deal</p>
+                    <p className="text-xs text-text-muted mt-0.5">Offer a discount, freebie, or promotion</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
+                </Link>
+              </div>
+              <div className="bg-surface rounded-2xl border border-border p-5">
+                <h3 className="font-semibold text-text mb-3">Tips for a great business page</h3>
+                <div className="space-y-2.5">
+                  {[
+                    { done: !!business.logo_url, text: 'Add a logo' },
+                    { done: !!business.description, text: 'Write a description' },
+                    { done: !!business.address || locations.length > 0, text: 'Add your location' },
+                    { done: !!business.opening_hours && Object.keys(business.opening_hours).length > 0, text: 'Set your opening hours' },
+                    { done: !!business.social_links && Object.values(business.social_links).some(Boolean), text: 'Add social links' },
+                  ].map((item) => (
+                    <div key={item.text} className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${item.done ? 'bg-success/10' : 'bg-muted'}`}>
+                        {item.done ? (
+                          <Star className="h-3 w-3 text-success" />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-text-light" />
+                        )}
+                      </div>
+                      <span className={`text-sm ${item.done ? 'text-text-muted line-through' : 'text-text'}`}>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link to="/business/edit" className="inline-block mt-4">
+                  <GradientButton size="sm" variant="outline">Edit business profile</GradientButton>
+                </Link>
+              </div>
+            </section>
+          ) : (
+            <section className="text-center py-12">
+              <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-xl font-semibold text-text mb-2">Coming soon</h2>
+              <p className="text-text-muted max-w-sm mx-auto mb-6">
+                {business.name} is setting up. Check back soon for events, deals, and more.
+              </p>
+              {business.social_links?.instagram && (
+                <a
+                  href={business.social_links.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-coral hover:text-coral/80 transition-colors"
+                >
+                  <Instagram className="h-4 w-4" />
+                  Follow on Instagram
+                </a>
+              )}
+            </section>
+          )
         )}
       </div>
     </div>

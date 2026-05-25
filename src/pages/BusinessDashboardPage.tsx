@@ -39,7 +39,7 @@ function StarRow({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={`h-3.5 w-3.5 ${i <= rating ? 'fill-warning text-warning' : 'text-gray-300'}`}
+          className={`h-3.5 w-3.5 ${i <= rating ? 'fill-warning text-warning' : 'text-muted'}`}
         />
       ))}
     </div>
@@ -84,7 +84,7 @@ function EventRow({ event }: { event: BusinessDashboardEvent }) {
       className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border hover:border-coral/40 transition-colors"
     >
       {event.cover_image_url ? (
-        <img src={event.cover_image_url} alt={event.title} className="w-14 h-14 rounded-lg object-cover" />
+        <img src={event.cover_image_url} alt={event.title} loading="lazy" className="w-14 h-14 rounded-lg object-cover" />
       ) : (
         <div className="w-14 h-14 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
           <Calendar className="h-5 w-5 text-white" />
@@ -186,7 +186,7 @@ export default function BusinessDashboardPage() {
   }
   if (!business) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background max-w-5xl mx-auto">
         <Header showBack showLogo />
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center mb-4">
@@ -204,7 +204,7 @@ export default function BusinessDashboardPage() {
 
   if (isLoading || !data) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background max-w-5xl mx-auto">
         <Header showLogo showNotifications />
         <div className="p-4 max-w-5xl mx-auto space-y-3">
           <div className="h-32 bg-surface rounded-2xl border border-border animate-pulse" />
@@ -497,7 +497,7 @@ export default function BusinessDashboardPage() {
                       className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border hover:border-coral/40 transition-colors"
                     >
                       {v.cover_image_url ? (
-                        <img src={v.cover_image_url} alt={v.title} className="w-14 h-14 rounded-lg object-cover" />
+                        <img src={v.cover_image_url} alt={v.title} loading="lazy" className="w-14 h-14 rounded-lg object-cover" />
                       ) : (
                         <div className="w-14 h-14 rounded-lg gradient-secondary flex items-center justify-center flex-shrink-0">
                           <Ticket className="h-5 w-5 text-white" />

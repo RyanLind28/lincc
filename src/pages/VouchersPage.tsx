@@ -125,7 +125,7 @@ export default function VouchersPage() {
   const hasFilters = !!query.trim() || !!categoryFilter || quickFilter !== 'all';
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 max-w-6xl mx-auto">
       <Header
         rightContent={
           <Link
@@ -258,7 +258,7 @@ export default function VouchersPage() {
             <p className="text-sm text-text-muted max-w-xs mb-5">
               {hasFilters
                 ? 'Try a different search, category, or filter chip.'
-                : 'Check back soon — local businesses are adding offers all the time.'}
+                : 'Check back soon. Local businesses are adding offers all the time.'}
             </p>
             {hasFilters && (
               <GradientButton

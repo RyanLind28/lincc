@@ -133,7 +133,7 @@ export default function VoucherDetailPage() {
   const isExpiringSoon = !isExpired && daysLeft <= 7;
 
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto pb-12">
+    <div className="min-h-screen bg-background max-w-5xl mx-auto pb-12">
       <Header
         showBack
         rightContent={

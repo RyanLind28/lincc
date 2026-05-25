@@ -57,7 +57,7 @@ export default function FollowListPage() {
   const activeList = activeTab === 'followers' ? followers : following;
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 max-w-5xl mx-auto">
       <Header showBack title={headerTitle} />
 
       {/* Tabs */}

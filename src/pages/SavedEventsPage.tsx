@@ -41,10 +41,10 @@ export default function SavedEventsPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background max-w-6xl mx-auto">
       <Header showBack title="Saved Events" />
 
-      <div className="p-4">
+      <div className="p-4 lg:p-6">
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (

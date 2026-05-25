@@ -61,8 +61,8 @@ export default function FeatureFlagsPage() {
           <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
             {flags.map((flag) => (
               <div key={flag.id} className="p-4 flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${flag.is_enabled ? 'bg-green-500/10' : 'bg-background'}`}>
-                  <Zap className={`h-5 w-5 ${flag.is_enabled ? 'text-green-500' : 'text-text-muted'}`} />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${flag.is_enabled ? 'bg-success/10' : 'bg-background'}`}>
+                  <Zap className={`h-5 w-5 ${flag.is_enabled ? 'text-success' : 'text-text-muted'}`} />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium text-text font-mono text-sm">{flag.key}</h3>

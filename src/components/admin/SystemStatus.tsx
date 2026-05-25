@@ -12,7 +12,7 @@ const STATUS_TEXT: Record<CheckStatus, string> = {
 };
 
 const DOT_CLASS: Record<CheckStatus, string> = {
-  ok: 'bg-green-500',
+  ok: 'bg-success',
   degraded: 'bg-warning',
   down: 'bg-error',
   unknown: 'bg-text-muted',
@@ -84,7 +84,7 @@ export function SystemStatus() {
         >
           <span className="relative flex h-3 w-3 shrink-0">
             {overall === 'ok' && (
-              <span className="absolute inline-flex h-full w-full rounded-full bg-green-500/40 animate-ping" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-success/40 animate-ping" />
             )}
             <span className={`relative inline-flex h-3 w-3 rounded-full ${DOT_CLASS[overall]}`} />
           </span>

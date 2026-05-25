@@ -47,12 +47,12 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'block w-full rounded-lg border bg-surface text-text appearance-none cursor-pointer',
-              'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
+              'block w-full h-[var(--height-input)] rounded-xl border bg-surface text-text appearance-none cursor-pointer',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:border-transparent',
               'disabled:bg-background disabled:cursor-not-allowed',
               'transition-colors',
-              error ? 'border-error focus:ring-error' : 'border-border',
-              'pl-4 pr-10 py-2.5',
+              error ? 'border-error focus-visible:ring-error' : 'border-border',
+              'pl-4 pr-10',
               className
             )}
             {...props}

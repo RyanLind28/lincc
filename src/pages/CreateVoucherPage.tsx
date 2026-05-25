@@ -5,7 +5,7 @@ import { ChevronLeft, MapPin, Camera, X, Tag, Store, Loader2 } from 'lucide-reac
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
-import { Input, TextArea, GradientButton, DatePicker } from '../components/ui';
+import { Input, TextArea, GradientButton, DatePicker, ImagePickerButtons } from '../components/ui';
 import { supabase } from '../lib/supabase';
 import { compressImage, validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
 import * as Sentry from '@sentry/react';
@@ -59,7 +59,7 @@ export default function CreateVoucherPage() {
   // Personal accounts: full block.
   if (profile && profile.account_type !== 'business') {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background max-w-2xl mx-auto">
         <Header showBack showLogo />
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
@@ -559,14 +559,14 @@ export default function CreateVoucherPage() {
                   className="sr-only"
                 />
               </div>
-              {coverImageFile && (
-                <label
-                  htmlFor="voucher-cover-input"
-                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-coral cursor-pointer hover:underline"
-                >
-                  <Camera className="h-3.5 w-3.5" /> Replace photo
-                </label>
-              )}
+              <div className="mt-2">
+                <ImagePickerButtons
+                  fileInputRef={fileInputRef}
+                  onCameraSelect={handleCoverImageUpload}
+                  galleryLabel={coverImageFile ? 'Replace photo' : 'Choose photo'}
+                  size="sm"
+                />
+              </div>
             </div>
 
             {/* Expiry date */}

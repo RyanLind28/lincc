@@ -106,7 +106,7 @@ export default function DMChatRoomPage() {
   }
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden bg-background">
+    <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-3xl mx-auto">
       {/* Header with user info */}
       <Header
         showBack

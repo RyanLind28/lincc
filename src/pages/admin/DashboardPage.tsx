@@ -92,20 +92,20 @@ export default function AdminDashboard() {
 
   const totalCards = [
     { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'bg-coral/10 text-coral' },
-    { label: 'Active Events', value: stats.activeEvents, icon: Calendar, color: 'bg-green-500/10 text-green-500' },
+    { label: 'Active Events', value: stats.activeEvents, icon: Calendar, color: 'bg-success/10 text-success' },
     { label: 'Pending Reports', value: stats.pendingReports, icon: Flag, color: 'bg-warning/10 text-warning' },
     { label: 'Categories', value: stats.totalCategories, icon: Tag, color: 'bg-purple/10 text-purple' },
   ];
 
   const metricCards = [
     { label: 'New Users', value: metrics?.newUsers ?? 0, icon: UserPlus, color: 'bg-coral/10 text-coral' },
-    { label: 'New Events', value: metrics?.newEvents ?? 0, icon: Calendar, color: 'bg-green-500/10 text-green-500' },
+    { label: 'New Events', value: metrics?.newEvents ?? 0, icon: Calendar, color: 'bg-success/10 text-success' },
     { label: 'Join Requests', value: metrics?.joinRequests ?? 0, icon: Handshake, color: 'bg-blue/10 text-blue' },
     { label: 'Approved Joins', value: metrics?.approvedJoins ?? 0, icon: Handshake, color: 'bg-purple/10 text-purple' },
     { label: 'Messages', value: metrics?.messages ?? 0, icon: MessageSquare, color: 'bg-blue/10 text-blue' },
     { label: 'Vouchers Redeemed', value: metrics?.redemptions ?? 0, icon: Gift, color: 'bg-coral/10 text-coral' },
     { label: 'New Vouchers', value: metrics?.newVouchers ?? 0, icon: Ticket, color: 'bg-purple/10 text-purple' },
-    { label: 'New Businesses', value: metrics?.newBusinesses ?? 0, icon: Building2, color: 'bg-green-500/10 text-green-500' },
+    { label: 'New Businesses', value: metrics?.newBusinesses ?? 0, icon: Building2, color: 'bg-success/10 text-success' },
   ];
 
   return (

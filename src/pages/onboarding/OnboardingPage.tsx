@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
-import { GradientButton, Input, TextArea, Avatar, ChipGroup, AvatarCropper } from '../../components/ui';
-import { Camera, ArrowLeft, ArrowRight, Download, Bell, ChevronRight, MapPin, CheckCircle, Loader2 } from 'lucide-react';
+import { GradientButton, AvatarCropper } from '../../components/ui';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { usePWA } from '../../hooks/usePWA';
-import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
+import { PhotoStep, BasicInfoStep, InterestsStep, BioStep, InstallStep, LocationStep, NotificationStep } from './steps';
 import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
@@ -25,31 +25,6 @@ const LOCATION_VIBES = [
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
-const INTEREST_TAGS = [
-  { value: 'coffee', label: 'Coffee', icon: '☕' },
-  { value: 'food', label: 'Food & Drinks', icon: '🍽️' },
-  { value: 'sports', label: 'Sports', icon: '⚽' },
-  { value: 'fitness', label: 'Fitness', icon: '💪' },
-  { value: 'walking', label: 'Walking', icon: '🚶' },
-  { value: 'hiking', label: 'Hiking', icon: '🥾' },
-  { value: 'running', label: 'Running', icon: '🏃' },
-  { value: 'cycling', label: 'Cycling', icon: '🚴' },
-  { value: 'gaming', label: 'Gaming', icon: '🎮' },
-  { value: 'movies', label: 'Movies', icon: '🎬' },
-  { value: 'music', label: 'Music', icon: '🎵' },
-  { value: 'art', label: 'Art & Culture', icon: '🎨' },
-  { value: 'study', label: 'Study & Work', icon: '📚' },
-  { value: 'language', label: 'Language Exchange', icon: '🗣️' },
-  { value: 'boardgames', label: 'Board Games', icon: '🎲' },
-  { value: 'yoga', label: 'Yoga & Wellness', icon: '🧘' },
-  { value: 'pets', label: 'Pets', icon: '🐕' },
-  { value: 'photography', label: 'Photography', icon: '📷' },
-];
-
-const GENDER_OPTIONS = [
-  { value: 'female', label: 'Female' },
-  { value: 'male', label: 'Male' },
-];
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
@@ -374,7 +349,7 @@ export default function OnboardingPage() {
           return false;
         }
         if (usernameStatus === 'taken') {
-          showToast('That username is already taken — try another.', 'error');
+          showToast('That username is already taken. Try another.', 'error');
           return false;
         }
         if (usernameStatus === 'checking') {
@@ -454,7 +429,7 @@ export default function OnboardingPage() {
       // Unique violation on profile_name — surface the exact reason so the
       // user can pick a different one without going round again.
       if (error.code === '23505' && /profile_name/i.test(error.message)) {
-        showToast('That username is already taken — try another.', 'error');
+        showToast('That username is already taken. Try another.', 'error');
         setStep(2); // step back to About You so they can edit it
       } else {
         showToast('Failed to save profile', 'error');
@@ -521,72 +496,15 @@ export default function OnboardingPage() {
         <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
           {/* Step 1: Photo */}
           {step === 1 && (
-            <div className="text-center">
-              <h1 className="text-2xl font-bold gradient-text mb-2">Add a photo</h1>
-              <p className="text-text-muted mb-8">
-                Help others recognise you, or skip to use your initials.
-              </p>
-
-              <div className="flex flex-col items-center gap-4">
-                <label className="cursor-pointer">
-                  <div className="relative">
-                    <Avatar src={avatarUrl} name={firstName || 'You'} size="xl" />
-                    <div className="absolute bottom-0 right-0 w-8 h-8 gradient-primary rounded-full flex items-center justify-center shadow-md">
-                      {isRecovering ? (
-                        <Loader2 className="h-4 w-4 text-white animate-spin" />
-                      ) : (
-                        <Camera className="h-4 w-4 text-white" />
-                      )}
-                    </div>
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    id="onboarding-avatar-input"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                </label>
-                <p className="text-sm text-text-muted">
-                  {isRecovering
-                    ? 'Fetching photo from cloud — this can take a few seconds…'
-                    : 'Tap to upload (max 25MB). Optional, you can add one later.'}
-                </p>
-
-                {photoError && (
-                  <div className="w-full text-left bg-error/5 border border-error/20 rounded-xl p-4 mt-2">
-                    <p className="text-sm font-semibold text-error mb-2">
-                      Couldn't use this photo
-                    </p>
-                    <p className="text-sm text-text-muted mb-3 leading-relaxed">
-                      {photoError}
-                    </p>
-                    {/cloud storage/i.test(photoError) && (
-                      <div className="text-xs text-text-muted bg-background rounded-lg p-3 mb-3 leading-relaxed">
-                        <p className="font-semibold text-text mb-1">On Samsung:</p>
-                        <ol className="list-decimal pl-4 space-y-0.5">
-                          <li>Open <span className="font-medium">Samsung Gallery</span></li>
-                          <li>Tap the photo you want to use</li>
-                          <li>Tap the <span className="font-medium">cloud icon</span> to download it to the device</li>
-                          <li>Come back here and tap your avatar to try again</li>
-                        </ol>
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPhotoError(null);
-                        fileInputRef.current?.click();
-                      }}
-                      className="text-sm font-semibold text-coral hover:text-coral-dark"
-                    >
-                      Try a different photo →
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+            <PhotoStep
+              avatarUrl={avatarUrl}
+              firstName={firstName}
+              isRecovering={isRecovering}
+              photoError={photoError}
+              fileInputRef={fileInputRef}
+              onPhotoSelect={handlePhotoSelect}
+              onClearError={() => setPhotoError(null)}
+            />
           )}
 
           {cropSrc && (
@@ -601,378 +519,59 @@ export default function OnboardingPage() {
             />
           )}
 
-          {/* Step 2: Basic Info */}
           {step === 2 && (
-            <div>
-              <h1 className="text-2xl font-bold gradient-text mb-2">
-                {firstName ? `Tell us about you, ${firstName}` : 'Tell us about you'}
-              </h1>
-              <p className="text-text-muted mb-8">
-                Pick a username and the basics.
-              </p>
-
-              <div className="space-y-4">
-                {/* Fallback for users who reached onboarding without a captured
-                    first/last name — typically a one-word OAuth login or an
-                    older account. Skipped for the common path because we
-                    already collected these on the signup form. */}
-                {(!firstName.trim() || !lastName.trim()) && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      label="First name"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Your first name"
-                      autoComplete="given-name"
-                    />
-                    <Input
-                      label="Last name"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Your last name"
-                      autoComplete="family-name"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <Input
-                    label="Username"
-                    value={profileName}
-                    onChange={(e) => setProfileName(e.target.value)}
-                    placeholder="How others see you on Lincc"
-                  />
-                  {profileName.trim() && usernameStatus === 'checking' && (
-                    <p className="text-xs text-text-muted mt-1.5 flex items-center gap-1.5">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Checking availability…
-                    </p>
-                  )}
-                  {profileName.trim() && usernameStatus === 'available' && (
-                    <p className="text-xs text-success mt-1.5 flex items-center gap-1.5">
-                      <CheckCircle className="h-3 w-3" />
-                      Available
-                    </p>
-                  )}
-                  {profileName.trim() && usernameStatus === 'taken' && (
-                    <p className="text-xs text-error mt-1.5">
-                      That username is taken — try another.
-                    </p>
-                  )}
-                  {!profileName.trim() && (
-                    <p className="text-xs text-text-muted mt-1.5">This is the name other people see. Defaults to your full name.</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-text mb-1.5">
-                    Date of Birth
-                  </label>
-                  <div className="flex gap-2">
-                    <select
-                      value={dobDay}
-                      onChange={(e) => setDobDay(e.target.value)}
-                      className="flex-1 px-3 py-2.5 bg-background border border-border rounded-lg text-text text-sm appearance-none"
-                    >
-                      <option value="">Day</option>
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                        <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={dobMonth}
-                      onChange={(e) => setDobMonth(e.target.value)}
-                      className="flex-[1.4] px-3 py-2.5 bg-background border border-border rounded-lg text-text text-sm appearance-none"
-                    >
-                      <option value="">Month</option>
-                      {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
-                        <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={dobYear}
-                      onChange={(e) => setDobYear(e.target.value)}
-                      className="flex-1 px-3 py-2.5 bg-background border border-border rounded-lg text-text text-sm appearance-none"
-                    >
-                      <option value="">Year</option>
-                      {Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - 18 - i).map((y) => (
-                        <option key={y} value={String(y)}>{y}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <p className="text-xs text-text-muted mt-1.5">You must be 18 or older</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-text mb-1.5">
-                    Gender
-                  </label>
-                  <div className="flex gap-2">
-                    {GENDER_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setGender(option.value as Gender)}
-                        className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-colors ${
-                          gender === option.value
-                            ? 'gradient-primary text-white border-transparent'
-                            : 'bg-surface text-text border-border hover:border-coral'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <BasicInfoStep
+              firstName={firstName}
+              lastName={lastName}
+              profileName={profileName}
+              usernameStatus={usernameStatus}
+              dobDay={dobDay}
+              dobMonth={dobMonth}
+              dobYear={dobYear}
+              gender={gender}
+              onFirstNameChange={setFirstName}
+              onLastNameChange={setLastName}
+              onProfileNameChange={setProfileName}
+              onDobDayChange={setDobDay}
+              onDobMonthChange={setDobMonth}
+              onDobYearChange={setDobYear}
+              onGenderChange={setGender}
+            />
           )}
 
-          {/* Step 3: Interests */}
           {step === 3 && (
-            <div>
-              <h1 className="text-2xl font-bold gradient-text mb-2">Your interests</h1>
-              <p className="text-text-muted mb-8">
-                Select the activities you enjoy. This helps others find you.
-              </p>
-
-              <ChipGroup
-                options={INTEREST_TAGS}
-                selected={tags}
-                onChange={setTags}
-              />
-
-              <p className="text-sm text-text-muted mt-4">
-                {tags.length} selected
-              </p>
-            </div>
+            <InterestsStep tags={tags} onTagsChange={setTags} />
           )}
 
-          {/* Step 4: Bio */}
           {step === 4 && (
-            <div>
-              <h1 className="text-2xl font-bold gradient-text mb-2">Write a bio</h1>
-              <p className="text-text-muted mb-8">
-                Share a bit about yourself. This is optional but helps others get to know you.
-              </p>
-
-              <TextArea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="I'm always up for a coffee chat or a morning run..."
-                rows={4}
-                maxLength={140}
-                showCount
-              />
-            </div>
+            <BioStep bio={bio} onBioChange={setBio} />
           )}
 
-          {/* Install App (skipped if already installed) */}
           {step === installStep && (
-            <div className="text-center">
-              <h1 className="text-2xl font-bold gradient-text mb-2">Add to Home Screen</h1>
-              <p className="text-text-muted mb-8">
-                Install Lincc for the best experience. Instant access, just like a native app.
-              </p>
-
-              <div className="space-y-3 text-left">
-                {/* Already installed — show confirmation */}
-                {isInstalled && (
-                  <div className="text-center py-4">
-                    <div className="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Download className="h-7 w-7 text-green-500" />
-                    </div>
-                    <p className="text-text-muted text-sm">Lincc is already installed!</p>
-                  </div>
-                )}
-
-                {/* Native install prompt available (Android Chrome / Samsung Internet that has fired beforeinstallprompt) */}
-                {!isInstalled && isInstallable && (
-                  <button
-                    onClick={handleInstall}
-                    className="w-full p-4 bg-coral/5 rounded-xl border border-coral/20 flex items-center gap-4 hover:bg-coral/10 transition-colors"
-                  >
-                    <div className="w-11 h-11 bg-coral rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Download className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <h3 className="font-semibold text-text">Install Lincc</h3>
-                      <p className="text-xs text-text-muted">Tap to add to your home screen</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-coral" />
-                  </button>
-                )}
-
-                {/* No native prompt — fall back to platform-specific manual steps.
-                    Covers Android browsers that haven't yet fired beforeinstallprompt,
-                    iOS Safari, and the iOS-Chrome edge case (where the user must
-                    re-open in Safari first). */}
-                {!isInstalled && !isInstallable && (() => {
-                  const platform = detectInstallPlatform();
-                  const instructions = getInstallInstructions(platform);
-                  if (!instructions) {
-                    return (
-                      <div className="text-center py-4">
-                        <p className="text-text-muted text-sm">
-                          You can install Lincc anytime from your browser menu.
-                        </p>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="w-full p-4 bg-coral/5 rounded-xl border border-coral/20">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-11 h-11 bg-coral rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Download className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-text">Add to Home Screen</h3>
-                          <p className="text-xs text-text-muted">{instructions.tagline}</p>
-                        </div>
-                      </div>
-                      <InstallSteps steps={instructions.steps} />
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
+            <InstallStep
+              isInstalled={isInstalled}
+              isInstallable={isInstallable}
+              onInstall={handleInstall}
+            />
           )}
 
-          {/* Location Step */}
           {step === locationStep && (
-            <div className="text-center">
-              {locationPermission === 'granted' ? (
-                <>
-                  <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-scale-in">
-                    <CheckCircle className="h-8 w-8 text-green-500" />
-                  </div>
-                  {locationNameLoading ? (
-                    <>
-                      <h1 className="text-2xl font-bold gradient-text mb-2">Finding your location...</h1>
-                      <div className="mt-4 p-4 bg-blue/5 rounded-xl border border-blue/20">
-                        <div className="flex items-center justify-center gap-2">
-                          <MapPin className="h-4 w-4 text-blue animate-pulse" />
-                          <div className="h-5 w-36 bg-border rounded-full animate-shimmer" />
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <h1 className="text-2xl font-bold gradient-text mb-2">Location enabled</h1>
-                      <div className="mt-4 p-4 bg-blue/5 rounded-xl border border-blue/20">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <MapPin className="h-4 w-4 text-blue" />
-                          <span className="font-semibold text-text">{locationName || 'Location found'}</span>
-                        </div>
-                        <p className="text-sm text-text-muted">{locationVibe}</p>
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : locationPermission === 'denied' ? (
-                <>
-                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MapPin className="h-8 w-8 text-white" />
-                  </div>
-                  <h1 className="text-2xl font-bold gradient-text mb-2">Location not enabled</h1>
-                  <p className="text-text-muted mb-6">
-                    Lincc works best with your location. Without it, you'll miss events happening right around you.
-                  </p>
-
-                  <GradientButton onClick={handleEnableLocation} fullWidth>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Try Again
-                  </GradientButton>
-
-                  <p className="text-xs text-text-light mt-3">
-                    If your browser blocked the request, you may need to allow location access in your browser settings and try again
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MapPin className="h-8 w-8 text-white" />
-                  </div>
-                  <h1 className="text-2xl font-bold gradient-text mb-2">Enable your location</h1>
-                  <p className="text-text-muted mb-8">
-                    Lincc needs your location to find events, people, and things to do near you. Without it, you'll miss out on what's happening in your area.
-                  </p>
-
-                  <GradientButton onClick={handleEnableLocation} fullWidth>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Allow Location Access
-                  </GradientButton>
-
-                  <p className="text-xs text-text-light mt-3">
-                    You can change this anytime in Settings
-                  </p>
-                </>
-              )}
-            </div>
+            <LocationStep
+              locationPermission={locationPermission}
+              locationName={locationName}
+              locationNameLoading={locationNameLoading}
+              locationVibe={locationVibe}
+              onEnableLocation={handleEnableLocation}
+            />
           )}
 
-          {/* Notifications Step */}
-          {step === notificationStep && (() => {
-            const notifEnabled = pushPermission === 'granted' || notifToggled;
-            return (
-            <div className="text-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300 ${
-                notifEnabled ? 'bg-green-500/10 animate-scale-in' : 'gradient-primary'
-              }`}>
-                {notifEnabled ? (
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                ) : (
-                  <Bell className="h-8 w-8 text-white" />
-                )}
-              </div>
-
-              {notifEnabled ? (
-                <>
-                  <h1 className="text-2xl font-bold gradient-text mb-2">Notifications enabled</h1>
-                  <p className="text-text-muted">
-                    You'll be the first to know when something's happening near you.
-                  </p>
-                </>
-              ) : 'Notification' in window ? (
-                <>
-                  <h1 className="text-2xl font-bold gradient-text mb-2">Don't miss out</h1>
-                  <p className="text-text-muted mb-8">
-                    People are posting events all the time. Turn on notifications so you're the first to know when something pops up nearby.
-                  </p>
-
-                  {/* Toggle-style card */}
-                  <button
-                    onClick={handleEnableNotifications}
-                    className="w-full p-5 bg-purple/5 rounded-2xl border border-purple/20 flex items-center gap-4 hover:bg-purple/10 transition-colors text-left"
-                  >
-                    <div className="w-12 h-12 bg-purple rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Bell className="h-6 w-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-text">Turn on notifications</h3>
-                      <p className="text-xs text-text-muted mt-0.5">Your browser will ask for permission</p>
-                    </div>
-                    {/* Toggle visual */}
-                    <div className="w-12 h-7 bg-border rounded-full flex items-center px-0.5 flex-shrink-0">
-                      <div className="w-6 h-6 bg-white rounded-full shadow-sm" />
-                    </div>
-                  </button>
-
-                  <p className="text-xs text-text-light mt-3">
-                    You can change this anytime in Settings
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h1 className="text-2xl font-bold gradient-text mb-2">You're all set!</h1>
-                  <p className="text-text-muted">
-                    Notifications aren't supported on this browser, but you can check Lincc anytime to see what's happening.
-                  </p>
-                </>
-              )}
-            </div>
-            );
-          })()}
+          {step === notificationStep && (
+            <NotificationStep
+              pushPermission={pushPermission}
+              notifToggled={notifToggled}
+              onEnableNotifications={handleEnableNotifications}
+            />
+          )}
         </div>
 
         {/* Navigation */}

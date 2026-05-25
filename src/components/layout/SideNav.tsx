@@ -27,13 +27,13 @@ export function SideNav() {
     { to: '/chats', icon: MessageCircle, label: 'Chats', badge: 0, tourId: 'chats' },
     { to: '/my-events', icon: Calendar, label: 'Events', badge: 0, tourId: 'my-events' },
     { to: '/vouchers', icon: Ticket, label: 'Vouchers', badge: 0, tourId: undefined },
-    { to: '/notifications', icon: Bell, label: 'Alerts', badge: unreadCount, tourId: undefined },
+    { to: '/notifications', icon: Bell, label: 'Notifications', badge: unreadCount, tourId: undefined },
     { to: '/profile', icon: User, label: 'Profile', badge: 0, tourId: undefined },
   ];
 
   return (
-    <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:flex lg:flex-col lg:w-16 lg:z-30 hover:lg:w-48 bg-surface backdrop-blur-sm group/sidebar transition-all duration-200 lg:pt-14">
-      <nav className="flex-1 flex flex-col items-stretch justify-center gap-3 px-3">
+    <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:flex lg:flex-col lg:w-16 lg:z-[var(--z-sidebar)] hover:lg:w-48 bg-surface border-r border-border shadow-sm group/sidebar transition-all duration-200 lg:pt-14" aria-label="Sidebar">
+      <nav className="flex-1 flex flex-col items-stretch justify-center gap-3 px-3" aria-label="Desktop navigation">
         {/* Discover / Toggle */}
         {isOnHomePage ? (
           <button onClick={toggleViewMode} data-tour="discover" className="relative">

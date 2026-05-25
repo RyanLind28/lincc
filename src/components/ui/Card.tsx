@@ -2,7 +2,7 @@ import { type HTMLAttributes } from 'react';
 import { cn } from '../../lib/utils';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'elevated' | 'outlined';
+  variant?: 'default' | 'elevated' | 'outlined' | 'interactive';
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
@@ -17,6 +17,7 @@ function Card({
     default: 'bg-surface',
     elevated: 'bg-surface shadow-md',
     outlined: 'bg-surface border border-border',
+    interactive: 'bg-surface border border-border hover:shadow-md hover:border-border-dark transition-shadow press-effect',
   };
 
   const paddings = {
@@ -29,7 +30,7 @@ function Card({
   return (
     <div
       className={cn(
-        'rounded-xl',
+        'rounded-2xl',
         variants[variant],
         paddings[padding],
         className

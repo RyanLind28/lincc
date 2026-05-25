@@ -119,7 +119,7 @@ export default function ManageParticipantsPage() {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background max-w-5xl mx-auto">
         <Header showBack title="Manage Participants" />
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <h2 className="text-xl font-semibold text-text mb-2">Event not found</h2>
@@ -130,7 +130,7 @@ export default function ManageParticipantsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 max-w-5xl mx-auto">
       <Header showBack title="Manage Participants" />
 
       {/* Event summary */}

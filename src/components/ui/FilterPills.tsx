@@ -36,16 +36,17 @@ export function FilterPills({
   };
 
   return (
-    <div className={cn('flex gap-2 overflow-x-auto scrollbar-hide', className)}>
+    <div className={cn('flex gap-2 overflow-x-auto scrollbar-hide', className)} role="group">
       {options.map((option) => {
         const isSelected = selected.includes(option.value);
         return (
           <button
             key={option.value}
             onClick={() => handleToggle(option.value)}
+            aria-pressed={isSelected}
             className={cn(
-              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium',
-              'transition-all duration-200 press-effect',
+              'flex-shrink-0 inline-flex items-center gap-1.5 px-4 h-[var(--height-tap-target)] rounded-full text-sm font-medium',
+              'transition-all press-effect',
               isSelected
                 ? 'gradient-primary text-white shadow-sm'
                 : 'bg-surface border border-border text-text-muted hover:border-coral hover:text-coral'
@@ -80,7 +81,7 @@ export function ActiveFilters({
       {filters.map((filter) => (
         <span
           key={filter.key}
-          className="inline-flex items-center gap-1 px-2.5 py-1 bg-coral/10 text-coral rounded-full text-sm font-medium"
+          className="inline-flex items-center gap-1 px-3 h-[var(--height-button-sm)] bg-coral/10 text-coral rounded-full text-sm font-medium"
         >
           {filter.label}
           <button

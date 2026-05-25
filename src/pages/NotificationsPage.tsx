@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { GradientButton, Spinner } from '../components/ui';
 import {
@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Star,
   Store,
+  Settings,
 } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { getNotificationPath } from '../services/notificationService';
@@ -92,8 +93,8 @@ export default function NotificationsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header title="Notifications" showBack />
+      <div className="min-h-screen bg-background max-w-5xl mx-auto">
+        <Header showLogo rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
         <div className="flex items-center justify-center p-8 mt-20">
           <Spinner size="lg" />
         </div>
@@ -103,8 +104,8 @@ export default function NotificationsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header title="Notifications" showBack />
+      <div className="min-h-screen bg-background max-w-5xl mx-auto">
+        <Header showLogo rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <p className="text-error mb-4">{error}</p>
           <GradientButton onClick={refresh}>Try Again</GradientButton>
@@ -115,8 +116,8 @@ export default function NotificationsPage() {
 
   if (notifications.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header title="Notifications" showBack />
+      <div className="min-h-screen bg-background max-w-5xl mx-auto">
+        <Header showLogo rightContent={<Link to="/settings" className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors" aria-label="Settings"><Settings className="h-5 w-5" /></Link>} />
 
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
@@ -165,24 +166,32 @@ export default function NotificationsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 max-w-5xl mx-auto">
       <Header
-        title="Notifications"
-        showBack
+        showLogo
         rightContent={
-          unreadCount > 0 && (
-            <button
-              onClick={markAllRead}
-              className="p-2 rounded-xl text-text-muted hover:text-coral hover:bg-coral/10 transition-colors"
-              aria-label="Mark all as read"
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllRead}
+                className="p-2 rounded-xl text-text-muted hover:text-coral hover:bg-coral/10 transition-colors"
+                aria-label="Mark all as read"
+              >
+                <CheckCheck className="h-5 w-5" />
+              </button>
+            )}
+            <Link
+              to="/settings"
+              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
+              aria-label="Settings"
             >
-              <CheckCheck className="h-5 w-5" />
-            </button>
-          )
+              <Settings className="h-5 w-5" />
+            </Link>
+          </div>
         }
       />
 
-      <div className="p-4">
+      <div className="p-4 lg:p-6">
         {Object.entries(groupedNotifications).map(([dateLabel, dateNotifications]) => (
           <div key={dateLabel} className="mb-6">
             <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">

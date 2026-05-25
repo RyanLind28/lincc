@@ -133,7 +133,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     };
 
     return (
-      <div className={cn('relative', className)} ref={dropdownRef}>
+      <div className={cn('relative', className)} ref={dropdownRef} role="search" aria-label="Search events">
         {/* Search icon */}
         <Search
           className={cn(

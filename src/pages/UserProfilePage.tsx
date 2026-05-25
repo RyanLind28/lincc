@@ -211,8 +211,8 @@ export default function UserProfilePage() {
     if (!profile) return;
     const shareUrl = `${window.location.origin}/user/${id}`;
     const shareData = {
-      title: `${profile.first_name} on Lincc`,
-      text: `Check out ${profile.first_name}'s profile on Lincc!`,
+      title: `${profile.profile_name || profile.first_name} on Lincc`,
+      text: `Check out ${profile.profile_name || profile.first_name}'s profile on Lincc!`,
       url: shareUrl,
     };
 
@@ -280,7 +280,7 @@ export default function UserProfilePage() {
             <div className="min-w-0 flex-1">
               {/* Name and Age */}
               <h1 className="text-2xl font-bold text-text">
-                {profile.first_name}{age ? `, ${age}` : ''}
+                {profile.profile_name || profile.first_name}{age ? `, ${age}` : ''}
               </h1>
 
               {/* Bio */}
@@ -472,7 +472,7 @@ export default function UserProfilePage() {
             <p className="text-text-muted mb-4">
               {isOwnProfile
                 ? "You haven't hosted any events yet"
-                : `${profile.first_name} hasn't hosted any events yet`}
+                : `${profile.profile_name || profile.first_name} hasn't hosted any events yet`}
             </p>
             {isOwnProfile && (
               <Link to="/event/new">
@@ -489,7 +489,7 @@ export default function UserProfilePage() {
           isOpen={showReport}
           onClose={() => setShowReport(false)}
           reportedUserId={id}
-          reportedUserName={profile.first_name}
+          reportedUserName={profile.profile_name || profile.first_name}
         />
       )}
     </div>

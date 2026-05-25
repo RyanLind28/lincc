@@ -38,7 +38,7 @@ export function VoucherTile({ voucher }: VoucherTileProps) {
       to={`/voucher/${voucher.id}`}
       className="flex-shrink-0 w-[200px] block group"
     >
-      <div className="relative bg-surface rounded-xl border border-border overflow-hidden transition-all group-hover:border-coral group-hover:shadow-md">
+      <div className="relative bg-surface rounded-xl border border-border overflow-hidden transition-all group-hover:border-coral group-hover:shadow-md press-effect">
         {/* Cover */}
         <div className="relative aspect-[5/3] bg-muted overflow-hidden">
           {voucher.cover_image_url ? (

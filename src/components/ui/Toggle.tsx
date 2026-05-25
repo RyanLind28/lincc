@@ -16,7 +16,7 @@ export function Toggle({ checked, onChange, disabled, className }: ToggleProps) 
       onClick={onChange}
       disabled={disabled}
       className={cn(
-        'relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200',
+        'relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
         checked ? 'bg-coral' : 'bg-muted',
         disabled && 'opacity-50 cursor-not-allowed',
         className

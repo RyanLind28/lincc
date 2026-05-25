@@ -28,7 +28,7 @@ export const GradientButton = forwardRef<HTMLButtonElement, GradientButtonProps>
     ref
   ) => {
     const baseStyles =
-      'relative inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 press-effect disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
+      'relative inline-flex items-center justify-center font-semibold rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-surface press-effect disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none';
 
     const variants = {
       primary:
@@ -40,9 +40,9 @@ export const GradientButton = forwardRef<HTMLButtonElement, GradientButtonProps>
     };
 
     const sizes = {
-      sm: 'h-9 px-4 text-sm gap-1.5',
-      md: 'h-11 px-6 text-base gap-2',
-      lg: 'h-13 px-8 text-lg gap-2.5',
+      sm: 'h-[var(--height-button-sm)] px-4 text-sm gap-1.5',
+      md: 'h-[var(--height-button-md)] px-6 text-base gap-2',
+      lg: 'h-[var(--height-button-lg)] px-8 text-lg gap-2.5',
     };
 
     return (

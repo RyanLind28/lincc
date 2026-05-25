@@ -133,7 +133,7 @@ export default function SearchPeoplePage() {
   const showSearch = query.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-background pb-20 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-background pb-20 max-w-5xl mx-auto">
       <Header showBack />
 
       <div className="p-4 space-y-4">
@@ -173,7 +173,7 @@ export default function SearchPeoplePage() {
                 Suggested for you
               </div>
               {!isSuggestionsLoading && suggestions.length > 0 && suggestions.every((s) => s.mutual_count === 0) && (
-                <p className="text-xs text-text-light mt-1">Popular on Lincc — follow a few to unlock friend-based suggestions.</p>
+                <p className="text-xs text-text-light mt-1">Popular on Lincc. Follow a few to unlock friend-based suggestions.</p>
               )}
             </div>
             {isSuggestionsLoading ? (
@@ -198,7 +198,7 @@ export default function SearchPeoplePage() {
                 </div>
                 <p className="text-sm font-semibold text-text mb-1">No one to suggest yet</p>
                 <p className="text-xs text-text-muted max-w-xs mx-auto">
-                  Lincc is still getting started — check back as more people join.
+                  Lincc is still getting started. Check back as more people join.
                 </p>
               </div>
             )}

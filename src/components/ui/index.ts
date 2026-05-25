@@ -28,4 +28,6 @@ export { Toggle, type ToggleProps } from './Toggle';
 export { PlacesAutocomplete, type PlacesAutocompleteProps } from './PlacesAutocomplete';
 export { Skeleton, EventCardSkeleton, EventCardGridSkeleton, ChatItemSkeleton, ChatListSkeleton, ProfileSkeleton, EventDetailSkeleton } from './Skeleton';
 export { WelcomeGuide } from './WelcomeGuide';
+export { SectionHeader } from './SectionHeader';
+export { ImagePickerButtons } from './ImagePickerButtons';
 export { AvatarCropper } from './AvatarCropper';

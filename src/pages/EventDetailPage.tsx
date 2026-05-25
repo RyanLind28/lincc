@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, GradientButton, CategoryIcon, BottomSheet, EventDetailSkeleton } from '../components/ui';
+import { Avatar, GradientButton, CategoryIcon, BottomSheet, EventDetailSkeleton, Input, TextArea } from '../components/ui';
 import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert, Navigation, Copy } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 import { useAuth } from '../contexts/AuthContext';
@@ -236,7 +236,7 @@ export default function EventDetailPage() {
     try {
       sessionStorage.setItem('lincc-create-event-draft', JSON.stringify(draft));
     } catch { /* quota */ }
-    showToast('Event details copied — adjust and publish', 'success');
+    showToast('Event details copied. Adjust and publish', 'success');
     navigate('/event/new');
   };
 
@@ -387,15 +387,15 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-6 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-background pb-24 max-w-5xl mx-auto">
       {/* Header — global unified bar */}
       <Header showBack showLogo showCreateEvent showNotifications />
 
-      <div className="px-4 mt-2">
+      <div className="px-4 lg:px-6 mt-2">
         {/* Event card with cover image */}
-        <div className="bg-surface rounded-2xl shadow-lg overflow-hidden mb-4">
+        <div className="bg-surface rounded-2xl shadow-lg overflow-hidden mb-4 lg:mb-6">
           {/* Cover image */}
-          <div className="relative h-44 bg-muted overflow-hidden">
+          <div className="relative h-44 lg:h-64 bg-muted overflow-hidden">
             <img
               src={event.cover_image_url || CATEGORIES.find(c => c.label === event.category?.name)?.image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=450&fit=crop'}
               alt={event.category?.name || 'Event'}
@@ -562,10 +562,10 @@ export default function EventDetailPage() {
         </div>
 
         {/* Location & Map card */}
-        <div className="bg-surface rounded-2xl shadow-lg p-5 mb-4">
+        <div className="bg-surface rounded-2xl shadow-lg p-5 mb-4 lg:mb-6">
           <div className="flex items-center gap-2 mb-3">
             <MapPin className="h-5 w-5 text-coral" />
-            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">Location</h2>
+            <h2 className="text-section-label">Location</h2>
           </div>
 
           <div className="h-36 lg:h-56 rounded-xl overflow-hidden mb-3">
@@ -609,7 +609,7 @@ export default function EventDetailPage() {
         {/* Participants card */}
         <div className="bg-surface rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">
+            <h2 className="text-section-label">
               Who's going
             </h2>
             <span className="text-sm text-text-muted">
@@ -744,9 +744,9 @@ export default function EventDetailPage() {
         />
       </div>
 
-      {/* Action buttons */}
-      <div className="px-4 mt-4">
-        <div className="flex gap-3">
+      {/* Action buttons — sticky bottom bar */}
+      <div className="fixed bottom-0 left-0 right-0 lg:left-16 z-[var(--z-sticky)] bg-surface/95 backdrop-blur-sm border-t border-border px-4 py-3 safe-bottom">
+        <div className="max-w-5xl mx-auto flex gap-3">
           {renderJoinButton()}
         </div>
       </div>
@@ -758,35 +758,25 @@ export default function EventDetailPage() {
         title="Edit Event"
       >
         <div className="space-y-4 pb-4">
-          <div>
-            <label className="block text-sm font-medium text-text mb-1">Title</label>
-            <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              maxLength={60}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-coral/50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text mb-1">Description</label>
-            <textarea
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              maxLength={280}
-              rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-coral/50 resize-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text mb-1">Venue</label>
-            <input
-              type="text"
-              value={editVenue}
-              onChange={(e) => setEditVenue(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-text focus:outline-none focus:ring-2 focus:ring-coral/50"
-            />
-          </div>
+          <Input
+            label="Title"
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            maxLength={60}
+          />
+          <TextArea
+            label="Description"
+            value={editDescription}
+            onChange={(e) => setEditDescription(e.target.value)}
+            maxLength={280}
+            rows={3}
+            showCount
+          />
+          <Input
+            label="Venue"
+            value={editVenue}
+            onChange={(e) => setEditVenue(e.target.value)}
+          />
           <div>
             <label className="block text-sm font-medium text-text mb-1">
               Capacity: {editCapacity} {editCapacity === 1 ? 'guest' : 'guests'}

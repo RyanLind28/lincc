@@ -131,7 +131,7 @@ export function ShareEventSheet({ isOpen, onClose, event }: ShareEventSheetProps
           >
             <div className="w-10 h-10 rounded-xl bg-coral/10 flex items-center justify-center flex-shrink-0">
               {linkCopied ? (
-                <Check className="h-5 w-5 text-green-500" />
+                <Check className="h-5 w-5 text-success" />
               ) : (
                 <Link2 className="h-5 w-5 text-coral" />
               )}
@@ -183,7 +183,7 @@ export function ShareEventSheet({ isOpen, onClose, event }: ShareEventSheetProps
                       disabled={isSent || isSending}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                         isSent
-                          ? 'bg-green-50 text-green-600'
+                          ? 'bg-success/10 text-success'
                           : 'gradient-primary text-white hover:opacity-90'
                       } disabled:opacity-70`}
                     >

@@ -22,7 +22,7 @@ function StarRow({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${i <= rating ? 'fill-warning text-warning' : 'text-gray-300'}`}
+          className={`h-4 w-4 ${i <= rating ? 'fill-warning text-warning' : 'text-muted'}`}
         />
       ))}
     </div>

@@ -127,7 +127,7 @@ export default function AdminEventsPage() {
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: 'Total', value: analytics?.total, color: 'text-text' },
-            { label: 'Active', value: analytics?.active, color: 'text-green-500' },
+            { label: 'Active', value: analytics?.active, color: 'text-success' },
             { label: 'Joins', value: analytics?.totalJoins, color: 'text-purple' },
           ].map((stat) => (
             <Card key={stat.label} variant="outlined" padding="sm">

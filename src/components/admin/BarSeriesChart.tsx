@@ -121,7 +121,7 @@ export function BarSeriesChart({ title, dates, series, emptyText = 'No activity 
 
                 {isHover && (
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-10 pointer-events-none">
-                    <div className="bg-gray-900 text-white text-[11px] px-2 py-1 rounded-lg whitespace-nowrap shadow-lg ring-1 ring-black/10">
+                    <div className="bg-text text-white text-[11px] px-2 py-1 rounded-lg whitespace-nowrap shadow-lg ring-1 ring-black/10">
                       <div className="font-medium mb-0.5">{formatDateShort(date)}</div>
                       {series.map((s, j) => (
                         <div key={s.key} className="flex items-center gap-1.5">

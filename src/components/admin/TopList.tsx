@@ -35,7 +35,7 @@ export function TopList({ title, items, isLoading, countSuffix, emptyText = 'No 
               <span className="w-5 text-xs text-text-muted font-mono">{i + 1}.</span>
               {item.avatar !== undefined && (
                 item.avatar ? (
-                  <img src={item.avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  <img src={item.avatar} alt="" loading="lazy" className="w-6 h-6 rounded-full object-cover" />
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-coral/10 flex items-center justify-center text-[10px] font-semibold text-coral">
                     {item.label.charAt(0).toUpperCase()}

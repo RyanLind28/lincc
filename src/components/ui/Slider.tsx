@@ -78,7 +78,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
               '[&::-moz-range-thumb]:cursor-pointer'
             )}
             style={{
-              background: `linear-gradient(to right, #FF6B6B 0%, #845EF7 ${percentage}%, #E5E7EB ${percentage}%, #E5E7EB 100%)`,
+              background: `linear-gradient(to right, #FF6B6B 0%, #845EF7 ${percentage}%, var(--color-border) ${percentage}%, var(--color-border) 100%)`,
             }}
             {...props}
           />
