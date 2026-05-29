@@ -4,6 +4,7 @@ import { BottomSheet, Avatar } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getFollowing, type FollowProfile } from '../../services/followService';
+import { getDisplayName } from '../../lib/utils';
 import { createNotification } from '../../services/notificationService';
 import { getOrCreateConversation, sendDirectMessage } from '../../services/chat/dmService';
 import type { EventWithDetails, NotificationType } from '../../types';
@@ -172,11 +173,11 @@ export function ShareEventSheet({ isOpen, onClose, event }: ShareEventSheetProps
                   >
                     <Avatar
                       src={friend.avatar_url}
-                      name={friend.first_name}
+                      name={getDisplayName(friend)}
                       size="sm"
                     />
                     <span className="flex-1 text-sm font-medium text-text truncate">
-                      {friend.first_name}
+                      {getDisplayName(friend)}
                     </span>
                     <button
                       onClick={() => handleSendToFriend(friend)}

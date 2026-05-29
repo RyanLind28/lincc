@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useEventParticipants } from '../hooks/useEventParticipants';
 import { supabase } from '../lib/supabase';
-import { calculateAge } from '../lib/utils';
+import { calculateAge, getDisplayName } from '../lib/utils';
 import type { EventWithDetails, ParticipantStatus } from '../types';
 
 export default function ManageParticipantsPage() {
@@ -210,7 +210,7 @@ export default function ManageParticipantsPage() {
                     <Link to={`/user/${participant.user_id}`}>
                       <Avatar
                         src={participant.user?.avatar_url}
-                        name={participant.user?.first_name || 'User'}
+                        name={getDisplayName(participant.user)}
                         size="lg"
                       />
                     </Link>
@@ -219,7 +219,7 @@ export default function ManageParticipantsPage() {
                         to={`/user/${participant.user_id}`}
                         className="font-semibold text-text hover:text-coral transition-colors"
                       >
-                        {participant.user?.first_name}
+                        {getDisplayName(participant.user)}
                         {age && `, ${age}`}
                       </Link>
                       {participant.user?.bio && (
@@ -250,7 +250,7 @@ export default function ManageParticipantsPage() {
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={() =>
-                          handleReject(participant.user_id, participant.user?.first_name || 'User')
+                          handleReject(participant.user_id, getDisplayName(participant.user))
                         }
                         disabled={isUpdating}
                         className="flex-1 py-2 px-4 rounded-xl border border-border text-text-muted hover:text-error hover:border-error transition-colors flex items-center justify-center gap-2"
@@ -260,7 +260,7 @@ export default function ManageParticipantsPage() {
                       </button>
                       <button
                         onClick={() =>
-                          handleApprove(participant.user_id, participant.user?.first_name || 'User')
+                          handleApprove(participant.user_id, getDisplayName(participant.user))
                         }
                         disabled={isUpdating}
                         className="flex-1 py-2 px-4 rounded-xl bg-coral text-white hover:bg-coral/90 transition-colors flex items-center justify-center gap-2"
@@ -275,7 +275,7 @@ export default function ManageParticipantsPage() {
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={() =>
-                          handleReject(participant.user_id, participant.user?.first_name || 'User')
+                          handleReject(participant.user_id, getDisplayName(participant.user))
                         }
                         disabled={isUpdating}
                         className="flex-1 py-2 px-4 rounded-xl border border-border text-text-muted hover:text-error hover:border-error transition-colors flex items-center justify-center gap-2"
@@ -297,7 +297,7 @@ export default function ManageParticipantsPage() {
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={() =>
-                          handleApprove(participant.user_id, participant.user?.first_name || 'User')
+                          handleApprove(participant.user_id, getDisplayName(participant.user))
                         }
                         disabled={isUpdating}
                         className="flex-1 py-2 px-4 rounded-xl bg-coral text-white hover:bg-coral/90 transition-colors flex items-center justify-center gap-2"

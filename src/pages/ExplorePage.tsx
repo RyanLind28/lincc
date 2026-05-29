@@ -132,6 +132,7 @@ export default function ExplorePage() {
     },
     host: {
       first_name: event.host?.first_name || 'Host',
+      profile_name: event.host?.profile_name ?? null,
       avatar_url: event.host?.avatar_url || null,
     },
     venue_name: event.venue_name,

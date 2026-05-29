@@ -46,7 +46,8 @@ export function ProtectedRoute({
 
   // Check profile completion (all required fields: first_name, dob, gender, tags, avatar_url).
   // Business accounts have their own multi-step wizard at /onboarding/business
-  // (verify → logo+bio → location → install).
+  // (welcome → logo+bio → location → install). Verification is a separate,
+  // optional step from the dashboard, not part of onboarding.
   if (requireProfile && !isProfileComplete) {
     const target = profile?.account_type === 'business' ? '/onboarding/business' : '/onboarding';
     logger.log(LOG_PREFIX, location.pathname, '→ redirect to', target, '(profile incomplete)');

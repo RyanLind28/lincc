@@ -9,7 +9,7 @@ import {
 } from '../../services/reviews';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { formatRelativeTime } from '../../lib/utils';
+import { formatRelativeTime, getDisplayName } from '../../lib/utils';
 
 interface GuestReviewsListProps {
   eventId: string;
@@ -104,7 +104,7 @@ export function GuestReviewsList({ eventId, hostId }: GuestReviewsListProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-sm font-medium text-text">
-                      {review.guest?.first_name || 'Guest'}
+                      {getDisplayName(review.guest, 'Guest')}
                     </span>
                     <StarRow rating={review.guest_rating} />
                     <span className="text-xs text-text-light ml-auto">

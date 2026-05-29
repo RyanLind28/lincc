@@ -4,6 +4,7 @@ import { Header } from '../components/layout';
 import { Input, Avatar, ChatListSkeleton } from '../components/ui';
 import { Search, Users, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getDisplayName } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getSuggestedUsers,
@@ -15,6 +16,7 @@ import { FollowButton } from '../components/social/FollowButton';
 interface UserResult {
   id: string;
   first_name: string | null;
+  profile_name: string | null;
   avatar_url: string | null;
   bio: string | null;
   tags: string[] | null;
@@ -61,8 +63,8 @@ export default function SearchPeoplePage() {
       const sanitized = query.trim().replace(/[,.()\[\]]/g, '');
       const { data } = await supabase
         .from('profiles')
-        .select('id, first_name, avatar_url, bio, tags')
-        .ilike('first_name', `%${sanitized}%`)
+        .select('id, first_name, profile_name, avatar_url, bio, tags')
+        .or(`profile_name.ilike.%${sanitized}%,first_name.ilike.%${sanitized}%`)
         .neq('id', user?.id || '')
         .eq('status', 'active')
         .limit(20);
@@ -88,10 +90,10 @@ export default function SearchPeoplePage() {
       className="flex items-center gap-3 p-4 hover:bg-background transition-colors"
     >
       <Link to={`/user/${person.id}`} className="flex items-center gap-3 flex-1 min-w-0">
-        <Avatar src={person.avatar_url} name={person.first_name ?? 'User'} size="md" />
+        <Avatar src={person.avatar_url} name={getDisplayName(person)} size="md" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-text truncate">{person.first_name || 'User'}</p>
+            <p className="font-medium text-text truncate">{getDisplayName(person)}</p>
             {person.mutual_count !== undefined && person.mutual_count > 0 && (
               <span className="flex items-center gap-0.5 text-[10px] font-medium text-purple flex-shrink-0">
                 <Users className="h-2.5 w-2.5" />
@@ -184,6 +186,7 @@ export default function SearchPeoplePage() {
                   renderRow({
                     id: s.id,
                     first_name: s.first_name,
+                    profile_name: s.profile_name,
                     avatar_url: s.avatar_url,
                     bio: s.bio,
                     tags: s.tags,

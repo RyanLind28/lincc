@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Clock, MapPin, Bookmark, Users, ChevronRight } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, getDisplayName } from '../../lib/utils';
 import { Avatar } from './Avatar';
 import { GradientButton } from './GradientButton';
 import { CategoryIcon } from './CategoryIcon';
@@ -16,6 +16,7 @@ export interface EventCardEvent {
   };
   host: {
     first_name: string;
+    profile_name?: string | null;
     age?: number;
     avatar_url?: string | null;
   };
@@ -134,7 +135,7 @@ export function EventCard({
         <div className="flex items-center gap-2 mb-3">
           <Avatar
             src={event.business?.logo_url ?? event.host.avatar_url}
-            name={event.business?.name ?? event.host.first_name}
+            name={event.business?.name ?? getDisplayName(event.host)}
             size="sm"
           />
           <span className="text-sm text-text inline-flex items-center gap-1">
@@ -145,7 +146,7 @@ export function EventCard({
               </>
             ) : (
               <>
-                {event.host.first_name}
+                {getDisplayName(event.host)}
                 {event.host.age && `, ${event.host.age}`}
               </>
             )}

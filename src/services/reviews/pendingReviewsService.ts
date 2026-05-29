@@ -8,7 +8,7 @@ export interface PendingHostReview {
     cover_image_url: string | null;
     start_time: string;
     venue_name: string | null;
-    host: { id: string; first_name: string; avatar_url: string | null };
+    host: { id: string; first_name: string; profile_name: string | null; avatar_url: string | null };
   };
 }
 
@@ -21,7 +21,7 @@ export interface PendingGuestReview {
     start_time: string;
     venue_name: string | null;
   };
-  guest: { id: string; first_name: string; avatar_url: string | null };
+  guest: { id: string; first_name: string; profile_name: string | null; avatar_url: string | null };
 }
 
 export type PendingReview = PendingHostReview | PendingGuestReview;
@@ -33,7 +33,7 @@ export async function fetchPendingHostReviews(userId: string): Promise<PendingHo
     .select(`
       event:events!event_participants_event_id_fkey(
         id, title, cover_image_url, start_time, venue_name, status, host_id,
-        host:profiles!host_id(id, first_name, avatar_url)
+        host:profiles!host_id(id, first_name, profile_name, avatar_url)
       )
     `)
     .eq('user_id', userId)
@@ -44,7 +44,7 @@ export async function fetchPendingHostReviews(userId: string): Promise<PendingHo
     .filter((e): e is {
       id: string; title: string; cover_image_url: string | null; start_time: string;
       venue_name: string | null; status: string; host_id: string;
-      host: { id: string; first_name: string; avatar_url: string | null };
+      host: { id: string; first_name: string; profile_name: string | null; avatar_url: string | null };
     } => !!e && (e as { status: string }).status === 'expired');
 
   if (candidates.length === 0) return [];
@@ -88,7 +88,7 @@ export async function fetchPendingGuestReviews(userId: string): Promise<PendingG
     .from('event_participants')
     .select(`
       event_id, user_id,
-      guest:profiles!event_participants_user_id_fkey(id, first_name, avatar_url)
+      guest:profiles!event_participants_user_id_fkey(id, first_name, profile_name, avatar_url)
     `)
     .in('event_id', eventIds)
     .eq('status', 'approved')
@@ -111,7 +111,7 @@ export async function fetchPendingGuestReviews(userId: string): Promise<PendingG
     if (reviewedKey.has(key)) continue;
     const event = eventsById.get(p.event_id);
     if (!event) continue;
-    const guest = (p as unknown as { guest: { id: string; first_name: string; avatar_url: string | null } | null }).guest;
+    const guest = (p as unknown as { guest: { id: string; first_name: string; profile_name: string | null; avatar_url: string | null } | null }).guest;
     if (!guest) continue;
     result.push({
       kind: 'guest',

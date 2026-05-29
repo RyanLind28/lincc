@@ -10,6 +10,7 @@ import { useNow } from '../hooks/useNow';
 import { ChatStatusPill } from '../components/features/ChatStatusPill';
 import { ReportMessageDialog } from '../components/social/ReportMessageDialog';
 import { supabase } from '../lib/supabase';
+import { getDisplayName } from '../lib/utils';
 import type { EventWithDetails } from '../types';
 
 export default function ChatRoomPage() {
@@ -251,7 +252,7 @@ export default function ChatRoomPage() {
                               <Link to={`/user/${msg.sender_id}`}>
                                 <Avatar
                                   src={msg.sender?.avatar_url}
-                                  name={msg.sender?.first_name || 'User'}
+                                  name={getDisplayName(msg.sender)}
                                   size="sm"
                                 />
                               </Link>
@@ -266,7 +267,7 @@ export default function ChatRoomPage() {
                           {showName && (
                             <Link to={`/user/${msg.sender_id}`} className="hover:underline">
                               <p className="text-xs text-text-muted mb-1 ml-1">
-                                {msg.sender?.first_name}
+                                {getDisplayName(msg.sender)}
                               </p>
                             </Link>
                           )}
@@ -287,7 +288,7 @@ export default function ChatRoomPage() {
                                 onClick={() => setReportingMessage({
                                   id: msg.id,
                                   senderId: msg.sender_id,
-                                  senderName: msg.sender?.first_name || 'this user',
+                                  senderName: getDisplayName(msg.sender, 'this user'),
                                   content: msg.content,
                                 })}
                                 aria-label="Report message"

@@ -14,7 +14,7 @@ export interface GuestReview {
   disputed_at: string | null;
   disputed_by: string | null;
   dispute_reason: string | null;
-  guest?: { first_name: string; avatar_url: string | null } | null;
+  guest?: { first_name: string; profile_name: string | null; avatar_url: string | null } | null;
 }
 
 export async function getGuestReviewsForEvent(eventId: string) {
@@ -24,7 +24,7 @@ export async function getGuestReviewsForEvent(eventId: string) {
       id, event_id, host_id, guest_id, guest_rating, comment, created_at,
       guest_reply, guest_replied_at,
       is_disputed, disputed_at, disputed_by, dispute_reason,
-      guest:profiles!guest_reviews_guest_id_fkey(first_name, avatar_url)
+      guest:profiles!guest_reviews_guest_id_fkey(first_name, profile_name, avatar_url)
     `)
     .eq('event_id', eventId)
     .order('created_at', { ascending: false });

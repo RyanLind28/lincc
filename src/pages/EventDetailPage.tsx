@@ -17,7 +17,7 @@ import { useBookmarks } from '../hooks/useBookmarks';
 import { updateEvent, deleteEvent } from '../services/events';
 import { getOrCreateConversation } from '../services/chat/dmService';
 import { supabase } from '../lib/supabase';
-import { cn, calculateAge, calculateDistance } from '../lib/utils';
+import { cn, calculateAge, calculateDistance, getDisplayName } from '../lib/utils';
 import { useUserLocation } from '../hooks/useUserLocation';
 import type { EventWithDetails } from '../types';
 
@@ -546,13 +546,13 @@ export default function EventDetailPage() {
               >
                 <Avatar
                   src={event.host.avatar_url}
-                  name={event.host.first_name}
+                  name={getDisplayName(event.host)}
                   size="sm"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-text-muted">Hosted by</p>
                   <p className="font-medium text-text group-hover:text-coral transition-colors truncate">
-                    {event.host.first_name}{hostAge ? `, ${hostAge}` : ''}
+                    {getDisplayName(event.host)}{hostAge ? `, ${hostAge}` : ''}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-text-light group-hover:text-coral transition-colors flex-shrink-0" />
@@ -625,7 +625,7 @@ export default function EventDetailPage() {
                 <Link to={`/user/${event.host.id}`} className="relative">
                   <Avatar
                     src={event.host.avatar_url}
-                    name={event.host.first_name}
+                    name={getDisplayName(event.host)}
                     size="md"
                   />
                   <span className="absolute -bottom-1 -right-1 bg-coral text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full">
@@ -638,11 +638,11 @@ export default function EventDetailPage() {
                   <Link key={participant.id} to={`/user/${participant.user_id}`} className="flex flex-col items-center gap-1">
                     <Avatar
                       src={participant.user?.avatar_url}
-                      name={participant.user?.first_name || 'User'}
+                      name={getDisplayName(participant.user)}
                       size="md"
                     />
                     <span className="text-xs text-text-muted truncate max-w-[4rem]">
-                      {participant.user?.first_name || 'User'}
+                      {getDisplayName(participant.user)}
                     </span>
                   </Link>
                 ))}
@@ -667,7 +667,7 @@ export default function EventDetailPage() {
                 <div className="relative z-10">
                   <Avatar
                     src={event.host.avatar_url}
-                    name={event.host.first_name}
+                    name={getDisplayName(event.host)}
                     size="sm"
                   />
                 </div>
@@ -675,7 +675,7 @@ export default function EventDetailPage() {
                   <div key={participant.id} className="relative" style={{ zIndex: 9 - idx }}>
                     <Avatar
                       src={participant.user?.avatar_url}
-                      name={participant.user?.first_name || 'User'}
+                      name={getDisplayName(participant.user)}
                       size="sm"
                     />
                   </div>
@@ -825,7 +825,7 @@ export default function EventDetailPage() {
           isOpen={showReportDialog}
           onClose={() => setShowReportDialog(false)}
           reportedUserId={event.host_id}
-          reportedUserName={event.host?.first_name || 'Host'}
+          reportedUserName={getDisplayName(event.host, 'Host')}
           eventId={event.id}
         />
       )}

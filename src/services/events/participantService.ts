@@ -1,4 +1,4 @@
-import { logger } from '../../lib/utils';
+import { logger, getDisplayName } from '../../lib/utils';
 // Participant service for event join/leave functionality
 
 import { supabase } from '../../lib/supabase';
@@ -58,10 +58,10 @@ export async function requestToJoin(
         // Fetch event and user info for notification
         const [eventRes, userRes] = await Promise.all([
           supabase.from('events').select('host_id, title').eq('id', eventId).single(),
-          supabase.from('profiles').select('first_name').eq('id', userId).single(),
+          supabase.from('profiles').select('first_name, profile_name').eq('id', userId).single(),
         ]);
         if (eventRes.data && userRes.data) {
-          const userName = userRes.data.first_name || 'Someone';
+          const userName = getDisplayName(userRes.data, 'Someone');
           const eventTitle = eventRes.data.title || 'an event';
           createNotification(
             eventRes.data.host_id,
@@ -119,10 +119,10 @@ export async function cancelRequest(eventId: string, userId: string): Promise<Pa
   // Notify host that user left
   const [eventRes, userRes] = await Promise.all([
     supabase.from('events').select('host_id, title').eq('id', eventId).single(),
-    supabase.from('profiles').select('first_name').eq('id', userId).single(),
+    supabase.from('profiles').select('first_name, profile_name').eq('id', userId).single(),
   ]);
   if (eventRes.data && userRes.data && eventRes.data.host_id !== userId) {
-    const userName = userRes.data.first_name || 'Someone';
+    const userName = getDisplayName(userRes.data, 'Someone');
     const eventTitle = eventRes.data.title || 'your event';
     createNotification(
       eventRes.data.host_id,

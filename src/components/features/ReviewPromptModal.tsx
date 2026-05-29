@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Star } from 'lucide-react';
 import { Avatar, GradientButton, Modal, TextArea } from '../ui';
+import { getDisplayName } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import {
@@ -172,11 +173,11 @@ export function ReviewPromptModal({ items, onClose, onItemHandled }: ReviewPromp
               <Avatar src={current.event.host.avatar_url} size="md" />
               <div className="flex-1">
                 <p className="text-sm text-text-muted">Your host</p>
-                <p className="font-medium text-text">{current.event.host.first_name}</p>
+                <p className="font-medium text-text">{getDisplayName(current.event.host)}</p>
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-text mb-2">Rate {current.event.host.first_name}</p>
+              <p className="text-sm font-medium text-text mb-2">Rate {getDisplayName(current.event.host)}</p>
               <StarRow rating={hostRating} onChange={setHostRating} size="lg" />
             </div>
             <div>
@@ -190,11 +191,11 @@ export function ReviewPromptModal({ items, onClose, onItemHandled }: ReviewPromp
               <Avatar src={current.guest.avatar_url} size="md" />
               <div className="flex-1">
                 <p className="text-sm text-text-muted">Your guest</p>
-                <p className="font-medium text-text">{current.guest.first_name}</p>
+                <p className="font-medium text-text">{getDisplayName(current.guest)}</p>
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-text mb-2">Rate {current.guest.first_name}</p>
+              <p className="text-sm font-medium text-text mb-2">Rate {getDisplayName(current.guest)}</p>
               <StarRow rating={guestRating} onChange={setGuestRating} size="lg" />
             </div>
           </>

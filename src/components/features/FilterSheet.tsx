@@ -7,12 +7,13 @@ import {
   CategoryIcon,
   QUICK_DATE_OPTIONS,
 } from '../ui';
+import type { Filters } from '../../hooks/useFilters';
 
 interface FilterSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  filters: { timeRange: string | null; categories: string[] };
-  updateFilter: (key: string, value: unknown) => void;
+  filters: Filters;
+  updateFilter: <K extends keyof Filters>(key: K, value: Filters[K]) => void;
   distance: number;
   setDistance: (d: number) => void;
   showDatePicker: boolean;

@@ -55,6 +55,7 @@ export async function getFollowingCount(userId: string): Promise<number> {
 export interface FollowProfile {
   id: string;
   first_name: string;
+  profile_name: string | null;
   avatar_url: string | null;
   bio: string | null;
 }
@@ -62,7 +63,7 @@ export interface FollowProfile {
 export async function getFollowers(userId: string): Promise<FollowProfile[]> {
   const { data, error } = await supabase
     .from('follows')
-    .select('follower:profiles!follower_id(id, first_name, avatar_url, bio)')
+    .select('follower:profiles!follower_id(id, first_name, profile_name, avatar_url, bio)')
     .eq('followed_id', userId);
 
   if (error || !data) return [];
@@ -72,7 +73,7 @@ export async function getFollowers(userId: string): Promise<FollowProfile[]> {
 export async function getFollowing(userId: string): Promise<FollowProfile[]> {
   const { data, error } = await supabase
     .from('follows')
-    .select('followed:profiles!followed_id(id, first_name, avatar_url, bio)')
+    .select('followed:profiles!followed_id(id, first_name, profile_name, avatar_url, bio)')
     .eq('follower_id', userId);
 
   if (error || !data) return [];
@@ -92,6 +93,7 @@ export async function getFollowingIds(userId: string): Promise<Set<string>> {
 export interface SuggestedUser {
   id: string;
   first_name: string | null;
+  profile_name: string | null;
   avatar_url: string | null;
   bio: string | null;
   tags: string[] | null;

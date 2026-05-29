@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDMChat } from '../hooks/useDMChat';
 import { ReportMessageDialog } from '../components/social/ReportMessageDialog';
 import { supabase } from '../lib/supabase';
+import { getDisplayName } from '../lib/utils';
 import type { Profile, DirectMessageWithSender } from '../types';
 
 export default function DMChatRoomPage() {
@@ -115,10 +116,10 @@ export default function DMChatRoomPage() {
             <Link to={`/user/${otherUser.id}`} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
               <Avatar
                 src={otherUser.avatar_url}
-                name={otherUser.first_name}
+                name={getDisplayName(otherUser)}
                 size="sm"
               />
-              <span className="font-semibold text-text text-sm">{otherUser.first_name}</span>
+              <span className="font-semibold text-text text-sm">{getDisplayName(otherUser)}</span>
             </Link>
           ) : (
             <span className="text-sm font-semibold text-text">Chat</span>
@@ -135,7 +136,7 @@ export default function DMChatRoomPage() {
             </div>
             <p className="font-medium text-text mb-1">Start the conversation</p>
             <p className="text-sm text-text-muted">
-              Send a message to {otherUser?.first_name || 'your friend'}!
+              Send a message to {getDisplayName(otherUser, 'your friend')}!
             </p>
           </div>
         ) : (
@@ -170,7 +171,7 @@ export default function DMChatRoomPage() {
                               <Link to={`/user/${msg.sender_id}`}>
                                 <Avatar
                                   src={msg.sender?.avatar_url}
-                                  name={msg.sender?.first_name || 'User'}
+                                  name={getDisplayName(msg.sender)}
                                   size="sm"
                                 />
                               </Link>
@@ -205,7 +206,7 @@ export default function DMChatRoomPage() {
                                 onClick={() => setReportingMessage({
                                   id: msg.id,
                                   senderId: msg.sender_id,
-                                  senderName: msg.sender?.first_name || 'this user',
+                                  senderName: getDisplayName(msg.sender, 'this user'),
                                   content: msg.content,
                                 })}
                                 aria-label="Report message"

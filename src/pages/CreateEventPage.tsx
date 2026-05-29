@@ -441,7 +441,9 @@ export default function CreateEventPage() {
     return '';
   };
 
-  // Block business accounts from filling out the form until they're approved.
+  // Block business accounts only when their account isn't active (suspended,
+  // inactive or a rejected application). Approved businesses — the default —
+  // pass straight through; verification is optional and unrelated to this.
   // Personal accounts always pass through.
   if (profile?.account_type === 'business' && business && business.status !== 'approved') {
     return (
@@ -451,20 +453,13 @@ export default function CreateEventPage() {
           <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <ShieldCheck className="h-8 w-8 text-warning" />
           </div>
-          <h1 className="text-xl font-bold text-text mb-2">Verification needed</h1>
+          <h1 className="text-xl font-bold text-text mb-2">Account not active</h1>
           <p className="text-sm text-text-muted mb-4">
-            You can publish events once your business is approved. Submit your verification documents to speed it up.
+            Your business account isn't active right now, so you can't publish events. Contact support if you think this is a mistake.
           </p>
-          <div className="flex gap-2 justify-center">
-            <Link to="/business/verify">
-              <GradientButton size="md">Verify business</GradientButton>
-            </Link>
-            <Link to="/business/dashboard">
-              <button className="h-10 px-4 rounded-xl border border-border text-text hover:border-coral text-sm font-medium">
-                Open dashboard
-              </button>
-            </Link>
-          </div>
+          <Link to="/business/dashboard">
+            <GradientButton size="md">Open dashboard</GradientButton>
+          </Link>
         </div>
       </div>
     );

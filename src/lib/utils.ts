@@ -61,6 +61,19 @@ export function formatEventTime(date: Date | string): string {
   return `${target.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${time}`;
 }
 
+// Resolve the public-facing display name for a person. We collect a real name
+// (first_name/last_name — kept for admin/moderation) plus a display name
+// (profile_name, the "username"). User-facing screens should always show the
+// display name; this falls back to first_name, then a generic label, so it's
+// safe to call on partially-loaded profiles.
+export function getDisplayName(
+  person: { profile_name?: string | null; first_name?: string | null } | null | undefined,
+  fallback = 'User',
+): string {
+  const name = person?.profile_name?.trim() || person?.first_name?.trim();
+  return name || fallback;
+}
+
 // Calculate age from date of birth
 export function calculateAge(dob: Date | string): number {
   const birthDate = typeof dob === 'string' ? new Date(dob) : dob;

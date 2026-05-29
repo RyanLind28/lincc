@@ -7,7 +7,6 @@ import {
   FilterPills,
   EventCardGrid,
   GradientButton,
-  CategoryIcon,
   VoucherTile,
   EventCardGridSkeleton,
   SectionHeader,

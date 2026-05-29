@@ -5,7 +5,7 @@ import { Avatar, Spinner } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { getFollowers, getFollowing, type FollowProfile } from '../services/followService';
 import { supabase } from '../lib/supabase';
-import { cn } from '../lib/utils';
+import { cn, getDisplayName } from '../lib/utils';
 
 type Tab = 'followers' | 'following';
 
@@ -33,10 +33,10 @@ export default function FollowListPage() {
       if (id && id !== user?.id) {
         const { data } = await supabase
           .from('profiles')
-          .select('first_name')
+          .select('first_name, profile_name')
           .eq('id', id)
           .single();
-        setUserName(data?.first_name || '');
+        setUserName(getDisplayName(data, ''));
       }
 
       const [followerList, followingList] = await Promise.all([
@@ -113,9 +113,9 @@ export default function FollowListPage() {
               to={`/user/${person.id}`}
               className="flex items-center gap-3 p-4 hover:bg-background transition-colors"
             >
-              <Avatar src={person.avatar_url} name={person.first_name} size="md" />
+              <Avatar src={person.avatar_url} name={getDisplayName(person)} size="md" />
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-text truncate">{person.first_name}</p>
+                <p className="font-medium text-text truncate">{getDisplayName(person)}</p>
                 {person.bio && (
                   <p className="text-sm text-text-muted truncate">{person.bio}</p>
                 )}

@@ -19,7 +19,7 @@ import {
   type BusinessDashboardData,
   type BusinessDashboardEvent,
 } from '../services/businessService';
-import { formatRelativeTime } from '../lib/utils';
+import { formatRelativeTime, getDisplayName } from '../lib/utils';
 import type { PlaceDetails } from '../services/placesService';
 
 type Tab = 'overview' | 'events' | 'vouchers' | 'locations' | 'reviews' | 'profile';
@@ -303,7 +303,10 @@ export default function BusinessDashboardPage() {
           />
         </div>
 
-        {/* Quick actions — only when approved */}
+        {/* Quick actions — shown for any active (approved) business. Only a
+            suspended/inactive/rejected account sees the status card instead.
+            Verification is optional and handled separately (the "Verified"
+            button in the header above). */}
         {isBusinessApproved ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Link to="/event/new">
@@ -335,19 +338,19 @@ export default function BusinessDashboardPage() {
               <ShieldCheck className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
               <div className="space-y-2">
                 <h3 className="font-semibold text-text">
-                  {business.status === 'rejected' ? 'Application needs changes' : 'Get verified'}
+                  {business.status === 'rejected' ? 'Application needs changes' : 'Account not active'}
                 </h3>
                 <p className="text-sm text-text-muted">
                   {business.status === 'rejected'
                     ? 'Update your details based on the feedback above and re-submit. We usually re-review within 24 hours.'
-                    : 'You can publish events and vouchers once your business is verified. Upload your documents to speed it up.'}
+                    : "Your business account isn't active right now, so you can't publish events or vouchers. Contact support if you think this is a mistake."}
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <Link to="/business/verify">
-                    <GradientButton size="sm">
-                      {business.status === 'rejected' ? 'Re-submit' : 'Get verified'}
-                    </GradientButton>
-                  </Link>
+                  {business.status === 'rejected' && (
+                    <Link to="/pending-approval">
+                      <GradientButton size="sm">Re-submit</GradientButton>
+                    </Link>
+                  )}
                   <Link to="/business/edit">
                     <button className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-border text-text-muted hover:text-text text-sm font-medium">
                       <Pencil className="h-3.5 w-3.5" /> Edit profile
@@ -633,7 +636,7 @@ export default function BusinessDashboardPage() {
                   <div key={r.id} className="bg-surface rounded-xl border border-border p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <Avatar src={r.guest?.avatar_url ?? null} size="sm" />
-                      <span className="text-sm font-medium text-text">{r.guest?.first_name ?? 'Guest'}</span>
+                      <span className="text-sm font-medium text-text">{getDisplayName(r.guest, 'Guest')}</span>
                       <span className="text-xs text-text-light ml-auto">{formatRelativeTime(r.created_at)}</span>
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">

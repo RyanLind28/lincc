@@ -9,6 +9,8 @@ const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get('email') ?? '');
+  // Set when we bounce a returning user here from the signup page.
+  const alreadyHasAccount = searchParams.get('exists') === '1';
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signInWithProvider } = useAuth();
@@ -68,6 +70,12 @@ export default function LoginPage() {
               Sign Up
             </Link>
           </div>
+
+          {alreadyHasAccount && (
+            <div className="mb-5 rounded-xl border border-coral/30 bg-coral/5 p-3 text-sm text-text">
+              You already have an account with this email. Please sign in below.
+            </div>
+          )}
 
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <Input

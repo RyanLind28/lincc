@@ -9,7 +9,7 @@ import { Calendar, Users, ChevronRight, Share2, Clock, MoreVertical, ShieldAlert
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
-import { calculateAge } from '../lib/utils';
+import { calculateAge, getDisplayName } from '../lib/utils';
 import { followUser, unfollowUser, isFollowing, getFollowerCount, getFollowingCount } from '../services/followService';
 import { blockUser, unblockUser, isUserBlocked } from '../services/blockService';
 import { getOrCreateConversation } from '../services/chat/dmService';
@@ -211,8 +211,8 @@ export default function UserProfilePage() {
     if (!profile) return;
     const shareUrl = `${window.location.origin}/user/${id}`;
     const shareData = {
-      title: `${profile.profile_name || profile.first_name} on Lincc`,
-      text: `Check out ${profile.profile_name || profile.first_name}'s profile on Lincc!`,
+      title: `${getDisplayName(profile)} on Lincc`,
+      text: `Check out ${getDisplayName(profile)}'s profile on Lincc!`,
       url: shareUrl,
     };
 
@@ -270,7 +270,7 @@ export default function UserProfilePage() {
               <div className="h-[84px] w-[84px] bg-surface rounded-full flex items-center justify-center">
                 <Avatar
                   src={profile.avatar_url}
-                  name={profile.first_name}
+                  name={getDisplayName(profile)}
                   size="xl"
                 />
               </div>
@@ -280,7 +280,7 @@ export default function UserProfilePage() {
             <div className="min-w-0 flex-1">
               {/* Name and Age */}
               <h1 className="text-2xl font-bold text-text">
-                {profile.profile_name || profile.first_name}{age ? `, ${age}` : ''}
+                {getDisplayName(profile)}{age ? `, ${age}` : ''}
               </h1>
 
               {/* Bio */}
@@ -472,7 +472,7 @@ export default function UserProfilePage() {
             <p className="text-text-muted mb-4">
               {isOwnProfile
                 ? "You haven't hosted any events yet"
-                : `${profile.profile_name || profile.first_name} hasn't hosted any events yet`}
+                : `${getDisplayName(profile)} hasn't hosted any events yet`}
             </p>
             {isOwnProfile && (
               <Link to="/event/new">
@@ -489,7 +489,7 @@ export default function UserProfilePage() {
           isOpen={showReport}
           onClose={() => setShowReport(false)}
           reportedUserId={id}
-          reportedUserName={profile.profile_name || profile.first_name}
+          reportedUserName={getDisplayName(profile)}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Clock, Bookmark } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, getDisplayName } from '../../lib/utils';
 import { Avatar } from './Avatar';
 import { CategoryIcon } from './CategoryIcon';
 import { CATEGORIES } from '../../data/categories';
@@ -16,6 +16,7 @@ export interface GridEventData {
   subcategory?: string;
   host: {
     first_name: string;
+    profile_name?: string | null;
     avatar_url?: string | null;
   };
   business?: {
@@ -188,10 +189,10 @@ function EventCardTile({
           <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2">
             <Avatar
               src={event.business?.logo_url ?? event.host.avatar_url}
-              name={event.business?.name ?? event.host.first_name}
+              name={event.business?.name ?? getDisplayName(event.host)}
               size="xs"
             />
-            <span className="text-xs text-text-muted truncate">{event.business?.name ?? event.host.first_name}</span>
+            <span className="text-xs text-text-muted truncate">{event.business?.name ?? getDisplayName(event.host)}</span>
           </div>
           <CapacityDots filled={event.participant_count + 1} total={event.capacity + 1} />
         </div>

@@ -75,7 +75,9 @@ export default function CreateVoucherPage() {
     );
   }
 
-  // Business accounts that aren't approved yet: friendly verify-prompt.
+  // Business accounts whose account isn't active (suspended/inactive/rejected).
+  // Approved businesses — the default — pass straight through. Verification is
+  // optional and unrelated to publishing.
   if (!selectedBusiness || !isBusinessApproved) {
     return (
       <div className="min-h-screen bg-background max-w-2xl mx-auto">
@@ -84,18 +86,11 @@ export default function CreateVoucherPage() {
           <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Store className="h-8 w-8 text-warning" />
           </div>
-          <h1 className="text-xl font-bold text-text mb-2">Verification needed</h1>
+          <h1 className="text-xl font-bold text-text mb-2">Account not active</h1>
           <p className="text-sm text-text-muted mb-4">
-            You can publish vouchers once your business is approved. Submit your verification documents to speed it up.
+            Your business account isn't active right now, so you can't publish vouchers. Contact support if you think this is a mistake.
           </p>
-          <div className="flex gap-2 justify-center">
-            <Link to="/business/verify"><GradientButton size="md">Verify business</GradientButton></Link>
-            <Link to="/business/dashboard">
-              <button className="h-10 px-4 rounded-xl border border-border text-text hover:border-coral text-sm font-medium">
-                Open dashboard
-              </button>
-            </Link>
-          </div>
+          <Link to="/business/dashboard"><GradientButton size="md">Open dashboard</GradientButton></Link>
         </div>
       </div>
     );

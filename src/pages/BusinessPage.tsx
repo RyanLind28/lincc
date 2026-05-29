@@ -20,7 +20,7 @@ import {
   type BusinessPublicReview,
 } from '../services/businessService';
 import { getActiveVouchersByBusiness } from '../services/voucherService';
-import { formatRelativeTime } from '../lib/utils';
+import { formatRelativeTime, getDisplayName } from '../lib/utils';
 import type { BusinessWithOwner, BusinessLocation, VoucherWithDetails, BusinessOpeningHours } from '../types';
 
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -128,9 +128,9 @@ function ReviewCard({ review }: { review: BusinessPublicReview }) {
   return (
     <div className="bg-surface rounded-2xl border border-border p-4 min-w-[280px] sm:min-w-[320px] snap-start">
       <div className="flex items-center gap-2 mb-2">
-        <Avatar src={review.guest?.avatar_url ?? null} name={review.guest?.first_name ?? 'Guest'} size="sm" />
+        <Avatar src={review.guest?.avatar_url ?? null} name={getDisplayName(review.guest, 'Guest')} size="sm" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-text">{review.guest?.first_name ?? 'Guest'}</p>
+          <p className="text-sm font-medium text-text">{getDisplayName(review.guest, 'Guest')}</p>
           <p className="text-xs text-text-light">{formatRelativeTime(review.created_at)}</p>
         </div>
         <StarRow rating={review.host_rating} />

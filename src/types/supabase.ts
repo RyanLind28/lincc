@@ -977,6 +977,7 @@ export type Database = {
           allow_dms: boolean
           avatar_url: string | null
           bio: string | null
+          business_onboarding_completed_at: string | null
           created_at: string | null
           dob: string
           email: string
@@ -1009,6 +1010,7 @@ export type Database = {
           allow_dms?: boolean
           avatar_url?: string | null
           bio?: string | null
+          business_onboarding_completed_at?: string | null
           created_at?: string | null
           dob?: string
           email: string
@@ -1041,6 +1043,7 @@ export type Database = {
           allow_dms?: boolean
           avatar_url?: string | null
           bio?: string | null
+          business_onboarding_completed_at?: string | null
           created_at?: string | null
           dob?: string
           email?: string
@@ -1410,6 +1413,7 @@ export type Database = {
         Row: {
           business_name: string | null
           business_type: string | null
+          city: string | null
           created_at: string | null
           email: string
           id: string
@@ -1419,6 +1423,7 @@ export type Database = {
         Insert: {
           business_name?: string | null
           business_type?: string | null
+          city?: string | null
           created_at?: string | null
           email: string
           id?: string
@@ -1428,6 +1433,7 @@ export type Database = {
         Update: {
           business_name?: string | null
           business_type?: string | null
+          city?: string | null
           created_at?: string | null
           email?: string
           id?: string
@@ -1614,6 +1620,10 @@ export type Database = {
         Returns: undefined
       }
       calculate_age: { Args: { birth_date: string }; Returns: number }
+      convert_to_business: {
+        Args: { p_category?: string; p_name: string }
+        Returns: string
+      }
       create_notification: {
         Args: {
           p_body: string
@@ -1674,9 +1684,11 @@ export type Database = {
           }
         | { Args: { schema_name: string; table_name: string }; Returns: string }
         | { Args: { table_name: string }; Returns: string }
+      email_exists: { Args: { p_email: string }; Returns: boolean }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       expire_past_events: { Args: never; Returns: number }
+      expire_past_vouchers: { Args: never; Returns: number }
       export_user_data: { Args: never; Returns: Json }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
@@ -1786,6 +1798,14 @@ export type Database = {
           last_status: string
           schedule: string
           seconds_since_last_run: number
+        }[]
+      }
+      get_pending_welcome_users: {
+        Args: never
+        Returns: {
+          email: string
+          first_name: string
+          id: string
         }[]
       }
       gettransactionid: { Args: never; Returns: unknown }
@@ -2470,6 +2490,7 @@ export type Database = {
           first_name: string
           id: string
           mutual_count: number
+          profile_name: string
           tags: string[]
         }[]
       }

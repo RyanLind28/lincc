@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
 import { Avatar, Badge, GradientButton, EventCardMini, type EventCardEvent } from '../components/ui';
 import { Edit2, Calendar, Ghost, Lock, Settings, Bookmark, Users, Sparkles, Share2 } from 'lucide-react';
-import { calculateAge } from '../lib/utils';
+import { calculateAge, getDisplayName } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { getFollowerCount, getFollowingCount } from '../services/followService';
 import { useWaitlistStatus } from '../hooks/useWaitlistStatus';
@@ -56,7 +56,7 @@ export default function ProfilePage() {
         .select(`
           id, title, venue_name, start_time, capacity, join_mode, participant_count, cover_image_url,
           category:categories!category_id(name, icon),
-          host:profiles!host_id(first_name, avatar_url)
+          host:profiles!host_id(first_name, profile_name, avatar_url)
         `)
         .eq('host_id', userId)
         .in('status', ['active', 'full', 'expired'])
@@ -69,7 +69,7 @@ export default function ProfilePage() {
           event:events!event_id(
             id, title, venue_name, start_time, capacity, join_mode, participant_count, cover_image_url,
             category:categories!category_id(name, icon),
-            host:profiles!host_id(first_name, avatar_url)
+            host:profiles!host_id(first_name, profile_name, avatar_url)
           )
         `)
         .eq('user_id', userId)
@@ -94,7 +94,7 @@ export default function ProfilePage() {
         participant_count: (e.participant_count as number) || 0,
         join_mode: e.join_mode as 'instant' | 'request',
         category: e.category as { name: string; icon: string },
-        host: e.host as { first_name: string; avatar_url?: string | null },
+        host: e.host as { first_name: string; profile_name?: string | null; avatar_url?: string | null },
       });
 
       setHosting((hostedData || []).map(mapEvent));
@@ -150,7 +150,7 @@ export default function ProfilePage() {
   const handleShare = async () => {
     const url = `${window.location.origin}/user/${user?.id}`;
     if (navigator.share) {
-      navigator.share({ title: profile.profile_name || profile.first_name, url }).catch(() => {});
+      navigator.share({ title: getDisplayName(profile), url }).catch(() => {});
     } else {
       navigator.clipboard.writeText(url);
       showToast('Link copied', 'success');
@@ -192,12 +192,12 @@ export default function ProfilePage() {
           {/* Avatar + identity row */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:gap-6 items-center">
             <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-surface ring-4 ring-surface shadow-2xl overflow-hidden flex-shrink-0">
-              <Avatar src={profile.avatar_url} name={profile.first_name} size="xl" className="!h-full !w-full !rounded-full" />
+              <Avatar src={profile.avatar_url} name={getDisplayName(profile)} size="xl" className="!h-full !w-full !rounded-full" />
             </div>
 
             <div className="flex-1 min-w-0 mt-4 sm:mt-0 text-center sm:text-left">
               <h1 className="text-3xl sm:text-4xl font-extrabold text-text tracking-tight">
-                {profile.profile_name || profile.first_name}{age ? `, ${age}` : ''}
+                {getDisplayName(profile)}{age ? `, ${age}` : ''}
               </h1>
 
               <div className="flex items-center gap-2 mt-2 flex-wrap justify-center sm:justify-start">

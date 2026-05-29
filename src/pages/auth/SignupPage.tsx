@@ -5,6 +5,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { GradientButton, Input } from '../../components/ui';
 import { CheckCircle, Store, User as UserIcon } from 'lucide-react';
 import { BUSINESS_CATEGORIES, type AccountType } from '../../types';
+import { supabase } from '../../lib/supabase';
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
@@ -31,6 +32,30 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      showToast('Please enter your email', 'error');
+      return;
+    }
+
+    // If an account already exists for this email, send them to sign in rather
+    // than letting a password-mismatch (or any other) error mask the real
+    // reason. signUp() also detects duplicates, but only after the password
+    // fields match — this surfaces it up front.
+    setIsLoading(true);
+    try {
+      const { data: exists, error } = await supabase.rpc('email_exists', { p_email: trimmedEmail });
+      if (!error && exists) {
+        showToast('You already have an account with this email. Sign in instead.', 'info');
+        navigate(`/login?email=${encodeURIComponent(trimmedEmail)}&exists=1`);
+        return;
+      }
+    } catch {
+      // Non-fatal — fall through to normal signup, which still catches dupes.
+    } finally {
+      setIsLoading(false);
+    }
 
     if (password !== confirmPassword) {
       showToast('Passwords do not match', 'error');
@@ -82,8 +107,9 @@ export default function SignupPage() {
     });
 
     if (alreadyExists) {
-      showToast('This email is already registered. Redirecting to sign in…', 'error');
-      setTimeout(() => navigate(`/login?email=${encodeURIComponent(email)}`), 1200);
+      // Returning user — send them straight to Sign In with a clear message
+      // there (the email is prefilled and a banner explains what happened).
+      navigate(`/login?email=${encodeURIComponent(email)}&exists=1`);
     } else if (error) {
       showToast(error.message, 'error');
     } else {

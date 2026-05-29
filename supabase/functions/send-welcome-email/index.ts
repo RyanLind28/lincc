@@ -92,6 +92,74 @@ p{font-size:15px;line-height:1.65;color:#3f3f46;margin:0 0 16px}
 </div></div></div></body></html>`;
 }
 
+// Decode (without verifying) a JWT's `role` claim — used only to ROUTE the
+// request. Security comes from what happens next: the batch path re-verifies
+// via an admin capability check; the user path verifies via getUser().
+function jwtRole(token: string): string | null {
+  try {
+    const seg = token.split(".")[1];
+    if (!seg) return null;
+    const b64 = seg.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(seg.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(b64));
+    return typeof payload.role === "string" ? payload.role : null;
+  } catch {
+    return null;
+  }
+}
+
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+// Send the branded welcome email via Resend. Returns true on success.
+async function sendWelcomeEmail(recipient: string, firstName: string): Promise<boolean> {
+  const resendResp = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: EMAIL_FROM,
+      to: recipient,
+      subject: "Welcome to Lincc — something's happening near you 👋",
+      html: htmlTemplate(firstName ?? ""),
+    }),
+  });
+  if (!resendResp.ok) {
+    console.error("Resend error:", resendResp.status, await resendResp.text());
+    return false;
+  }
+  return true;
+}
+
+// Batch/cron mode: flush every confirmed-but-unwelcomed user. Reuses the
+// welcomed_at guard so it's safe to run repeatedly and races safely with the
+// client-side trigger. Only reachable with the service_role key (see caller).
+async function runBatch(): Promise<Response> {
+  const { data: pending, error } = await admin.rpc("get_pending_welcome_users");
+  if (error) {
+    console.error("get_pending_welcome_users failed:", error);
+    return json(500, { error: "Failed to list pending users" });
+  }
+  let sent = 0;
+  let failed = 0;
+  for (const u of (pending ?? []) as Array<{ id: string; email: string | null; first_name: string | null }>) {
+    if (!u.email) continue;
+    const ok = await sendWelcomeEmail(u.email, u.first_name ?? "");
+    if (ok) {
+      await admin.from("profiles").update({ welcomed_at: new Date().toISOString() }).eq("id", u.id);
+      sent++;
+    } else {
+      failed++;
+    }
+  }
+  return json(200, { ok: true, mode: "batch", sent, failed, total: (pending ?? []).length });
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -111,6 +179,23 @@ serve(async (req: Request) => {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  // Service-role bearer (the pg_cron job) → batch mode. We route on the token's
+  // role claim, then confirm it's a genuine service-role key by performing an
+  // admin-only call (GoTrue verifies the signature). This is robust against
+  // key rotation / new-vs-legacy key formats — no brittle string compare.
+  const bearer = authHeader.slice("Bearer ".length).trim();
+  if (jwtRole(bearer) === "service_role") {
+    const caller = createClient(SUPABASE_URL, bearer, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { error: adminErr } = await caller.auth.admin.listUsers({ page: 1, perPage: 1 });
+    if (adminErr) {
+      console.error("Batch auth rejected:", adminErr.message);
+      return json(401, { error: "Invalid service token" });
+    }
+    return await runBatch();
   }
 
   // Use a client bound to the caller's token to resolve their identity. Can't trust
@@ -166,25 +251,10 @@ serve(async (req: Request) => {
       });
     }
 
-    const resendResp = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: recipient,
-        subject: "Welcome to Lincc — something's happening near you 👋",
-        html: htmlTemplate(profile.first_name ?? ""),
-      }),
-    });
-
-    if (!resendResp.ok) {
-      const errBody = await resendResp.text();
-      console.error("Resend error:", resendResp.status, errBody);
+    const ok = await sendWelcomeEmail(recipient, profile.first_name ?? "");
+    if (!ok) {
       return new Response(
-        JSON.stringify({ error: "Email provider error", status: resendResp.status }),
+        JSON.stringify({ error: "Email provider error" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }

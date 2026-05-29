@@ -1,4 +1,4 @@
-import { logger } from '../lib/utils';
+import { logger, getDisplayName } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import type { Business, BusinessWithOwner, BusinessLocation, BusinessOpeningHours, BusinessSocialLinks } from '../types';
 
@@ -36,9 +36,9 @@ export async function updateBusiness(
 }
 
 /**
- * Convert a personal account into a business: creates a pending_approval
- * businesses row and flips profiles.account_type. Returns the new business id
- * so the caller can route the user into the verification flow.
+ * Convert a personal account into a business: creates an approved businesses
+ * row (can post straight away) and flips profiles.account_type. Returns the new
+ * business id. Verification (the official tick) is a separate, optional step.
  */
 export async function convertToBusiness(
   name: string,
@@ -221,7 +221,7 @@ export interface BusinessPublicReview {
   comment: string | null;
   created_at: string;
   host_reply: string | null;
-  guest: { first_name: string; avatar_url: string | null } | null;
+  guest: { first_name: string; profile_name: string | null; avatar_url: string | null } | null;
 }
 
 export async function getBusinessPublicData(businessId: string): Promise<{
@@ -264,7 +264,7 @@ export async function getBusinessPublicData(businessId: string): Promise<{
   const { data: reviews } = eventIds.length
     ? await supabase
         .from('host_reviews')
-        .select('id, host_rating, event_rating, comment, created_at, host_reply, guest:profiles!host_reviews_guest_id_fkey(first_name, avatar_url)')
+        .select('id, host_rating, event_rating, comment, created_at, host_reply, guest:profiles!host_reviews_guest_id_fkey(first_name, profile_name, avatar_url)')
         .in('event_id', eventIds)
         .eq('is_disputed', false)
         .order('created_at', { ascending: false })
@@ -392,7 +392,7 @@ export async function getBusinessDashboardData(businessId: string): Promise<Busi
   const reviewsRes = eventIds.length
     ? await supabase
         .from('host_reviews')
-        .select('id, host_rating, event_rating, comment, created_at, host_reply, is_disputed, guest:profiles!host_reviews_guest_id_fkey(first_name, avatar_url)')
+        .select('id, host_rating, event_rating, comment, created_at, host_reply, is_disputed, guest:profiles!host_reviews_guest_id_fkey(first_name, profile_name, avatar_url)')
         .in('event_id', eventIds)
         .order('created_at', { ascending: false })
         .limit(20)
@@ -409,7 +409,7 @@ export async function getBusinessDashboardData(businessId: string): Promise<Busi
     voucherIds.length
       ? supabase
           .from('voucher_redemptions')
-          .select('id, redeemed_at, voucher:vouchers!voucher_id(title), user:profiles!voucher_redemptions_user_id_fkey(first_name)')
+          .select('id, redeemed_at, voucher:vouchers!voucher_id(title), user:profiles!voucher_redemptions_user_id_fkey(first_name, profile_name)')
           .in('voucher_id', voucherIds)
           .order('redeemed_at', { ascending: false })
           .limit(10)
@@ -417,7 +417,7 @@ export async function getBusinessDashboardData(businessId: string): Promise<Busi
     eventIds.length
       ? supabase
           .from('event_participants')
-          .select('id, status, created_at, event:events!event_id(title), user:profiles!event_participants_user_id_fkey(first_name)')
+          .select('id, status, created_at, event:events!event_id(title), user:profiles!event_participants_user_id_fkey(first_name, profile_name)')
           .in('event_id', eventIds)
           .eq('status', 'approved')
           .order('created_at', { ascending: false })
@@ -425,27 +425,27 @@ export async function getBusinessDashboardData(businessId: string): Promise<Busi
       : { data: [] },
   ]);
 
-  type RedemptionRow = { id: string; redeemed_at: string; voucher: { title: string } | null; user: { first_name: string } | null };
-  type JoinRow = { id: string; created_at: string; event: { title: string } | null; user: { first_name: string } | null };
-  type ReviewRow = { id: string; created_at: string; host_rating: number; comment: string | null; guest: { first_name: string } | null };
+  type RedemptionRow = { id: string; redeemed_at: string; voucher: { title: string } | null; user: { first_name: string; profile_name: string | null } | null };
+  type JoinRow = { id: string; created_at: string; event: { title: string } | null; user: { first_name: string; profile_name: string | null } | null };
+  type ReviewRow = { id: string; created_at: string; host_rating: number; comment: string | null; guest: { first_name: string; profile_name: string | null } | null };
 
   const redemptionActivity: BusinessDashboardActivity[] = ((redemptionsRes.data ?? []) as unknown as RedemptionRow[]).map((r) => ({
     id: `red-${r.id}`,
     type: 'redemption' as const,
     occurred_at: r.redeemed_at,
-    label: `${r.user?.first_name ?? 'Someone'} redeemed ${r.voucher?.title ?? 'a voucher'}`,
+    label: `${getDisplayName(r.user, 'Someone')} redeemed ${r.voucher?.title ?? 'a voucher'}`,
   }));
   const joinActivity: BusinessDashboardActivity[] = ((joinsRes.data ?? []) as unknown as JoinRow[]).map((j) => ({
     id: `join-${j.id}`,
     type: 'join' as const,
     occurred_at: j.created_at,
-    label: `${j.user?.first_name ?? 'Someone'} joined ${j.event?.title ?? 'an event'}`,
+    label: `${getDisplayName(j.user, 'Someone')} joined ${j.event?.title ?? 'an event'}`,
   }));
   const reviewActivity: BusinessDashboardActivity[] = (reviews as unknown as ReviewRow[]).map((r) => ({
     id: `rev-${r.id}`,
     type: 'review' as const,
     occurred_at: r.created_at,
-    label: `${r.guest?.first_name ?? 'A guest'} left a ${r.host_rating}-star review`,
+    label: `${getDisplayName(r.guest, 'A guest')} left a ${r.host_rating}-star review`,
     detail: r.comment,
   }));
 

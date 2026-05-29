@@ -21,6 +21,7 @@ export interface ScoredEvent {
   cover_image_url?: string | null;
   host: {
     first_name: string;
+    profile_name?: string | null;
     avatar_url: string | null;
   };
   business?: {
@@ -89,6 +90,7 @@ export function toGridEventData(event: ScoredEvent): GridEventData {
     cover_image: event.cover_image_url || undefined,
     host: {
       first_name: event.host.first_name,
+      profile_name: event.host.profile_name,
       avatar_url: event.host.avatar_url,
     },
     business: event.business ?? null,

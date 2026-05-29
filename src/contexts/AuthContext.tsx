@@ -54,9 +54,10 @@ const log = (...args: unknown[]) => { if (DEV_MODE) console.log('[Auth]', ...arg
 
 function checkProfileComplete(profile: Profile | null): boolean {
   if (!profile) return false;
-  // Business accounts walk through /onboarding/business (welcome → verify →
-  // logo+bio → location+hours → install). business_onboarding_completed_at is
-  // set when they finish; until then we redirect them into the wizard.
+  // Business accounts walk through /onboarding/business (welcome → logo+bio →
+  // location+hours → install). Verification is NOT part of this — it's an
+  // optional, later step from the dashboard. business_onboarding_completed_at
+  // is set when they finish; until then we redirect them into the wizard.
   if (profile.account_type === 'business') {
     return !!profile.first_name?.trim() && !!profile.business_onboarding_completed_at;
   }
