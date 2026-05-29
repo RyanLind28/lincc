@@ -18,25 +18,37 @@ export function ImagePickerButtons({
   cameraLabel = 'Take a photo',
   size = 'md',
 }: ImagePickerButtonsProps) {
-  const height = size === 'sm' ? 'h-[var(--height-button-sm)]' : 'h-[var(--height-tap-target)]';
+  const height = size === 'sm' ? 'h-[var(--height-button-sm)]' : 'h-12';
   const text = size === 'sm' ? 'text-xs' : 'text-sm';
-  const px = size === 'sm' ? 'px-3' : 'px-5';
+  const iconBox = size === 'sm' ? 'h-5 w-5' : 'h-7 w-7';
+  const icon = size === 'sm' ? 'h-3 w-3' : 'h-[17px] w-[17px]';
+
+  // Shared shell: each button fills its half of the row (or full width when
+  // stacked on mobile), with a tinted icon chip that flips to a solid fill on
+  // hover. Gallery leans coral, camera leans purple — same accent split the
+  // rest of the picker UI uses.
+  const base = `group flex w-full sm:flex-1 items-center justify-center gap-2.5 ${height} px-3 rounded-2xl border border-border bg-surface ${text} font-semibold text-text transition-all duration-200 press-effect`;
+  const chip = `flex ${iconBox} items-center justify-center rounded-full transition-colors`;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-2">
+    <div className="flex flex-col sm:flex-row items-stretch gap-2.5 w-full">
       <button
         type="button"
         onClick={() => {
           if (onGalleryClick) onGalleryClick();
           else fileInputRef?.current?.click();
         }}
-        className={`inline-flex items-center gap-2 ${height} ${px} rounded-xl border border-border bg-surface text-text ${text} font-medium hover:border-coral hover:text-coral transition-colors press-effect`}
+        className={`${base} hover:border-coral hover:bg-coral/5 hover:text-coral`}
       >
-        <ImagePlus className="h-4 w-4" />
+        <span className={`${chip} bg-coral/10 text-coral group-hover:bg-coral group-hover:text-white`}>
+          <ImagePlus className={icon} />
+        </span>
         {galleryLabel}
       </button>
-      <label className={`inline-flex items-center gap-2 ${height} ${px} rounded-xl border border-border bg-surface text-text ${text} font-medium hover:border-purple hover:text-purple transition-colors cursor-pointer press-effect`}>
-        <Camera className="h-4 w-4" />
+      <label className={`${base} cursor-pointer hover:border-purple hover:bg-purple/5 hover:text-purple`}>
+        <span className={`${chip} bg-purple/10 text-purple group-hover:bg-purple group-hover:text-white`}>
+          <Camera className={icon} />
+        </span>
         {cameraLabel}
         <input
           type="file"

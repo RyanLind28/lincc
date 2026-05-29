@@ -63,6 +63,9 @@ p{font-size:15px;line-height:1.65;color:#3f3f46;margin:0 0 16px}
 .footer{padding:24px 40px;text-align:center;border-top:1px solid #f4f4f5}
 .footer p{font-size:12px;color:#a1a1aa;margin:0 0 4px;line-height:1.5}
 .footer a{color:#a1a1aa;text-decoration:underline}
+.social-row{margin:24px 0 8px;text-align:center}
+.social-row p{font-size:13px;color:#71717a;margin:0 0 12px;font-weight:500}
+.social-icon{display:inline-block;width:36px;height:36px;margin:0 6px;background-color:#f4f4f5;border-radius:50%;text-align:center;line-height:36px;text-decoration:none}
 </style></head>
 <body><div class="wrapper"><div class="card"><div class="gradient-bar"></div>
 <div class="logo-section"><div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1"><span style="color:#FF6B6B">Lin</span><span style="color:#845EF7">cc</span></div></div>
@@ -82,6 +85,7 @@ p{font-size:15px;line-height:1.65;color:#3f3f46;margin:0 0 16px}
 <p>We've built Lincc to feel like your city is a little smaller — and a little friendlier.</p>
 <p class="sign-off">See you out there,<br/><strong>The Lincc Team</strong></p>
 <p class="subtle-text">Questions? Reach us any time at <a href="mailto:hello@lincc.live" style="color:#845EF7;">hello@lincc.live</a>.</p>
+<div class="social-row"><p>Follow Lincc</p><a href="https://www.instagram.com/lincc_live" class="social-icon" target="_blank" rel="noopener" aria-label="Instagram" style="color:#845EF7;"><span style="font-size:14px;font-weight:700;">IG</span></a><a href="https://www.tiktok.com/@lincc_live" class="social-icon" target="_blank" rel="noopener" aria-label="TikTok" style="color:#845EF7;"><span style="font-size:14px;font-weight:700;">TT</span></a></div>
 </div>
 <div class="footer"><p>&copy; Lincc. All rights reserved.</p>
 <p>You're receiving this because you just signed up to Lincc. You can manage your email preferences in your <a href="${APP_URL}/settings">account settings</a>.</p>

@@ -9,7 +9,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { usePWA } from '../../hooks/usePWA';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
-import { PhotoStep, BasicInfoStep, InterestsStep, BioStep, InstallStep, LocationStep, NotificationStep } from './steps';
+import { PhotoStep, NameStep, BirthdayStep, InterestsStep, BioStep, InstallStep, LocationStep, NotificationStep } from './steps';
 import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
@@ -24,6 +24,16 @@ const LOCATION_VIBES = [
 ];
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
+
+// Fixed pre-save steps. Photo and Bio are optional (skippable); Name, Birthday
+// and Interests are required and gated. Bio is the last step before we persist
+// the profile — the install/location/notification steps that follow are
+// computed because Install is skipped entirely when the app is already added.
+const PHOTO_STEP = 1;
+const NAME_STEP = 2;
+const BIRTHDAY_STEP = 3;
+const INTERESTS_STEP = 4;
+const BIO_STEP = 5;
 
 
 export default function OnboardingPage() {
@@ -144,7 +154,7 @@ export default function OnboardingPage() {
 
   // If profile is already complete on mount (before user starts), redirect to home.
   // Don't redirect once user is actively going through onboarding (step > 1)
-  // or after saving profile (step 5) — let them see the final setup screen.
+  // or after saving profile (post-save steps) — let them see the final setup screen.
   // ?preview=true bypasses this for testing.
   useEffect(() => {
     if (window.location.search.includes('preview=true')) return;
@@ -177,7 +187,9 @@ export default function OnboardingPage() {
         tags: string[];
         bio: string;
       }>;
-      if (saved.step && saved.step > 1) setStep(saved.step);
+      // Only restore pre-save steps. Post-save steps aren't persisted, and a
+      // stale cache from an older step layout must not drop the user past save.
+      if (saved.step && saved.step > 1 && saved.step <= BIO_STEP) setStep(saved.step);
       if (saved.firstName) setFirstName(saved.firstName);
       if (saved.lastName) setLastName(saved.lastName);
       if (saved.profileName) setProfileName(saved.profileName);
@@ -208,11 +220,12 @@ export default function OnboardingPage() {
     }
   }, [resumeKey, isProfileComplete, step, firstName, lastName, profileName, dobDay, dobMonth, dobYear, gender, tags, bio]);
 
-  // Skip the install step entirely if the app is already installed
+  // Skip the install step entirely if the app is already installed. These sit
+  // after BIO_STEP (the save point).
   const showInstallStep = !isInstalled;
-  const installStep = showInstallStep ? 5 : -1;
-  const locationStep = showInstallStep ? 6 : 5;
-  const notificationStep = showInstallStep ? 7 : 6;
+  const installStep = showInstallStep ? BIO_STEP + 1 : -1;
+  const locationStep = showInstallStep ? BIO_STEP + 2 : BIO_STEP + 1;
+  const notificationStep = showInstallStep ? BIO_STEP + 3 : BIO_STEP + 2;
   const totalSteps = notificationStep;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -331,11 +344,11 @@ export default function OnboardingPage() {
 
   const validateStep = () => {
     switch (step) {
-      case 1:
+      case PHOTO_STEP:
         // Avatar is optional — the Avatar component renders initials from the user's
         // first name when no photo is set.
         return true;
-      case 2: {
+      case NAME_STEP: {
         if (!firstName.trim()) {
           showToast('Please enter your first name', 'error');
           return false;
@@ -356,6 +369,9 @@ export default function OnboardingPage() {
           showToast('Checking username…', 'info');
           return false;
         }
+        return true;
+      }
+      case BIRTHDAY_STEP: {
         if (!dobDay || !dobMonth || !dobYear) {
           showToast('Please select your date of birth', 'error');
           return false;
@@ -366,13 +382,14 @@ export default function OnboardingPage() {
         }
         return true;
       }
-      case 3:
+      case INTERESTS_STEP:
         if (tags.length === 0) {
           showToast('Please select at least one interest', 'error');
           return false;
         }
         return true;
-      case 4:
+      case BIO_STEP:
+        // Bio is optional — skipping saves with a null bio.
         return true;
       default:
         return true;
@@ -382,13 +399,13 @@ export default function OnboardingPage() {
   const handleNext = async () => {
     if (!validateStep()) return;
 
-    // After bio (step 4), save profile then advance to install step
-    if (step === 4) {
+    // After bio, save profile then advance to the install step
+    if (step === BIO_STEP) {
       await saveProfile();
       return;
     }
 
-    // Step 6 (final) — done, go home
+    // Final step — done, go home
     if (step === totalSteps) {
       navigate('/');
       return;
@@ -495,7 +512,7 @@ export default function OnboardingPage() {
         {/* Step content wrapped in surface card */}
         <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
           {/* Step 1: Photo */}
-          {step === 1 && (
+          {step === PHOTO_STEP && (
             <PhotoStep
               avatarUrl={avatarUrl}
               firstName={firstName}
@@ -504,6 +521,7 @@ export default function OnboardingPage() {
               fileInputRef={fileInputRef}
               onPhotoSelect={handlePhotoSelect}
               onClearError={() => setPhotoError(null)}
+              onRemovePhoto={() => { setAvatarUrl(null); setPhotoError(null); }}
             />
           )}
 
@@ -519,19 +537,24 @@ export default function OnboardingPage() {
             />
           )}
 
-          {step === 2 && (
-            <BasicInfoStep
+          {step === NAME_STEP && (
+            <NameStep
               firstName={firstName}
               lastName={lastName}
               profileName={profileName}
               usernameStatus={usernameStatus}
+              onFirstNameChange={setFirstName}
+              onLastNameChange={setLastName}
+              onProfileNameChange={setProfileName}
+            />
+          )}
+
+          {step === BIRTHDAY_STEP && (
+            <BirthdayStep
               dobDay={dobDay}
               dobMonth={dobMonth}
               dobYear={dobYear}
               gender={gender}
-              onFirstNameChange={setFirstName}
-              onLastNameChange={setLastName}
-              onProfileNameChange={setProfileName}
               onDobDayChange={setDobDay}
               onDobMonthChange={setDobMonth}
               onDobYearChange={setDobYear}
@@ -539,11 +562,11 @@ export default function OnboardingPage() {
             />
           )}
 
-          {step === 3 && (
+          {step === INTERESTS_STEP && (
             <InterestsStep tags={tags} onTagsChange={setTags} />
           )}
 
-          {step === 4 && (
+          {step === BIO_STEP && (
             <BioStep bio={bio} onBioChange={setBio} />
           )}
 
@@ -589,10 +612,11 @@ export default function OnboardingPage() {
             onClick={handleNext}
             fullWidth
             isLoading={isLoading}
-            rightIcon={step < 4 ? <ArrowRight className="h-4 w-4" /> : undefined}
+            rightIcon={step < BIO_STEP ? <ArrowRight className="h-4 w-4" /> : undefined}
           >
-            {step < 4 ? 'Continue'
-              : step === 4 ? 'Save Profile'
+            {step === PHOTO_STEP ? (avatarUrl ? 'Continue' : 'Skip for now')
+              : step === NAME_STEP || step === BIRTHDAY_STEP || step === INTERESTS_STEP ? 'Continue'
+              : step === BIO_STEP ? (bio.trim() ? 'Save Profile' : 'Skip for now')
               : step === locationStep && locationPermission === 'prompt' ? 'Skip for now'
               : step === notificationStep && !notifToggled && pushPermission !== 'granted' && pushPermission !== 'denied' ? 'Skip for now'
               : step === totalSteps ? 'Get Started'

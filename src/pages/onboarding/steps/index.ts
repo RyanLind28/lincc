@@ -1,5 +1,6 @@
 export { PhotoStep } from './PhotoStep';
-export { BasicInfoStep } from './BasicInfoStep';
+export { NameStep } from './NameStep';
+export { BirthdayStep } from './BirthdayStep';
 export { InterestsStep } from './InterestsStep';
 export { BioStep } from './BioStep';
 export { InstallStep } from './InstallStep';

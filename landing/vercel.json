@@ -33,6 +33,13 @@
       "destination": "/about.md"
     },
     {
+      "source": "/business",
+      "has": [
+        { "type": "header", "key": "accept", "value": ".*text/markdown.*" }
+      ],
+      "destination": "/business.md"
+    },
+    {
       "source": "/contact",
       "has": [
         { "type": "header", "key": "accept", "value": ".*text/markdown.*" }

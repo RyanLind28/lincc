@@ -142,7 +142,7 @@ export default function SignupPage() {
             </p>
             {accountType === 'business' && (
               <p className="text-sm text-text-muted mb-4">
-                After verifying, you'll be taken straight to upload your business documents. Once submitted, our team will review and let you know when you're approved.
+                After verifying, you'll set up your business profile and can start posting straight away. You can verify your business anytime for the official tick.
               </p>
             )}
             <p className="text-xs text-text-light mb-6">
@@ -222,7 +222,7 @@ export default function SignupPage() {
 
           {accountType === 'business' && (
             <p className="text-xs text-text-muted mb-4">
-              Business accounts go through a quick review before you can publish. You'll be able to set up your profile while you wait.
+              Set up your profile in a couple of minutes and start posting deals, vouchers and events. Verify your business anytime to earn the official tick.
             </p>
           )}
 
@@ -336,7 +336,7 @@ export default function SignupPage() {
               isLoading={isLoading}
               disabled={!termsAccepted || (accountType === 'personal' && !ageConfirmed)}
             >
-              {accountType === 'business' ? 'Submit application' : 'Create Account'}
+              {accountType === 'business' ? 'Create business account' : 'Create Account'}
             </GradientButton>
           </form>
 

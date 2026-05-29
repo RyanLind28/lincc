@@ -41,6 +41,7 @@ const MOCK_PROFILE: Profile = {
   last_lng: null,
   account_type: 'personal',
   welcomed_at: new Date().toISOString(),
+  guide_dismissed_at: new Date().toISOString(),
   onboarding_step: null,
   business_onboarding_completed_at: null,
   allow_dms: true,

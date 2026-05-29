@@ -33,15 +33,17 @@ type Position = 'top' | 'bottom' | 'right';
 export function WelcomeGuide() {
   const { user, profile, refreshProfile } = useAuth();
   // Verified/onboarded users never see tooltips again — gated on the DB-backed
-  // welcomed_at flag rather than localStorage alone, so the guide stays dismissed
-  // across devices and after clearing browser data.
-  const isWelcomed = Boolean(profile?.welcomed_at);
+  // guide_dismissed_at flag rather than localStorage alone, so the guide stays
+  // dismissed across devices and after clearing browser data. This is separate
+  // from welcomed_at (the welcome-email idempotency guard) on purpose, so the
+  // tour can never suppress the welcome email.
+  const isGuideDismissed = Boolean(profile?.guide_dismissed_at);
   const [dismissed, setDismissed] = useState(() =>
-    isWelcomed || localStorage.getItem(GUIDE_DISMISSED_KEY) === 'true'
+    isGuideDismissed || localStorage.getItem(GUIDE_DISMISSED_KEY) === 'true'
   );
   useEffect(() => {
-    if (isWelcomed) setDismissed(true);
-  }, [isWelcomed]);
+    if (isGuideDismissed) setDismissed(true);
+  }, [isGuideDismissed]);
   const [currentStep, setCurrentStep] = useState(0);
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
   const [spotlightStyle, setSpotlightStyle] = useState<React.CSSProperties>({});
@@ -137,10 +139,10 @@ export function WelcomeGuide() {
     localStorage.setItem(GUIDE_DISMISSED_KEY, 'true');
     // Persist to DB so verified users on a new device or after clearing
     // browser storage don't see the guide again.
-    if (user?.id && !profile?.welcomed_at) {
+    if (user?.id && !profile?.guide_dismissed_at) {
       supabase
         .from('profiles')
-        .update({ welcomed_at: new Date().toISOString() })
+        .update({ guide_dismissed_at: new Date().toISOString() })
         .eq('id', user.id)
         .then(({ error }) => {
           if (!error) refreshProfile(user.id);

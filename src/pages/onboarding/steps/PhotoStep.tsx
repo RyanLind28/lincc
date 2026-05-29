@@ -1,5 +1,5 @@
 import { Avatar, ImagePickerButtons } from '../../../components/ui';
-import { Camera, Loader2 } from 'lucide-react';
+import { Camera, Loader2, X } from 'lucide-react';
 import type { RefObject } from 'react';
 
 interface PhotoStepProps {
@@ -10,6 +10,7 @@ interface PhotoStepProps {
   fileInputRef: RefObject<HTMLInputElement | null>;
   onPhotoSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onClearError: () => void;
+  onRemovePhoto: () => void;
 }
 
 export function PhotoStep({
@@ -20,6 +21,7 @@ export function PhotoStep({
   fileInputRef,
   onPhotoSelect,
   onClearError,
+  onRemovePhoto,
 }: PhotoStepProps) {
   return (
     <div className="text-center">
@@ -29,31 +31,49 @@ export function PhotoStep({
       </p>
 
       <div className="flex flex-col items-center gap-4">
-        <label className="cursor-pointer">
-          <div className="relative">
-            <Avatar src={avatarUrl} name={firstName || 'You'} size="xl" />
-            <div className="absolute bottom-0 right-0 w-8 h-8 gradient-primary rounded-full flex items-center justify-center shadow-md">
-              {isRecovering ? (
-                <Loader2 className="h-4 w-4 text-white animate-spin" />
-              ) : (
-                <Camera className="h-4 w-4 text-white" />
-              )}
+        {/* The avatar itself opens the picker. The remove badge is a sibling of
+            the label (not nested inside it) so tapping it clears the photo
+            instead of re-triggering the file input. */}
+        <div className="relative">
+          <label className="cursor-pointer block">
+            <div className="relative">
+              <Avatar src={avatarUrl} name={firstName || 'You'} size="xl" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 gradient-primary rounded-full flex items-center justify-center shadow-md">
+                {isRecovering ? (
+                  <Loader2 className="h-4 w-4 text-white animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4 text-white" />
+                )}
+              </div>
             </div>
-          </div>
-          <input
-            ref={fileInputRef}
-            id="onboarding-avatar-input"
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
-            onChange={onPhotoSelect}
-            className="hidden"
-          />
-        </label>
+            <input
+              ref={fileInputRef}
+              id="onboarding-avatar-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
+              onChange={onPhotoSelect}
+              className="hidden"
+            />
+          </label>
+
+          {avatarUrl && !isRecovering && (
+            <button
+              type="button"
+              onClick={onRemovePhoto}
+              aria-label="Remove photo"
+              className="absolute -top-1 -right-1 w-7 h-7 bg-error rounded-full flex items-center justify-center text-white shadow-md border-2 border-surface press-effect"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
 
         {!isRecovering && !photoError && (
           <ImagePickerButtons
             fileInputRef={fileInputRef}
             onCameraSelect={onPhotoSelect}
+            galleryLabel="Gallery"
+            cameraLabel="Selfie"
           />
         )}
 

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, CheckCircle, ChevronRight, Clock, Download, Globe,
-  ImageIcon, Loader2, MapPin, ShieldCheck, Store, X,
+  ImageIcon, Loader2, MapPin, Store, X,
 } from 'lucide-react';
 import * as Sentry from '@sentry/react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,20 +12,18 @@ import { cn } from '../../lib/utils';
 import {
   GradientButton, Input, TextArea, PlacesAutocomplete, AvatarCropper, ImagePickerButtons,
 } from '../../components/ui';
-import { VerificationSlots, useVerificationUpload } from '../../components/business/VerificationSlots';
 import { usePWA } from '../../hooks/usePWA';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
 import {
   compressImage, validateImageDetailed, convertHeicIfNeeded,
 } from '../../lib/imageCompression';
 import { updateBusiness } from '../../services/businessService';
-import { getMyVerification, submitVerification } from '../../services/verificationService';
 import type { PlaceDetails } from '../../services/placesService';
-import type { BusinessOpeningHours, BusinessVerification } from '../../types';
+import type { BusinessOpeningHours } from '../../types';
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 4;
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 type Day = typeof DAYS[number];
@@ -67,16 +65,7 @@ export default function BusinessOnboardingPage() {
   const [step, setStep] = useState(1);
   const [isFinishing, setIsFinishing] = useState(false);
 
-  // Step 2 — verification
-  const [verification, setVerification] = useState<BusinessVerification | null>(null);
-  const refreshVerification = useCallback(async () => {
-    if (!business?.id) return;
-    setVerification(await getMyVerification(business.id));
-  }, [business?.id]);
-  useEffect(() => { refreshVerification(); }, [refreshVerification]);
-  const { uploadingSlot, handleUpload, handleRemove } = useVerificationUpload(business?.id, user?.id, refreshVerification);
-
-  // Step 3 — logo + description
+  // Step 2 — logo + description
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -84,7 +73,7 @@ export default function BusinessOnboardingPage() {
   const [description, setDescription] = useState('');
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  // Step 4 — location + hours + website. Hours default to all 7 days open 9–5
+  // Step 3 — location + hours + website. Hours default to all 7 days open 9–5
   // and the "same every day" mode is on; the user toggles to per-day editing
   // only if they actually have different hours.
   const [address, setAddress] = useState('');
@@ -301,18 +290,6 @@ export default function BusinessOnboardingPage() {
         throw new Error(result.error || 'Failed to save business profile');
       }
 
-      // If all four verification docs are uploaded and still in draft, submit
-      // them now so the admin queue picks them up. If not, that's fine — the
-      // user can return to /business/verify from the dashboard.
-      const allDocs = verification
-        && verification.operator_selfie_path
-        && verification.id_document_path
-        && verification.selfie_with_id_path
-        && verification.registration_doc_path;
-      if (verification?.status === 'draft' && allDocs) {
-        await submitVerification(verification.id);
-      }
-
       // Mark onboarding done. The gate in checkProfileComplete reads this.
       const { error: profileErr } = await supabase
         .from('profiles')
@@ -340,34 +317,25 @@ export default function BusinessOnboardingPage() {
   // ---- Navigation helpers ----
 
   // Each substantive step gates its Next button on the inputs it owns. Welcome
-  // and Install (1 and 5) are non-blocking — Install is optional by design and
-  // Welcome has no inputs. Hours and website are optional polish on step 4.
-  const allDocsUploaded = !!(
-    verification
-    && verification.operator_selfie_path
-    && verification.id_document_path
-    && verification.selfie_with_id_path
-    && verification.registration_doc_path
-  );
+  // and Install (1 and 4) are non-blocking — Install is optional by design and
+  // Welcome has no inputs. Hours and website are optional polish on step 3.
   const hasLogo = !!logoUrl;
   const hasDescription = description.trim().length > 0;
   const hasAddress = address.trim().length > 0;
 
   const canAdvance = (() => {
-    if (step === 2) return allDocsUploaded;
-    if (step === 3) return hasLogo && hasDescription;
-    if (step === 4) return hasAddress;
+    if (step === 2) return hasLogo && hasDescription;
+    if (step === 3) return hasAddress;
     return true;
   })();
 
   const advanceHint = (() => {
-    if (step === 2 && !allDocsUploaded) return 'Upload all four documents to continue.';
-    if (step === 3) {
+    if (step === 2) {
       if (!hasLogo && !hasDescription) return 'Add a logo and a short description to continue.';
       if (!hasLogo) return 'Add a logo to continue.';
       if (!hasDescription) return 'Add a short description to continue.';
     }
-    if (step === 4 && !hasAddress) return 'Add your address to continue.';
+    if (step === 3 && !hasAddress) return 'Add your address to continue.';
     return null;
   })();
 
@@ -428,41 +396,15 @@ export default function BusinessOnboardingPage() {
             <div className="bg-surface border border-border rounded-2xl p-4 text-left space-y-2.5">
               <p className="text-sm font-semibold text-text">What you'll need</p>
               <ul className="text-sm text-text-muted space-y-2">
-                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-coral mt-0.5 flex-shrink-0" /> Photo of your ID (passport, national ID, or licence)</li>
-                <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-coral mt-0.5 flex-shrink-0" /> Business registration document</li>
                 <li className="flex items-start gap-2"><ImageIcon className="h-4 w-4 text-coral mt-0.5 flex-shrink-0" /> Your logo (square image)</li>
                 <li className="flex items-start gap-2"><MapPin className="h-4 w-4 text-coral mt-0.5 flex-shrink-0" /> Your address and opening hours</li>
               </ul>
-              <p className="text-xs text-text-light pt-1">Takes about 5 minutes.</p>
+              <p className="text-xs text-text-light pt-1">Takes about 2 minutes. You can verify your business later for the official tick.</p>
             </div>
           </div>
         )}
 
         {step === 2 && (
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck className="h-5 w-5 text-coral" />
-                <h1 className="text-xl font-bold text-text">Verify your business</h1>
-              </div>
-              <p className="text-sm text-text-muted">
-                Verified businesses get an official tick. Documents stay private. Only admins reviewing your application can see them.
-              </p>
-            </div>
-            <VerificationSlots
-              verification={verification}
-              uploadingSlot={uploadingSlot}
-              locked={false}
-              onUpload={handleUpload}
-              onRemove={handleRemove}
-            />
-            <p className="text-xs text-text-light">
-              All four documents are needed before we can review your business.
-            </p>
-          </div>
-        )}
-
-        {step === 3 && (
           <div className="space-y-5">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -521,7 +463,7 @@ export default function BusinessOnboardingPage() {
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="space-y-5">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -661,7 +603,7 @@ export default function BusinessOnboardingPage() {
           </div>
         )}
 
-        {step === 5 && (
+        {step === 4 && (
           <div className="space-y-5">
             <div>
               <div className="flex items-center gap-2 mb-1">

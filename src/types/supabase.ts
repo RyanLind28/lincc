@@ -983,6 +983,7 @@ export type Database = {
           first_name: string
           flag_reason: string | null
           gender: Database["public"]["Enums"]["user_gender"]
+          guide_dismissed_at: string | null
           id: string
           is_flagged: boolean | null
           is_ghost_mode: boolean | null
@@ -1014,6 +1015,7 @@ export type Database = {
           first_name?: string
           flag_reason?: string | null
           gender?: Database["public"]["Enums"]["user_gender"]
+          guide_dismissed_at?: string | null
           id: string
           is_flagged?: boolean | null
           is_ghost_mode?: boolean | null
@@ -1045,6 +1047,7 @@ export type Database = {
           first_name?: string
           flag_reason?: string | null
           gender?: Database["public"]["Enums"]["user_gender"]
+          guide_dismissed_at?: string | null
           id?: string
           is_flagged?: boolean | null
           is_ghost_mode?: boolean | null

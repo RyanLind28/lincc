@@ -26,6 +26,7 @@ export interface Profile {
   last_lat: number | null;
   last_lng: number | null;
   welcomed_at: string | null;
+  guide_dismissed_at: string | null;
   onboarding_step: string | null;
   business_onboarding_completed_at: string | null;
   allow_dms: boolean;

@@ -22,15 +22,20 @@ Lincc is a real-time local discovery app that shows you everything happening nea
 - Local businesses wanting to reach customers within walking distance
 - Event organisers and community hosts
 
+## For Businesses
+
+Lincc lets local businesses reach nearby people who are looking for something to do right now. Post flash deals, vouchers, events and openings in seconds and reach your neighbourhood for a fraction of the cost of traditional advertising. Founding businesses get priority placement and early-access pricing. Details and business waitlist at https://www.lincc.live/business
+
 ## Status
 
 - Pre-launch (waitlist open at https://www.lincc.live)
-- Launching in 2026
-- Based in London, UK
+- Now launching in Sheffield, UK, then expanding city by city
+- Based in the UK
 
 ## Links
 
 - Website: https://www.lincc.live
 - Waitlist: https://www.lincc.live/#waitlist
+- For Businesses: https://www.lincc.live/business
 - About: https://www.lincc.live/about
 - Contact: https://www.lincc.live/contact
