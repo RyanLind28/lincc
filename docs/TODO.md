@@ -1,6 +1,15 @@
 # LINCC TODO
 
-Last updated: 2026-05-22
+Last updated: 2026-05-29
+
+---
+
+## Service Monitoring (backlog, P2)
+
+Follow-ups from the admin System Status widget (`src/components/admin/SystemStatus.tsx` + `src/services/statusService.ts`). The live panel is point-in-time only — it shows status now, with no memory. These add persistence and proactive alerting. Raised 2026-05-29.
+
+- [ ] **Incident history / uptime** — persist each health-check run (or just status transitions) to a table; surface "uptime % (7d/30d)" and a last-incident timestamp in the admin panel. Needs a `service_health_log` table + a writer (a cron job pinging `health-check`, or client-side logging on each run). Currently nothing is recorded, so an overnight outage leaves no trace.
+- [ ] **Outage alerts** — when a service flips to `down`, notify admins via the existing push/email pipeline (see `create_notification` + `send-push-notification`) so detection doesn't depend on someone watching the panel. Debounce/flap-guard so a service bouncing up/down doesn't spam.
 
 ---
 
