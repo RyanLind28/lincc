@@ -56,10 +56,14 @@ function checkProfileComplete(profile: Profile | null): boolean {
   if (!profile) return false;
   // Business accounts walk through /onboarding/business (welcome → logo+bio →
   // location+hours → install). Verification is NOT part of this — it's an
-  // optional, later step from the dashboard. business_onboarding_completed_at
-  // is set when they finish; until then we redirect them into the wizard.
+  // optional, later step from the dashboard. Completeness hinges ONLY on
+  // business_onboarding_completed_at (the flag that wizard sets). We must NOT
+  // also require first_name here: the business wizard never collects it, so a
+  // business with an empty contact name would be judged incomplete forever,
+  // and ProtectedRoute ↔ wizard would ping-pong into an infinite redirect loop
+  // (blank /business/dashboard). The contact name is captured at signup.
   if (profile.account_type === 'business') {
-    return !!profile.first_name?.trim() && !!profile.business_onboarding_completed_at;
+    return !!profile.business_onboarding_completed_at;
   }
   return (
     !!profile.first_name?.trim() &&
