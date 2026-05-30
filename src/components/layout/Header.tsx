@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Bell, Plus } from 'lucide-react';
+import { ArrowLeft, Bell, Plus, Settings } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 import { OfflineBanner } from '../pwa/OfflineBanner';
@@ -42,9 +42,10 @@ export interface HeaderProps {
   leftContent?: React.ReactNode;
   /** Additional CSS classes */
   className?: string;
+  /** Show a settings cog (links to /settings) on the right side */
+  showSettings?: boolean;
   // Legacy props — accepted but ignored for backwards compatibility
   showNotifications?: boolean;
-  showSettings?: boolean;
   showLogo?: boolean;
   showCreateEvent?: boolean;
   transparent?: boolean;
@@ -57,6 +58,7 @@ export function Header({
   leftContent,
   rightContent,
   className,
+  showSettings,
 }: HeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -120,6 +122,15 @@ export function Header({
         {/* Right side */}
         <div className="flex items-center gap-1 flex-shrink-0 justify-end">
           {rightContent}
+          {showSettings && (
+            <Link
+              to="/settings"
+              className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors"
+              aria-label="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Link>
+          )}
           <Link
             to="/notifications"
             className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-background transition-colors relative"

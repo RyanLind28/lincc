@@ -187,7 +187,7 @@ export default function BusinessDashboardPage() {
   if (!business) {
     return (
       <div className="min-h-screen bg-background max-w-5xl mx-auto">
-        <Header showBack showLogo />
+        <Header showBack showLogo showSettings />
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-8 w-8 text-error" />
@@ -205,7 +205,7 @@ export default function BusinessDashboardPage() {
   if (isLoading || !data) {
     return (
       <div className="min-h-screen bg-background max-w-5xl mx-auto">
-        <Header showLogo showNotifications />
+        <Header showLogo showNotifications showSettings />
         <div className="p-4 max-w-5xl mx-auto space-y-3">
           <div className="h-32 bg-surface rounded-2xl border border-border animate-pulse" />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -225,7 +225,7 @@ export default function BusinessDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background pb-12 max-w-5xl mx-auto">
-      <Header showLogo showNotifications />
+      <Header showLogo showNotifications showSettings />
 
       <div className="p-4 space-y-6">
         {/* Hero */}
