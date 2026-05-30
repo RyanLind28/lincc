@@ -1,36 +1,14 @@
 import { logger } from '../../lib/utils';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { GradientButton } from '../../components/ui';
-import { Shield, Users, Clock, Heart } from 'lucide-react';
+import { personalGuidelines, businessGuidelines } from '../../data/guidelines';
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
-
-const guidelines = [
-  {
-    icon: Shield,
-    title: 'Safety First',
-    description: 'Always meet in public places. Trust your instincts and report any suspicious behavior.',
-  },
-  {
-    icon: Users,
-    title: 'Respectful Interactions',
-    description: 'Treat everyone with respect. Harassment, discrimination, and inappropriate behavior are not tolerated.',
-  },
-  {
-    icon: Clock,
-    title: 'Be Reliable',
-    description: 'Honor your commitments. If you can\'t make it, let others know as soon as possible.',
-  },
-  {
-    icon: Heart,
-    title: 'Platonic Connections',
-    description: 'Lincc is for friendship and activity partners. This is not a dating app.',
-  },
-];
 
 export default function TermsPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +16,9 @@ export default function TermsPage() {
   const { user, profile, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  const isBusiness = profile?.account_type === 'business';
+  const items = isBusiness ? businessGuidelines : personalGuidelines;
 
   // If terms already accepted, skip this page
   useEffect(() => {
@@ -59,7 +40,7 @@ export default function TermsPage() {
 
     setIsLoading(true);
 
-    // Use upsert so it works whether the profile row exists or not
+    // Use upsert so it works whether the profile row exists or not.
     const { error } = await supabase
       .from('profiles')
       .upsert(
@@ -72,6 +53,13 @@ export default function TermsPage() {
       );
 
     if (error) {
+      // logger.error is a no-op in production, so report to Sentry to make this
+      // failure visible — previously the user only ever saw a generic toast and
+      // the underlying cause was recorded nowhere.
+      Sentry.captureException(error, {
+        tags: { feature: 'terms-accept' },
+        extra: { userId: user.id, code: error.code, details: error.details, hint: error.hint },
+      });
       showToast('Something went wrong. Please try again.', 'error');
       logger.error(error);
     } else {
@@ -94,14 +82,18 @@ export default function TermsPage() {
 
         <div className="bg-surface rounded-2xl border border-border p-6 shadow-sm">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold gradient-text mb-2">Community Guidelines</h1>
+            <h1 className="text-2xl font-bold gradient-text mb-2">
+              {isBusiness ? 'Business Guidelines' : 'Community Guidelines'}
+            </h1>
             <p className="text-text-muted">
-              Before you get started, please review and agree to our community guidelines.
+              {isBusiness
+                ? 'Before you list your business, please review and agree to our guidelines.'
+                : 'Before you get started, please review and agree to our community guidelines.'}
             </p>
           </div>
 
           <div className="space-y-4 mb-6">
-            {guidelines.map((item) => (
+            {items.map((item) => (
               <div
                 key={item.title}
                 className="flex gap-4 p-4 bg-background rounded-xl border border-border"

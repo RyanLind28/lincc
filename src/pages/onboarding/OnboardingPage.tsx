@@ -10,6 +10,7 @@ import { usePWA } from '../../hooks/usePWA';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
 import { PhotoStep, NameStep, BirthdayStep, InterestsStep, BioStep, InstallStep, LocationStep, NotificationStep } from './steps';
+import { GuidelinesIntro } from '../../components/onboarding/GuidelinesIntro';
 import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
@@ -38,6 +39,7 @@ const BIO_STEP = 5;
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
+  const [guidelinesAcknowledged, setGuidelinesAcknowledged] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
@@ -189,7 +191,11 @@ export default function OnboardingPage() {
       }>;
       // Only restore pre-save steps. Post-save steps aren't persisted, and a
       // stale cache from an older step layout must not drop the user past save.
-      if (saved.step && saved.step > 1 && saved.step <= BIO_STEP) setStep(saved.step);
+      // Resuming mid-flow means they've already seen the guidelines intro.
+      if (saved.step && saved.step > 1 && saved.step <= BIO_STEP) {
+        setStep(saved.step);
+        setGuidelinesAcknowledged(true);
+      }
       if (saved.firstName) setFirstName(saved.firstName);
       if (saved.lastName) setLastName(saved.lastName);
       if (saved.profileName) setProfileName(saved.profileName);
@@ -488,6 +494,11 @@ export default function OnboardingPage() {
     setNotifToggled(true);
     await pushSubscribe();
   };
+
+  // Show the community guidelines once, up front, before the step wizard.
+  if (!guidelinesAcknowledged) {
+    return <GuidelinesIntro variant="personal" onContinue={() => setGuidelinesAcknowledged(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">

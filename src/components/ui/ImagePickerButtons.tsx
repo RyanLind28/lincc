@@ -8,6 +8,7 @@ interface ImagePickerButtonsProps {
   galleryLabel?: string;
   cameraLabel?: string;
   size?: 'sm' | 'md';
+  showCamera?: boolean;
 }
 
 export function ImagePickerButtons({
@@ -17,6 +18,7 @@ export function ImagePickerButtons({
   galleryLabel = 'Choose from gallery',
   cameraLabel = 'Take a photo',
   size = 'md',
+  showCamera = true,
 }: ImagePickerButtonsProps) {
   const height = size === 'sm' ? 'h-[var(--height-button-sm)]' : 'h-12';
   const text = size === 'sm' ? 'text-xs' : 'text-sm';
@@ -45,19 +47,21 @@ export function ImagePickerButtons({
         </span>
         {galleryLabel}
       </button>
-      <label className={`${base} cursor-pointer hover:border-purple hover:bg-purple/5 hover:text-purple`}>
-        <span className={`${chip} bg-purple/10 text-purple group-hover:bg-purple group-hover:text-white`}>
-          <Camera className={icon} />
-        </span>
-        {cameraLabel}
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={onCameraSelect}
-          className="hidden"
-        />
-      </label>
+      {showCamera && (
+        <label className={`${base} cursor-pointer hover:border-purple hover:bg-purple/5 hover:text-purple`}>
+          <span className={`${chip} bg-purple/10 text-purple group-hover:bg-purple group-hover:text-white`}>
+            <Camera className={icon} />
+          </span>
+          {cameraLabel}
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={onCameraSelect}
+            className="hidden"
+          />
+        </label>
+      )}
     </div>
   );
 }

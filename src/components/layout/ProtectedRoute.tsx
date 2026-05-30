@@ -38,9 +38,14 @@ export function ProtectedRoute({
     return <Navigate to="/" replace />;
   }
 
-  // Check terms acceptance
-  if (requireTerms && !profile?.terms_accepted_at) {
-    logger.log(LOG_PREFIX, location.pathname, '→ redirect to /terms (terms not accepted, profile:', !!profile, ')');
+  // Check terms acceptance. Only redirect when we actually have a loaded profile
+  // that hasn't accepted terms — a null profile here means the fetch is still
+  // settling or transiently failed, and bouncing to /terms (which performs a DB
+  // write before the session is reliably attached) surfaced a spurious
+  // "Something went wrong" toast. Terms are accepted at signup, so a genuinely
+  // unaccepted loaded profile is the only case that should land here.
+  if (requireTerms && profile && !profile.terms_accepted_at) {
+    logger.log(LOG_PREFIX, location.pathname, '→ redirect to /terms (terms not accepted)');
     return <Navigate to="/terms" state={{ from: location }} replace />;
   }
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, CheckCircle, ChevronRight, Clock, Download, Globe,
-  ImageIcon, Loader2, MapPin, Store, X,
+  ImageIcon, ImagePlus, Loader2, MapPin, Store, X,
 } from 'lucide-react';
 import * as Sentry from '@sentry/react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,7 +10,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 import {
-  GradientButton, Input, TextArea, PlacesAutocomplete, AvatarCropper, ImagePickerButtons,
+  GradientButton, Input, TextArea, PlacesAutocomplete, AvatarCropper,
 } from '../../components/ui';
 import { usePWA } from '../../hooks/usePWA';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
@@ -18,6 +18,7 @@ import {
   compressImage, validateImageDetailed, convertHeicIfNeeded,
 } from '../../lib/imageCompression';
 import { updateBusiness } from '../../services/businessService';
+import { GuidelinesIntro } from '../../components/onboarding/GuidelinesIntro';
 import type { PlaceDetails } from '../../services/placesService';
 import type { BusinessOpeningHours } from '../../types';
 
@@ -63,6 +64,7 @@ export default function BusinessOnboardingPage() {
   const { isInstallable, isInstalled, promptInstall } = usePWA();
 
   const [step, setStep] = useState(1);
+  const [guidelinesAcknowledged, setGuidelinesAcknowledged] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
 
   // Step 2 — logo + description
@@ -111,7 +113,11 @@ export default function BusinessOnboardingPage() {
         website: string;
         hours: BusinessOpeningHours;
       }>;
-      if (saved.step && saved.step > 1 && saved.step <= TOTAL_STEPS) setStep(saved.step);
+      // Resuming mid-flow means they've already seen the guidelines intro.
+      if (saved.step && saved.step > 1 && saved.step <= TOTAL_STEPS) {
+        setStep(saved.step);
+        setGuidelinesAcknowledged(true);
+      }
       if (saved.description) setDescription(saved.description);
       if (saved.address) setAddress(saved.address);
       if (saved.website) setWebsite(saved.website);
@@ -148,6 +154,11 @@ export default function BusinessOnboardingPage() {
         <Loader2 className="h-6 w-6 text-coral animate-spin" />
       </div>
     );
+  }
+
+  // Show the business guidelines once, up front, before the setup wizard.
+  if (!guidelinesAcknowledged) {
+    return <GuidelinesIntro variant="business" onContinue={() => setGuidelinesAcknowledged(true)} />;
   }
 
   // ---- Step 3 logo handlers ----
@@ -416,38 +427,47 @@ export default function BusinessOnboardingPage() {
 
             <div>
               <label className="block text-sm font-medium text-text mb-2">Business logo</label>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
                 {logoStatus !== 'idle' ? (
-                  <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-coral flex flex-col items-center justify-center text-coral">
+                  <div className="w-20 h-20 shrink-0 rounded-2xl border-2 border-dashed border-coral flex flex-col items-center justify-center text-coral">
                     <Loader2 className="h-5 w-5 animate-spin mb-1" />
                     <span className="text-[10px] capitalize">{logoStatus}…</span>
                   </div>
                 ) : logoUrl ? (
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <img src={logoUrl} alt="Business logo" className="w-20 h-20 rounded-2xl object-cover border-2 border-border" />
                     <button type="button" onClick={handleRemoveLogo} className="absolute -top-2 -right-2 w-6 h-6 bg-error rounded-full flex items-center justify-center text-white" aria-label="Remove logo">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 ) : (
-                  <label htmlFor="business-onboarding-logo-input" className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex items-center justify-center text-text-muted hover:border-coral hover:text-coral cursor-pointer">
+                  <label htmlFor="business-onboarding-logo-input" className="w-20 h-20 shrink-0 rounded-2xl border-2 border-dashed border-border flex items-center justify-center text-text-muted hover:border-coral hover:text-coral cursor-pointer transition-colors">
                     <ImageIcon className="h-6 w-6" />
                   </label>
                 )}
-                <input
-                  ref={logoInputRef}
-                  id="business-onboarding-logo-input"
-                  type="file"
-                  accept="image/*,.heic,.heif"
-                  onChange={handleLogoSelect}
-                  className="sr-only"
-                />
-                <ImagePickerButtons
-                  fileInputRef={logoInputRef}
-                  onCameraSelect={handleLogoSelect}
-                  galleryLabel={logoUrl ? 'Change logo' : 'Choose logo'}
-                  size="sm"
-                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-text">
+                    {logoUrl ? 'Looking good' : 'Add your logo'}
+                  </p>
+                  <p className="text-xs text-text-muted mb-3">Square image works best. PNG or JPG.</p>
+                  <input
+                    ref={logoInputRef}
+                    id="business-onboarding-logo-input"
+                    type="file"
+                    accept="image/*,.heic,.heif"
+                    onChange={handleLogoSelect}
+                    className="sr-only"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={logoStatus !== 'idle'}
+                    className="inline-flex items-center gap-2 h-[var(--height-button-sm)] px-4 rounded-2xl border border-border bg-surface text-xs font-semibold text-text hover:border-coral hover:bg-coral/5 hover:text-coral transition-all duration-200 press-effect disabled:opacity-50"
+                  >
+                    <ImagePlus className="h-3.5 w-3.5" />
+                    {logoUrl ? 'Change logo' : 'Choose logo'}
+                  </button>
+                </div>
               </div>
             </div>
 
