@@ -151,6 +151,7 @@ export default function EditProfilePage() {
   };
 
   const handleCropConfirm = async (croppedBlob: Blob) => {
+    logUpload('crop:confirm', `${croppedBlob.size}b`);
     if (!user) return;
     if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
@@ -161,9 +162,11 @@ export default function EditProfilePage() {
 
       // Upload first; only delete the old avatar after the new one is committed
       // so a failed upload doesn't leave the user with no avatar.
+      logUpload('upload:start', filePath);
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, croppedBlob, { contentType: 'image/jpeg' });
+      logUpload('upload:done', uploadError ? `ERR ${uploadError.message}` : 'ok');
 
       if (uploadError) {
         Sentry.captureException(uploadError, {
@@ -215,8 +218,10 @@ export default function EditProfilePage() {
 
       setAvatarUrl(newUrl);
       await refreshProfile(user.id);
+      logUpload('save:done', 'avatar updated');
       showToast('Photo updated', 'success');
     } catch (err) {
+      logUpload('crop:threw', err instanceof Error ? err.message : String(err));
       Sentry.captureException(err, { tags: { feature: 'avatar', stage: 'flow' } });
       showToast(err instanceof Error ? err.message : 'Failed to update photo', 'error');
     } finally {

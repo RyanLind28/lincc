@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import Cropper, { type Area } from 'react-easy-crop';
 import { Modal, GradientButton, Button } from './';
 import { cropImageToBlob } from '../../lib/imageCompression';
+import { logUpload } from '../../lib/uploadDebug';
 
 interface AvatarCropperProps {
   /** Object URL of the source image */
@@ -42,6 +43,13 @@ export function AvatarCropper({
     setPixels(null);
   }, [src]);
 
+  // Debug: confirm the cropper modal actually mounted on-device. If the upload
+  // trace shows 'handler:cropper-open' but never 'cropper:mounted', the Modal
+  // isn't rendering. Pre-launch aid.
+  useEffect(() => {
+    if (isOpen) logUpload('cropper:mounted');
+  }, [isOpen]);
+
   const onCropComplete = useCallback((_area: Area, areaPixels: Area) => {
     setPixels(areaPixels);
   }, []);
@@ -60,7 +68,12 @@ export function AvatarCropper({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="md" closeOnOverlayClick={false}>
       <div className="space-y-4">
-        <div className="relative w-full aspect-square bg-background rounded-2xl overflow-hidden border border-border">
+        {/* min-h is critical: react-easy-crop measures this container to size
+            the crop area. An aspect-ratio-only box inside the modal's slide-up
+            transform can measure as 0 height on mobile, leaving the cropper
+            invisible ("nothing happens"). A fixed min-height guarantees a
+            non-zero box to measure. */}
+        <div className="relative w-full aspect-square min-h-[280px] bg-background rounded-2xl overflow-hidden border border-border">
           <Cropper
             image={src}
             crop={crop}
@@ -71,6 +84,12 @@ export function AvatarCropper({
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
+            onMediaLoaded={(mediaSize) =>
+              logUpload('cropper:media-loaded', `${mediaSize.naturalWidth}x${mediaSize.naturalHeight}`)
+            }
+            mediaProps={{
+              onError: () => logUpload('cropper:media-error', 'img failed to load'),
+            }}
           />
         </div>
 

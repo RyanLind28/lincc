@@ -338,15 +338,18 @@ export default function OnboardingPage() {
   };
 
   const handleCropConfirm = async (croppedBlob: Blob) => {
+    logUpload('crop:confirm', `${croppedBlob.size}b`);
     if (!user) return;
     if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
     setIsLoading(true);
 
     const filePath = `${user.id}/${Date.now()}.jpg`;
+    logUpload('upload:start', filePath);
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(filePath, croppedBlob, { contentType: 'image/jpeg' });
+    logUpload('upload:done', uploadError ? `ERR ${uploadError.message}` : 'ok');
 
     if (uploadError) {
       Sentry.captureException(uploadError, {
@@ -367,6 +370,7 @@ export default function OnboardingPage() {
     setAvatarUrl(data.publicUrl);
     setPhotoError(null);
     setIsLoading(false);
+    logUpload('save:done', 'avatar set');
   };
 
   const validateStep = () => {
