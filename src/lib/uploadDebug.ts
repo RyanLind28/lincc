@@ -7,6 +7,11 @@
 //
 // Pre-launch debugging aid. Gate the panel behind a flag before public launch.
 
+// Stamped into the debug panel header so every screen recording proves which
+// build it came from — kills the "is this a stale cached build?" ambiguity that
+// repeatedly wasted debugging rounds. Bump this with every package.json bump.
+export const APP_VERSION = '0.12.5';
+
 export interface UploadLogLine {
   t: number;
   step: string;
