@@ -40,10 +40,6 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number): numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Hard cap for discovery — anything beyond this is not surfaced even in the
-// "further afield" section. Locked to 100km per the 2026-05-08 product call.
-const MAX_DISCOVERY_KM = 100;
-
 // Map categories from data file to filter format (exclude "Other" — not useful as a filter)
 const ALL_CATEGORIES = CATEGORIES
   .filter((cat) => cat.value !== 'other')
@@ -199,17 +195,16 @@ export default function HomePage() {
   }, [refresh]);
   const { pullDistance, isRefreshing, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
 
-  // Split events into nearby and further away. Anything beyond MAX_DISCOVERY_KM
-  // is dropped entirely so the feed stays locally relevant — events with no
+  // Split events into nearby and further away. "Near You" respects the distance
+  // slider; "Further Away" has NO upper cap — it shows everything else, however
+  // far, so the feed is never empty when events are distant. Events with no
   // computed distance (e.g. before location resolves) fall into "further" so
   // they don't disappear silently.
   const nearbyEvents = events.filter(
     (e) => e.distance_km !== undefined && e.distance_km <= debouncedDistance,
   );
   const furtherEvents = events.filter(
-    (e) =>
-      e.distance_km === undefined ||
-      (e.distance_km > debouncedDistance && e.distance_km <= MAX_DISCOVERY_KM),
+    (e) => e.distance_km === undefined || e.distance_km > debouncedDistance,
   );
 
   // Result count + reset state
@@ -221,8 +216,8 @@ export default function HomePage() {
     getActiveVouchers().then(setVouchers).catch(logger.error);
   }, []);
 
-  // Split vouchers into nearby vs further away. Same MAX_DISCOVERY_KM cap as
-  // events so a global voucher in California doesn't show up under "further".
+  // Split vouchers into nearby vs further away. "Near" respects the slider;
+  // "far" has no upper cap — everything beyond the slider shows under "further".
   const nearbyVouchers = effectiveLocation
     ? vouchers.filter((v) => {
         const d = haversine(effectiveLocation.latitude, effectiveLocation.longitude, v.venue_lat, v.venue_lng);
@@ -232,7 +227,7 @@ export default function HomePage() {
   const farVouchers = effectiveLocation
     ? vouchers.filter((v) => {
         const d = haversine(effectiveLocation.latitude, effectiveLocation.longitude, v.venue_lat, v.venue_lng);
-        return d > debouncedDistance && d <= MAX_DISCOVERY_KM;
+        return d > debouncedDistance;
       })
     : [];
 
