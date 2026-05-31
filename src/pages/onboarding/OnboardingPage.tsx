@@ -179,6 +179,7 @@ export default function OnboardingPage() {
       if (!raw) return;
       const saved = JSON.parse(raw) as Partial<{
         step: number;
+        guidelinesAcknowledged: boolean;
         firstName: string;
         lastName: string;
         profileName: string;
@@ -189,6 +190,12 @@ export default function OnboardingPage() {
         tags: string[];
         bio: string;
       }>;
+      // Restore the guidelines acknowledgement first, independent of step.
+      // Taking a selfie on the photo step (step 1) backgrounds the PWA on
+      // Android and remounts this page, resetting guidelinesAcknowledged to
+      // false — without this the user gets bounced back to the guidelines
+      // screen mid-onboarding.
+      if (saved.guidelinesAcknowledged) setGuidelinesAcknowledged(true);
       // Only restore pre-save steps. Post-save steps aren't persisted, and a
       // stale cache from an older step layout must not drop the user past save.
       // Resuming mid-flow means they've already seen the guidelines intro.
@@ -219,12 +226,12 @@ export default function OnboardingPage() {
     try {
       localStorage.setItem(
         resumeKey,
-        JSON.stringify({ step, firstName, lastName, profileName, dobDay, dobMonth, dobYear, gender, tags, bio }),
+        JSON.stringify({ step, guidelinesAcknowledged, firstName, lastName, profileName, dobDay, dobMonth, dobYear, gender, tags, bio }),
       );
     } catch {
       // Quota or private mode — fail silent; resume is best-effort.
     }
-  }, [resumeKey, isProfileComplete, step, firstName, lastName, profileName, dobDay, dobMonth, dobYear, gender, tags, bio]);
+  }, [resumeKey, isProfileComplete, step, guidelinesAcknowledged, firstName, lastName, profileName, dobDay, dobMonth, dobYear, gender, tags, bio]);
 
   // Skip the install step entirely if the app is already installed. These sit
   // after BIO_STEP (the save point).

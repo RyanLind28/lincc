@@ -344,14 +344,18 @@ export default function EditProfilePage() {
             className="sr-only"
             disabled={isUploadingAvatar}
           />
-          {!isUploadingAvatar && (
-            <ImagePickerButtons
-              fileInputRef={fileInputRef}
-              onCameraSelect={handlePhotoSelect}
-              galleryLabel={avatarUrl ? 'Replace photo' : 'Choose photo'}
-              size="sm"
-            />
-          )}
+          {/* Keep this mounted at all times: the camera input lives inside it,
+              and unmounting it mid-read (e.g. when isUploadingAvatar flips true
+              during HEIC conversion) revokes the captured photo's content:// URI
+              on Android, so the selfie never loads. Mirrors onboarding PhotoStep. */}
+          <ImagePickerButtons
+            fileInputRef={fileInputRef}
+            onCameraSelect={handlePhotoSelect}
+            galleryLabel={avatarUrl ? 'Replace photo' : 'Choose photo'}
+            cameraLabel="Selfie"
+            capture="user"
+            size="sm"
+          />
         </div>
 
         {cropSrc && (

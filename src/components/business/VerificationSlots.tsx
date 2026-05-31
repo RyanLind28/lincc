@@ -188,9 +188,18 @@ function SlotCard({
           {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           {path ? 'Replace' : 'Upload'}
         </label>
-        {showCamera && !disabled && (
+        {/* Keep the camera input mounted whenever the slot supports it, even
+            while uploading — unmounting it mid-read (the moment isUploading
+            flips true) revokes the captured photo's content:// URI on Android,
+            so the selfie/ID shot never uploads. Disable rather than remove. */}
+        {showCamera && (
           <label
-            className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-border text-sm font-medium text-text-muted hover:border-purple hover:text-purple cursor-pointer transition-colors"
+            aria-disabled={disabled}
+            className={`flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-border text-sm font-medium transition-colors ${
+              disabled
+                ? 'opacity-50 cursor-not-allowed text-text-muted'
+                : 'text-text-muted hover:border-purple hover:text-purple cursor-pointer'
+            }`}
           >
             <Camera className="h-4 w-4" />
             Camera
