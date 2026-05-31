@@ -61,6 +61,15 @@ Big polish + key-screen rework pass. 80+ files changed across foundations, compo
 
 ---
 
+## Image upload resilience (backlog, P2)
+
+Raised 2026-05-31 while fixing Samsung/Android image upload failures (cloud-offloaded photos return a `content://` reference whose bytes the browser can't read). The read pipeline (`src/lib/imageCompression.ts`) was simplified and image upload is now skippable on every flow step via the shared `UploadErrorNotice` (onboarding avatar, business onboarding logo, create event, create voucher) so a broken upload never blocks or loses a task.
+
+- [ ] **"Something's not working" reporter** — User-facing problem reporter for when a flow breaks or a user gets stuck. One tap to report; auto-captures context (current screen/route, device + user agent, the last error message, and the Sentry event/trace id) and files to the `feedback` table. Surface it inline on upload failures and onboarding steps, plus a persistent entry point in Settings.
+- [ ] **Camera parity on business logo** — the business-onboarding logo picker is gallery-only; add a camera-capture option (the reliable path on Samsung) like the other upload surfaces.
+
+---
+
 ## Meeting 2026-05-08 — Action Items (with Thameena)
 
 Source: `docs/Meeting started 2026_05_08 16_34 BST – Notes by Gemini.pdf`. Thameena needs a working waitlist + welcome email in 3–4 days to start Sheffield business outreach, so the waitlist + email items are the launch blockers.

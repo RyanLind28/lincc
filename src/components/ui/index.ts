@@ -31,3 +31,4 @@ export { WelcomeGuide } from './WelcomeGuide';
 export { SectionHeader } from './SectionHeader';
 export { ImagePickerButtons } from './ImagePickerButtons';
 export { AvatarCropper } from './AvatarCropper';
+export { UploadErrorNotice } from './UploadErrorNotice';

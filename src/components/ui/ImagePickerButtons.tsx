@@ -9,6 +9,8 @@ interface ImagePickerButtonsProps {
   cameraLabel?: string;
   size?: 'sm' | 'md';
   showCamera?: boolean;
+  /** Which camera the capture input opens. 'user' = front (selfies). */
+  capture?: 'user' | 'environment';
 }
 
 export function ImagePickerButtons({
@@ -19,6 +21,7 @@ export function ImagePickerButtons({
   cameraLabel = 'Take a photo',
   size = 'md',
   showCamera = true,
+  capture = 'environment',
 }: ImagePickerButtonsProps) {
   const height = size === 'sm' ? 'h-[var(--height-button-sm)]' : 'h-12';
   const text = size === 'sm' ? 'text-xs' : 'text-sm';
@@ -56,7 +59,7 @@ export function ImagePickerButtons({
           <input
             type="file"
             accept="image/*"
-            capture="environment"
+            capture={capture}
             onChange={onCameraSelect}
             className="hidden"
           />

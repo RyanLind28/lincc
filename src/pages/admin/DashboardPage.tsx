@@ -5,7 +5,7 @@ import { Card, CardContent, Skeleton } from '../../components/ui';
 import {
   Users, Calendar, Flag, Tag, Shield, Megaphone, Zap,
   UserPlus, Handshake, MessageSquare, Ticket, Building2, Gift, Store, Image as ImageIcon,
-  ClipboardList,
+  ClipboardList, MessageSquareWarning,
 } from 'lucide-react';
 import {
   getAdminStats, getDashboardMetrics, getAdminActionCounts,
@@ -33,6 +33,7 @@ const menuItems: Array<{
   { to: '/admin/businesses', label: 'Business Management', icon: Store, description: 'View and manage businesses' },
   { to: '/admin/business-applications', label: 'Business Applications', icon: Store, description: 'Approve or reject pending business signups', countKey: 'pendingApplications' },
   { to: '/admin/reports', label: 'Report Queue', icon: Flag, description: 'Review user reports', countKey: 'pendingReports' },
+  { to: '/admin/feedback', label: 'User Feedback', icon: MessageSquareWarning, description: 'Bug reports & problem reports from users' },
   { to: '/admin/categories', label: 'Categories', icon: Tag, description: 'Manage event categories' },
   { to: '/admin/images', label: 'Images', icon: ImageIcon, description: 'Browse and remove uploaded images' },
   { to: '/admin/announcements', label: 'Announcements', icon: Megaphone, description: 'Broadcast to all users' },

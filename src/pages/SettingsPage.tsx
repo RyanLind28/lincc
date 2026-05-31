@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
 import { Slider, Toggle, Modal, Input, Button } from '../components/ui';
 import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Monitor, Mail, Lock, HelpCircle, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus, Sparkles, FlaskConical, Share, Shield } from 'lucide-react';
+import { useReportProblem } from '../contexts/ReportProblemContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { useLocationName } from '../hooks/useLocationName';
@@ -15,6 +16,7 @@ import type { NotificationPreferences } from '../types';
 export default function SettingsPage() {
   const { profile, user, signOut, refreshProfile } = useAuth();
   const { showToast } = useToast();
+  const { openReport } = useReportProblem();
   const navigate = useNavigate();
   const { location } = useUserLocation();
 
@@ -696,6 +698,20 @@ export default function SettingsPage() {
             </button>
 
             <button
+              onClick={() => openReport({ source: 'settings' })}
+              className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
+            >
+              <div className="w-10 h-10 bg-error/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-error" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-text">Report a problem</h3>
+                <p className="text-sm text-text-muted">Something broke or you're stuck? Tell us — we attach your device details automatically</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-text-muted" />
+            </button>
+
+            <button
               onClick={() => navigate('/feedback')}
               className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
             >
@@ -704,7 +720,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex-1">
                 <h3 className="font-medium text-text">Send Feedback</h3>
-                <p className="text-sm text-text-muted">Bug reports, feature requests, support</p>
+                <p className="text-sm text-text-muted">Feature requests &amp; general feedback</p>
               </div>
               <ChevronRight className="h-5 w-5 text-text-muted" />
             </button>
@@ -845,7 +861,7 @@ export default function SettingsPage() {
 
         {/* Version */}
         <p className="text-center text-sm text-text-light">
-          Lincc v0.11.0
+          Lincc v0.12.0
         </p>
 
         {/* Delete Account Confirmation Modal */}

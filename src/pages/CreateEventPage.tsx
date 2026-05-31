@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, MapPin, Calendar, Users, Clock, Search, Spar
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
-import { Input, TextArea, GradientButton, Slider, DatePicker, CategoryIcon, PlacesAutocomplete, ImagePickerButtons } from '../components/ui';
+import { Input, TextArea, GradientButton, Slider, DatePicker, CategoryIcon, PlacesAutocomplete, ImagePickerButtons, UploadErrorNotice } from '../components/ui';
 import { CATEGORIES, type Category, type SubCategory } from '../data/categories';
 import { createEvent } from '../services/events';
 import { cn } from '../lib/utils';
@@ -98,6 +98,10 @@ export default function CreateEventPage() {
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>((draft.current?.coverImageUrl as string) || null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  // Inline failure state — the cover is optional, so a broken pick or upload
+  // offers retry/skip rather than blocking or losing the event.
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const [imageSubmitError, setImageSubmitError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Persist draft on changes so state survives file-picker remount
@@ -161,6 +165,7 @@ export default function CreateEventPage() {
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setCoverError(null);
 
     // Validate (and read bytes into a JS-owned File) BEFORE clearing the
     // input — clearing `input.value` can revoke the picker's Content URI
@@ -180,7 +185,7 @@ export default function CreateEventPage() {
           recoveryAttempts: validation.recoveryAttempts,
         },
       });
-      showToast(validation.error, 'error');
+      setCoverError(validation.error);
       return;
     }
     if (validation.recovered) {
@@ -277,7 +282,7 @@ export default function CreateEventPage() {
 
   const handleSubmit = (asDraft = false) => submit(asDraft);
 
-  const submit = async (asDraft: boolean) => {
+  const submit = async (asDraft: boolean, opts: { skipImage?: boolean } = {}) => {
     if (!user?.id) {
       showToast('Please log in to create an event', 'error');
       return;
@@ -296,11 +301,16 @@ export default function CreateEventPage() {
       const [hours, minutes] = selectedTime.split(':').map(Number);
       eventDateTime.setHours(hours, minutes, 0, 0);
 
-      // Upload cover image if user selected a file. If the upload fails, abort
-      // the whole submit — silently falling back to a default image was confusing
-      // (users thought their picked photo had saved when it hadn't).
+      // Upload cover image if user selected a file. On failure we don't abort
+      // the whole event — instead we surface an inline "post without photo /
+      // try again" choice (imageSubmitError) so a broken upload never costs the
+      // user their event. `opts.skipImage` is the "post without photo" path.
       let finalCoverImageUrl = coverImageUrl;
-      if (coverImageFile) {
+      if (coverImageFile && opts.skipImage) {
+        // User chose to post without the photo — drop the blob URL and fall
+        // back to the category/subcategory default cover.
+        finalCoverImageUrl = selectedSubcategory?.image ?? selectedCategory?.image ?? null;
+      } else if (coverImageFile) {
         setIsUploading(true);
         let compressed: Blob;
         try {
@@ -315,10 +325,7 @@ export default function CreateEventPage() {
               userAgent: navigator.userAgent,
             },
           });
-          showToast(
-            "Couldn't process that image. Try a smaller photo or a different format (JPG/PNG).",
-            'error',
-          );
+          setImageSubmitError(true);
           setIsUploading(false);
           setIsLoading(false);
           return;
@@ -334,12 +341,7 @@ export default function CreateEventPage() {
             tags: { feature: 'event-cover', stage: 'upload' },
             extra: { fileName, compressedSize: compressed.size, userAgent: navigator.userAgent },
           });
-          showToast(
-            uploadError.message
-              ? `Image upload failed: ${uploadError.message}`
-              : "Image upload failed. Check your connection and try again.",
-            'error',
-          );
+          setImageSubmitError(true);
           setIsUploading(false);
           setIsLoading(false);
           return;
@@ -351,6 +353,7 @@ export default function CreateEventPage() {
         finalCoverImageUrl = urlData.publicUrl;
         setIsUploading(false);
       }
+      setImageSubmitError(false);
 
       const result = await createEvent(
         {
@@ -701,6 +704,17 @@ export default function CreateEventPage() {
                   size="sm"
                 />
               </div>
+              {coverError && (
+                <div className="mt-2">
+                  <UploadErrorNotice
+                    message={coverError}
+                    onRetry={() => { setCoverError(null); fileInputRef.current?.click(); }}
+                    onSkip={() => setCoverError(null)}
+                    skipLabel="Skip photo"
+                    reportSource="event-cover"
+                  />
+                </div>
+              )}
             </div>
 
             <Input
@@ -1017,6 +1031,16 @@ export default function CreateEventPage() {
             </div>
 
             <div className="space-y-2">
+              {imageSubmitError && (
+                <UploadErrorNotice
+                  message="We couldn't upload your photo. Post without it, or try again."
+                  retryLabel="Try again"
+                  skipLabel="Post without photo"
+                  onRetry={() => handleSubmit(false)}
+                  onSkip={() => submit(false, { skipImage: true })}
+                  reportSource="event-cover-upload"
+                />
+              )}
               <GradientButton
                 fullWidth
                 size="lg"

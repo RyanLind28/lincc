@@ -10,7 +10,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 import {
-  GradientButton, Input, TextArea, PlacesAutocomplete, AvatarCropper,
+  GradientButton, Input, TextArea, PlacesAutocomplete, AvatarCropper, UploadErrorNotice,
 } from '../../components/ui';
 import { usePWA } from '../../hooks/usePWA';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
@@ -72,6 +72,7 @@ export default function BusinessOnboardingPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [logoStatus, setLogoStatus] = useState<LogoStatus>('idle');
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -166,6 +167,7 @@ export default function BusinessOnboardingPage() {
   const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setLogoError(null);
     const validation = await validateImageDetailed(file);
     if (logoInputRef.current) logoInputRef.current.value = '';
     if (!validation.ok) {
@@ -180,7 +182,7 @@ export default function BusinessOnboardingPage() {
           recoveryAttempts: validation.recoveryAttempts,
         },
       });
-      showToast(validation.error, 'error');
+      setLogoError(validation.error);
       return;
     }
     if (validation.recovered) {
@@ -330,22 +332,20 @@ export default function BusinessOnboardingPage() {
   // Each substantive step gates its Next button on the inputs it owns. Welcome
   // and Install (1 and 4) are non-blocking — Install is optional by design and
   // Welcome has no inputs. Hours and website are optional polish on step 3.
-  const hasLogo = !!logoUrl;
   const hasDescription = description.trim().length > 0;
   const hasAddress = address.trim().length > 0;
 
+  // Logo is optional — a broken image upload must never block onboarding. The
+  // business can add or change it later from the dashboard. Only the
+  // description gates step 2.
   const canAdvance = (() => {
-    if (step === 2) return hasLogo && hasDescription;
+    if (step === 2) return hasDescription;
     if (step === 3) return hasAddress;
     return true;
   })();
 
   const advanceHint = (() => {
-    if (step === 2) {
-      if (!hasLogo && !hasDescription) return 'Add a logo and a short description to continue.';
-      if (!hasLogo) return 'Add a logo to continue.';
-      if (!hasDescription) return 'Add a short description to continue.';
-    }
+    if (step === 2 && !hasDescription) return 'Add a short description to continue.';
     if (step === 3 && !hasAddress) return 'Add your address to continue.';
     return null;
   })();
@@ -470,6 +470,16 @@ export default function BusinessOnboardingPage() {
                 </div>
               </div>
             </div>
+
+            {logoError && (
+              <UploadErrorNotice
+                message={logoError}
+                onRetry={() => { setLogoError(null); logoInputRef.current?.click(); }}
+                onSkip={() => setLogoError(null)}
+                skipLabel="Skip logo"
+                reportSource="business-logo"
+              />
+            )}
 
             <TextArea
               label="Description"

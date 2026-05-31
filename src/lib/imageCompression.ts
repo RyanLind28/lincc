@@ -6,11 +6,10 @@ const JPEG_QUALITY = 0.8;
 const MAX_INPUT_SIZE = 25 * 1024 * 1024;
 const MAX_INPUT_SIZE_LABEL = '25MB';
 
-// Total wall-clock budget for the recovery cascade. Each stage has its own
-// inner timeout; this is a belt-and-braces cap so a wedged decode can't hang
-// the picker indefinitely.
-const RECOVERY_BUDGET_MS = 20_000;
-const IMAGE_LOAD_TIMEOUT_MS = 15_000;
+// Timeout for the single slice-reread fallback. Short on purpose — if the first
+// direct read failed, a cloud-backed file won't materialise no matter how long
+// we wait, so we fail fast rather than hang the picker.
+const SLICE_REREAD_TIMEOUT_MS = 5_000;
 
 const ALLOWED_TYPES = new Set([
   'image/jpeg',
@@ -28,16 +27,26 @@ const HEIC_BRANDS = new Set(['heic', 'heix', 'hevc', 'heim', 'heis', 'hevm', 'he
 
 type DetectedFormat = 'jpeg' | 'png' | 'gif' | 'webp' | 'heic' | null;
 
-// User-facing copy when every read path failed. Points at the Android Share
-// intent — that route hands Chrome a fresh Content URI from the source app,
-// which side-steps the picker URI that just failed us.
-const UNREADABLE_MESSAGE =
-  "This photo couldn't be opened. It may be stored in the cloud and not downloaded to your device yet. " +
-  "Try taking a fresh photo with your camera, or open the photo in your gallery first to download it.";
+// User-facing copy for the dominant Samsung failure: the picked file has zero
+// bytes because Samsung Gallery / OneDrive / Google Photos offloaded it to the
+// cloud and never downloaded it back. No client-side read can recover bytes
+// that aren't on the device, so we point the user straight at the camera (which
+// always works) or at re-downloading the photo in Gallery first.
+const EMPTY_FILE_MESSAGE =
+  "This photo hasn't downloaded to your phone yet. Samsung Gallery often keeps photos in the cloud. " +
+  "Tap 'Take a photo' to use your camera, or open the photo in Gallery first to download it, then try again.";
 
+// Fallback copy when the read genuinely failed for a non-empty file.
+const UNREADABLE_MESSAGE =
+  "This photo couldn't be opened. It may still be syncing from the cloud. " +
+  "Try taking a fresh photo with your camera, or open the photo in Gallery first to download it.";
+
+// Kept as a lightweight record for Sentry breadcrumbs. The old multi-stage
+// cascade is gone (it could never read a zero-byte file); we now record only
+// the fast path and the single slice-reread fallback.
 export type RecoveryAttempt = {
-  stage: 'imageBitmap' | 'fileReader' | 'stream' | 'responseStream' | 'imageElement';
-  outcome: 'recovered' | 'timeout' | 'unsupported' | 'null-result' | 'error';
+  stage: 'arrayBuffer' | 'sliceReread';
+  outcome: 'recovered' | 'timeout' | 'null-result' | 'error';
   detail?: string;
 };
 
@@ -56,10 +65,6 @@ export type ImageValidationResult =
       arrayBufferError?: string;
       recoveryAttempts?: RecoveryAttempt[];
     };
-
-type RecoveryStageResult =
-  | { ok: true; file: File }
-  | { ok: false; outcome: Exclude<RecoveryAttempt['outcome'], 'recovered'>; detail?: string };
 
 function detectFormatFromBytes(bytes: Uint8Array): DetectedFormat {
   if (bytes.length < 4) return null;
@@ -133,193 +138,6 @@ function summariseError(err: unknown): string {
   return String(err).slice(0, 200);
 }
 
-function stageFailure(err: unknown): RecoveryStageResult {
-  if (err instanceof TimeoutError) return { ok: false, outcome: 'timeout' };
-  return { ok: false, outcome: 'error', detail: summariseError(err) };
-}
-
-// --- Recovery cascade --------------------------------------------------------
-// Different browser APIs go through different internal read paths inside
-// Chrome. When the Promise-based `Blob.arrayBuffer()` fails on a Samsung
-// Content URI, one of these alternative paths frequently still works.
-// Each helper returns a JS-owned File (decoupled from the original URI) or
-// null. They never throw.
-
-async function recoverViaImageBitmap(file: File): Promise<RecoveryStageResult> {
-  if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') {
-    return { ok: false, outcome: 'unsupported' };
-  }
-  let bitmap: ImageBitmap;
-  try {
-    bitmap = await raceTimeout(createImageBitmap(file), IMAGE_LOAD_TIMEOUT_MS);
-  } catch (err) {
-    return stageFailure(err);
-  }
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return { ok: false, outcome: 'error', detail: 'no-canvas-2d-context' };
-    ctx.drawImage(bitmap, 0, 0);
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
-    );
-    if (!blob) return { ok: false, outcome: 'null-result', detail: 'canvas-toBlob-null' };
-    return { ok: true, file: new File([blob], renameToJpg(file.name), { type: 'image/jpeg' }) };
-  } catch (err) {
-    return stageFailure(err);
-  } finally {
-    if ('close' in bitmap) bitmap.close();
-  }
-}
-
-async function recoverViaFileReader(file: File): Promise<RecoveryStageResult> {
-  if (typeof FileReader === 'undefined') {
-    return { ok: false, outcome: 'unsupported' };
-  }
-  try {
-    const buffer = await raceTimeout(
-      new Promise<ArrayBuffer>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result;
-          if (result instanceof ArrayBuffer) resolve(result);
-          else reject(new Error('FileReader returned non-ArrayBuffer'));
-        };
-        reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'));
-        reader.readAsArrayBuffer(file);
-      }),
-      IMAGE_LOAD_TIMEOUT_MS,
-    );
-    return { ok: true, file: new File([buffer], file.name, { type: file.type || 'image/jpeg' }) };
-  } catch (err) {
-    return stageFailure(err);
-  }
-}
-
-// `new Response(blob).arrayBuffer()` exercises the fetch stack rather than the
-// direct Blob read path. On some Android Chrome builds this succeeds when
-// `blob.arrayBuffer()` returns NotReadableError on the same Content URI.
-async function recoverViaResponseStream(file: File): Promise<RecoveryStageResult> {
-  if (typeof Response === 'undefined') {
-    return { ok: false, outcome: 'unsupported' };
-  }
-  try {
-    const buffer = await raceTimeout(new Response(file).arrayBuffer(), IMAGE_LOAD_TIMEOUT_MS);
-    return { ok: true, file: new File([buffer], file.name, { type: file.type || 'image/jpeg' }) };
-  } catch (err) {
-    return stageFailure(err);
-  }
-}
-
-// ReadableStream API — exercises a different Chrome I/O pipe than arrayBuffer()
-// or FileReader. On some Android builds this path stays open when others fail.
-async function recoverViaStream(file: File): Promise<RecoveryStageResult> {
-  if (typeof file.stream !== 'function') {
-    return { ok: false, outcome: 'unsupported' };
-  }
-  try {
-    const reader = file.stream().getReader();
-    const chunks: Uint8Array[] = [];
-    let done = false;
-    while (!done) {
-      const result = await raceTimeout(reader.read(), IMAGE_LOAD_TIMEOUT_MS);
-      if (result.done) {
-        done = true;
-      } else {
-        chunks.push(result.value);
-      }
-    }
-    const totalLength = chunks.reduce((sum, c) => sum + c.byteLength, 0);
-    if (totalLength === 0) return { ok: false, outcome: 'null-result', detail: 'stream-empty' };
-    const merged = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const chunk of chunks) {
-      merged.set(chunk, offset);
-      offset += chunk.byteLength;
-    }
-    return { ok: true, file: new File([merged], file.name, { type: file.type || 'image/jpeg' }) };
-  } catch (err) {
-    return stageFailure(err);
-  }
-}
-
-// Last resort: load the file through `<img src=createObjectURL>`. Even when
-// every byte-read API fails, the renderer sometimes materialises pixels by
-// going through the platform image decoder directly.
-async function recoverViaImageElement(file: File): Promise<RecoveryStageResult> {
-  if (typeof URL === 'undefined' || typeof Image === 'undefined') {
-    return { ok: false, outcome: 'unsupported' };
-  }
-  const objectUrl = URL.createObjectURL(file);
-  try {
-    const img = await raceTimeout(loadImage(objectUrl), IMAGE_LOAD_TIMEOUT_MS);
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return { ok: false, outcome: 'error', detail: 'no-canvas-2d-context' };
-    ctx.drawImage(img, 0, 0);
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
-    );
-    if (!blob) return { ok: false, outcome: 'null-result', detail: 'canvas-toBlob-null' };
-    return { ok: true, file: new File([blob], renameToJpg(file.name), { type: 'image/jpeg' }) };
-  } catch (err) {
-    return stageFailure(err);
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('image load failed'));
-    img.src = src;
-  });
-}
-
-function renameToJpg(name: string): string {
-  return name.replace(/\.[a-z0-9]+$/i, '') + '.jpg';
-}
-
-async function runRecoveryCascade(
-  file: File,
-): Promise<{ file: File | null; attempts: RecoveryAttempt[] }> {
-  const deadline = Date.now() + RECOVERY_BUDGET_MS;
-  const stages: Array<{ name: RecoveryAttempt['stage']; run: (f: File) => Promise<RecoveryStageResult> }> = [
-    { name: 'imageBitmap', run: recoverViaImageBitmap },
-    { name: 'fileReader', run: recoverViaFileReader },
-    { name: 'stream' as RecoveryAttempt['stage'], run: recoverViaStream },
-    { name: 'responseStream', run: recoverViaResponseStream },
-    { name: 'imageElement', run: recoverViaImageElement },
-  ];
-  const attempts: RecoveryAttempt[] = [];
-  for (const stage of stages) {
-    if (Date.now() >= deadline) {
-      attempts.push({ stage: stage.name, outcome: 'timeout', detail: 'cascade-budget-exhausted' });
-      break;
-    }
-    let result: RecoveryStageResult;
-    try {
-      result = await stage.run(file);
-    } catch (err) {
-      result = stageFailure(err);
-    }
-    if (result.ok) {
-      attempts.push({ stage: stage.name, outcome: 'recovered' });
-      return { file: result.file, attempts };
-    }
-    attempts.push({ stage: stage.name, outcome: result.outcome, detail: result.detail });
-  }
-  return { file: null, attempts };
-}
-
 // --- Public API --------------------------------------------------------------
 
 /**
@@ -332,6 +150,19 @@ async function runRecoveryCascade(
  * breaking subsequent reads.
  */
 export async function validateImageDetailed(file: File): Promise<ImageValidationResult> {
+  // Zero-byte guard — the dominant Samsung failure. When Gallery hands the
+  // browser a cloud-offloaded photo, the File handle exists (name, type) but
+  // `file.size` is 0 and every byte read fails with NotReadableError. There is
+  // nothing on the device to read, so we bail immediately with a clear,
+  // camera-first message rather than churning through doomed read attempts.
+  if (file.size === 0) {
+    return {
+      ok: false,
+      error: EMPTY_FILE_MESSAGE,
+      recoveryAttempts: [{ stage: 'arrayBuffer', outcome: 'null-result', detail: 'zero-byte-file' }],
+    };
+  }
+
   if (file.size > MAX_INPUT_SIZE) {
     return { ok: false, error: `Image must be less than ${MAX_INPUT_SIZE_LABEL}` };
   }
@@ -348,7 +179,7 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
     arrayBufferError = summariseError(err);
   }
 
-  if (buffer) {
+  if (buffer && buffer.byteLength > 0) {
     const cloned = new File([buffer], file.name, { type: file.type || 'image/jpeg' });
     const format = detectFormatFromBytes(new Uint8Array(buffer, 0, Math.min(16, buffer.byteLength)));
     if (format) return { ok: true, file: cloned, format, recovered: false };
@@ -360,12 +191,13 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
     return { ok: false, error: 'File does not appear to be a valid image' };
   }
 
-  // arrayBuffer() failed — before the full cascade, try one more direct read:
-  // slice the entire Blob and read the slice. On some Android versions this
-  // goes through a different ContentProvider code path that stays open.
+  // arrayBuffer() failed (or returned empty). One cheap retry: slice the whole
+  // Blob and read the slice. On some Android builds this goes through a
+  // different ContentProvider code path that stays open. If this also fails the
+  // bytes genuinely aren't reachable — no further read API will change that.
   try {
     const sliced = file.slice(0, file.size, file.type);
-    buffer = await raceTimeout(sliced.arrayBuffer(), 5000);
+    buffer = await raceTimeout(sliced.arrayBuffer(), SLICE_REREAD_TIMEOUT_MS);
     if (buffer && buffer.byteLength > 0) {
       const cloned = new File([buffer], file.name, { type: file.type || 'image/jpeg' });
       const format = detectFormatFromBytes(new Uint8Array(buffer, 0, Math.min(16, buffer.byteLength)));
@@ -375,24 +207,15 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
         format: format ?? null,
         recovered: true,
         arrayBufferError,
-        recoveryAttempts: [{ stage: 'stream' as RecoveryAttempt['stage'], outcome: 'recovered', detail: 'blob-slice-reread' }],
+        recoveryAttempts: [{ stage: 'sliceReread', outcome: 'recovered', detail: 'blob-slice-reread' }],
       };
     }
-  } catch {
-    // Slice re-read also failed — continue to full cascade
-  }
-
-  // Run the full recovery cascade. Any successful stage produces a re-encoded
-  // JPEG (or a fresh JS-owned File), so we don't need to re-validate magic bytes.
-  const { file: recovered, attempts } = await runRecoveryCascade(file);
-  if (recovered) {
+  } catch (err) {
     return {
-      ok: true,
-      file: recovered,
-      format: 'jpeg',
-      recovered: true,
+      ok: false,
+      error: UNREADABLE_MESSAGE,
       arrayBufferError,
-      recoveryAttempts: attempts,
+      recoveryAttempts: [{ stage: 'sliceReread', outcome: summariseSliceOutcome(err), detail: summariseError(err) }],
     };
   }
 
@@ -400,8 +223,12 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
     ok: false,
     error: UNREADABLE_MESSAGE,
     arrayBufferError,
-    recoveryAttempts: attempts,
+    recoveryAttempts: [{ stage: 'sliceReread', outcome: 'null-result', detail: 'slice-empty' }],
   };
+}
+
+function summariseSliceOutcome(err: unknown): RecoveryAttempt['outcome'] {
+  return err instanceof TimeoutError ? 'timeout' : 'error';
 }
 
 /**

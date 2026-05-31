@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ViewModeProvider } from './contexts/ViewModeContext';
+import { ReportProblemProvider } from './contexts/ReportProblemContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute, PublicRoute } from './components/layout/ProtectedRoute';
 import { ErrorBoundary } from './components/layout/ErrorBoundary';
@@ -75,6 +76,7 @@ const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
 const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
 const FeatureFlagsPage = lazy(() => import('./pages/admin/FeatureFlagsPage'));
 const AdminWaitlistPage = lazy(() => import('./pages/admin/WaitlistPage'));
+const AdminFeedbackPage = lazy(() => import('./pages/admin/FeedbackPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
 const SearchPeoplePage = lazy(() => import('./pages/SearchPeoplePage'));
 const BusinessDirectoryPage = lazy(() => import('./pages/BusinessDirectoryPage'));
@@ -93,6 +95,7 @@ function App() {
     <AuthProvider>
       <ToastProvider>
         <ViewModeProvider>
+        <ReportProblemProvider>
         <ScrollToTop />
         <AnalyticsTracker />
         <CookieConsentBanner />
@@ -358,8 +361,17 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/feedback"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminFeedbackPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
         </Suspense>
+        </ReportProblemProvider>
         </ViewModeProvider>
       </ToastProvider>
     </AuthProvider>

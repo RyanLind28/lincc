@@ -5,7 +5,7 @@ import { ChevronLeft, MapPin, Camera, X, Tag, Store, Loader2 } from 'lucide-reac
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/layout';
-import { Input, TextArea, GradientButton, DatePicker, ImagePickerButtons } from '../components/ui';
+import { Input, TextArea, GradientButton, DatePicker, ImagePickerButtons, UploadErrorNotice } from '../components/ui';
 import { supabase } from '../lib/supabase';
 import { compressImage, validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
 import * as Sentry from '@sentry/react';
@@ -49,6 +49,10 @@ export default function CreateVoucherPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  // Inline failure state — the cover is optional, so a broken pick or upload
+  // offers retry/skip rather than blocking or losing the voucher.
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const [imageSubmitError, setImageSubmitError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentStepIndex = STEPS.indexOf(step);
@@ -99,6 +103,7 @@ export default function CreateVoucherPage() {
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setCoverError(null);
 
     // Validate (and read bytes into a JS-owned File) BEFORE clearing the
     // input — clearing `input.value` can revoke the picker's Content URI
@@ -118,7 +123,7 @@ export default function CreateVoucherPage() {
           recoveryAttempts: validation.recoveryAttempts,
         },
       });
-      showToast(validation.error, 'error');
+      setCoverError(validation.error);
       return;
     }
     if (validation.recovered) {
@@ -218,7 +223,7 @@ export default function CreateVoucherPage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (opts: { skipImage?: boolean } = {}) => {
     if (!user?.id) {
       showToast('Please log in', 'error');
       return;
@@ -232,10 +237,13 @@ export default function CreateVoucherPage() {
     setIsLoading(true);
 
     try {
-      // Upload cover image if selected. Abort the whole submit on failure rather
-      // than silently saving a voucher without the image the user picked.
+      // Upload cover image if selected. On failure we don't abort — an inline
+      // "save without photo / try again" choice (imageSubmitError) keeps the
+      // voucher from being lost. `opts.skipImage` is the "save without" path.
       let finalCoverImageUrl = coverImageUrl;
-      if (coverImageFile) {
+      if (coverImageFile && opts.skipImage) {
+        finalCoverImageUrl = null;
+      } else if (coverImageFile) {
         setIsUploading(true);
         let compressed: Blob;
         try {
@@ -250,10 +258,7 @@ export default function CreateVoucherPage() {
               userAgent: navigator.userAgent,
             },
           });
-          showToast(
-            "Couldn't process that image. Try a smaller photo or a different format (JPG/PNG).",
-            'error',
-          );
+          setImageSubmitError(true);
           setIsUploading(false);
           setIsLoading(false);
           return;
@@ -269,12 +274,7 @@ export default function CreateVoucherPage() {
             tags: { feature: 'voucher-cover', stage: 'upload' },
             extra: { fileName, compressedSize: compressed.size, userAgent: navigator.userAgent },
           });
-          showToast(
-            uploadError.message
-              ? `Image upload failed: ${uploadError.message}`
-              : "Image upload failed. Check your connection and try again.",
-            'error',
-          );
+          setImageSubmitError(true);
           setIsUploading(false);
           setIsLoading(false);
           return;
@@ -286,6 +286,7 @@ export default function CreateVoucherPage() {
         finalCoverImageUrl = urlData.publicUrl;
         setIsUploading(false);
       }
+      setImageSubmitError(false);
 
       const { error } = await supabase
         .from('vouchers')
@@ -562,6 +563,17 @@ export default function CreateVoucherPage() {
                   size="sm"
                 />
               </div>
+              {coverError && (
+                <div className="mt-2">
+                  <UploadErrorNotice
+                    message={coverError}
+                    onRetry={() => { setCoverError(null); fileInputRef.current?.click(); }}
+                    onSkip={() => setCoverError(null)}
+                    skipLabel="Skip photo"
+                    reportSource="voucher-cover"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Expiry date */}
@@ -636,10 +648,20 @@ export default function CreateVoucherPage() {
               </div>
             </div>
 
+            {imageSubmitError && (
+              <UploadErrorNotice
+                message="We couldn't upload your photo. Save without it, or try again."
+                retryLabel="Try again"
+                skipLabel="Save without photo"
+                onRetry={() => handleSubmit()}
+                onSkip={() => handleSubmit({ skipImage: true })}
+                reportSource="voucher-cover-upload"
+              />
+            )}
             <GradientButton
               fullWidth
               size="lg"
-              onClick={handleSubmit}
+              onClick={() => handleSubmit()}
               isLoading={isLoading || isUploading}
             >
               {isUploading ? (

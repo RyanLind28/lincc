@@ -1,4 +1,4 @@
-import { Avatar, ImagePickerButtons } from '../../../components/ui';
+import { Avatar, ImagePickerButtons, UploadErrorNotice } from '../../../components/ui';
 import { Camera, Loader2, X } from 'lucide-react';
 import type { RefObject } from 'react';
 
@@ -68,14 +68,16 @@ export function PhotoStep({
           )}
         </div>
 
-        {!isRecovering && !photoError && (
-          <ImagePickerButtons
-            fileInputRef={fileInputRef}
-            onCameraSelect={onPhotoSelect}
-            galleryLabel="Gallery"
-            cameraLabel="Selfie"
-          />
-        )}
+        {/* Gallery + Selfie are always available — the photo is optional, so a
+            failed pick should never hide the way to try a different source. The
+            'Skip for now' nav button below also lets the user move on. */}
+        <ImagePickerButtons
+          fileInputRef={fileInputRef}
+          onCameraSelect={onPhotoSelect}
+          galleryLabel="Gallery"
+          cameraLabel="Selfie"
+          capture="user"
+        />
 
         <p className="text-xs text-text-muted">
           {isRecovering
@@ -84,47 +86,17 @@ export function PhotoStep({
         </p>
 
         {photoError && (
-          <div className="w-full text-left bg-error/5 border border-error/20 rounded-xl p-4 mt-2">
-            <p className="text-sm font-semibold text-error mb-2">
-              Couldn't use this photo
-            </p>
-            <p className="text-sm text-text-muted mb-3 leading-relaxed">
-              {photoError}
-            </p>
-            {/cloud|downloaded/i.test(photoError) && (
-              <div className="text-xs text-text-muted bg-background rounded-lg p-3 mb-3 leading-relaxed">
-                <p className="font-semibold text-text mb-1">On Samsung:</p>
-                <ol className="list-decimal pl-4 space-y-0.5">
-                  <li>Open <span className="font-medium">Samsung Gallery</span></li>
-                  <li>Tap the photo you want to use</li>
-                  <li>Tap the <span className="font-medium">cloud icon</span> to download it to the device</li>
-                  <li>Come back here and tap your avatar to try again</li>
-                </ol>
-              </div>
-            )}
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  onClearError();
-                  fileInputRef.current?.click();
-                }}
-                className="text-sm font-semibold text-coral hover:text-coral-dark"
-              >
-                Try a different photo →
-              </button>
-              <label className="text-sm font-semibold text-purple hover:text-purple-dark cursor-pointer">
-                Take a photo instead
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  onChange={onPhotoSelect}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          </div>
+          <UploadErrorNotice
+            message={photoError}
+            retryLabel="Try again"
+            skipLabel="Skip photo"
+            onRetry={() => {
+              onClearError();
+              fileInputRef.current?.click();
+            }}
+            onSkip={onClearError}
+            reportSource="onboarding-avatar"
+          />
         )}
       </div>
     </div>
