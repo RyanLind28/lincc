@@ -8,8 +8,6 @@ import { Header } from '../components/layout';
 import { Avatar, Button, Input, TextArea, ChipGroup, ImagePickerButtons } from '../components/ui';
 import { Camera, Mail, Lock, ChevronRight, Loader2 } from 'lucide-react';
 import { validateImageDetailed, convertHeicIfNeeded, autoCropSquareToBlob } from '../lib/imageCompression';
-import { logUpload } from '../lib/uploadDebug';
-import { UploadDebugPanel } from '../components/ui';
 import * as Sentry from '@sentry/react';
 
 const INTEREST_TAGS = [
@@ -61,13 +59,10 @@ export default function EditProfilePage() {
   const [isSecurityLoading, setIsSecurityLoading] = useState(false);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    logUpload('onChange:fired', `files=${e.target.files?.length ?? 0}`);
     const file = e.target.files?.[0];
     if (!file) {
-      logUpload('onChange:no-file');
       return;
     }
-    logUpload('picked', `${file.name} | ${file.size}b | ${file.type || 'no-type'}`);
 
     // Show feedback immediately — the read below is async and can take a moment
     // on a real device; without this the screen looks frozen ("nothing happens").
@@ -148,13 +143,11 @@ export default function EditProfilePage() {
     try {
       squareBlob = await autoCropSquareToBlob(workingFile);
     } catch (err) {
-      logUpload('autocrop:failed', err instanceof Error ? err.message : String(err));
       Sentry.captureException(err, { tags: { feature: 'avatar', stage: 'autocrop' } });
       showToast("Couldn't process that photo. Try another one.", 'error');
       setIsUploadingAvatar(false);
       return;
     }
-    logUpload('autocrop:done', `${squareBlob.size}b`);
     await handleCropConfirm(squareBlob);
   };
 
@@ -167,11 +160,9 @@ export default function EditProfilePage() {
 
       // Upload first; only delete the old avatar after the new one is committed
       // so a failed upload doesn't leave the user with no avatar.
-      logUpload('upload:start', filePath);
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, croppedBlob, { contentType: 'image/jpeg' });
-      logUpload('upload:done', uploadError ? `ERR ${uploadError.message}` : 'ok');
 
       if (uploadError) {
         Sentry.captureException(uploadError, {
@@ -223,7 +214,6 @@ export default function EditProfilePage() {
 
       setAvatarUrl(newUrl);
       await refreshProfile(user.id);
-      logUpload('save:done', 'avatar updated');
       showToast('Photo updated', 'success');
     } catch (err) {
       Sentry.captureException(err, { tags: { feature: 'avatar', stage: 'flow' } });
@@ -344,7 +334,6 @@ export default function EditProfilePage() {
 
   return (
     <div className="min-h-screen bg-background pb-8 max-w-2xl mx-auto">
-      <UploadDebugPanel />
       <Header title="Edit Profile" showBack />
 
       <div className="p-4 space-y-6">
