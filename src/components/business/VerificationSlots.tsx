@@ -166,12 +166,17 @@ function SlotCard({
         </div>
       )}
 
+      {/* Full MIME types on the upload input, NOT a wildcard + bare ".pdf"
+          extension. Mixing image/* with a dotted extension makes the Samsung
+          Internet picker return no file (no onChange) — the same bug that broke
+          avatar uploads. Explicit image MIMEs + application/pdf are picker-safe
+          and still allow PDF registration docs. */}
       <div className="mt-3 flex gap-2">
         <input
           ref={inputRef}
           id={inputId}
           type="file"
-          accept="image/*,.pdf"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
           onChange={handleFile}
           className="sr-only"
           disabled={disabled}
