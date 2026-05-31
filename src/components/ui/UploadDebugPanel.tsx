@@ -28,8 +28,6 @@ export function UploadDebugPanel() {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // clipboard API can be blocked (insecure context / permissions) — fall
-      // back to a hidden textarea + execCommand so copy still works on mobile.
       try {
         const ta = document.createElement('textarea');
         ta.value = text;

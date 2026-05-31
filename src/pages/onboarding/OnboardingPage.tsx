@@ -254,6 +254,7 @@ export default function OnboardingPage() {
       logUpload('onChange:no-file-or-user', `file=${!!file} user=${!!user}`);
       return;
     }
+    logUpload('picked', `${file.name} | ${file.size}b | ${file.type || 'no-type'}`);
     setPhotoError(null);
 
     // Validate (and read bytes into a JS-owned File) BEFORE clearing the
@@ -265,7 +266,6 @@ export default function OnboardingPage() {
     try {
       validation = await validateImageDetailed(file);
     } catch (err) {
-      logUpload('validate:threw', err instanceof Error ? err.message : String(err));
       Sentry.captureException(err, { tags: { feature: 'onboarding-avatar', stage: 'validate-threw' } });
       setPhotoError("Couldn't read that photo. Try another, or take one with your camera.");
       setIsRecovering(false);
@@ -326,22 +326,18 @@ export default function OnboardingPage() {
 
     // Auto center-crop to a square and upload — no crop pop-up. The interactive
     // cropper modal failed to render on mobile, so we crop on canvas directly.
-    logUpload('autocrop:start', `${workingFile.size}b`);
     let squareBlob: Blob;
     try {
       squareBlob = await autoCropSquareToBlob(workingFile);
     } catch (err) {
-      logUpload('autocrop:failed', err instanceof Error ? err.message : String(err));
       Sentry.captureException(err, { tags: { feature: 'onboarding-avatar', stage: 'autocrop' } });
       setPhotoError("Couldn't process that photo. Try another one.");
       return;
     }
-    logUpload('autocrop:done', `${squareBlob.size}b`);
     await handleCropConfirm(squareBlob);
   };
 
   const handleCropConfirm = async (croppedBlob: Blob) => {
-    logUpload('upload:enter', `${croppedBlob.size}b`);
     if (!user) return;
     setIsLoading(true);
 

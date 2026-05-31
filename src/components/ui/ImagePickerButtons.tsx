@@ -29,7 +29,12 @@ export function ImagePickerButtons({
   size = 'md',
   showCamera = true,
   capture = 'environment',
-  accept = 'image/*,.heic,.heif',
+  // Plain 'image/*' ONLY. Mixing the wildcard with explicit '.heic,.heif'
+  // extensions makes the Samsung Internet / Android file picker return nothing
+  // (no file → no onChange), which is why "Choose photo" silently did nothing
+  // while the Selfie button — which uses plain image/* — always worked. image/*
+  // already includes HEIC on Android, and we convert HEIC downstream anyway.
+  accept = 'image/*',
 }: ImagePickerButtonsProps) {
   const height = size === 'sm' ? 'h-[var(--height-button-sm)]' : 'h-12';
   const text = size === 'sm' ? 'text-xs' : 'text-sm';

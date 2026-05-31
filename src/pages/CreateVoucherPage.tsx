@@ -550,7 +550,7 @@ export default function CreateVoucherPage() {
                   ref={fileInputRef}
                   id="voucher-cover-input"
                   type="file"
-                  accept="image/*,.heic,.heif"
+                  accept="image/*"
                   onChange={handleCoverImageUpload}
                   className="sr-only"
                 />

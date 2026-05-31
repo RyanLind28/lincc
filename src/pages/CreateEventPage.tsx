@@ -691,7 +691,7 @@ export default function CreateEventPage() {
                   ref={fileInputRef}
                   id="event-cover-input"
                   type="file"
-                  accept="image/*,.heic,.heif"
+                  accept="image/*"
                   onChange={handleCoverImageUpload}
                   className="sr-only"
                 />

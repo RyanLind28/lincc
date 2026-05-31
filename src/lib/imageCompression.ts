@@ -1,5 +1,3 @@
-import { logUpload } from './uploadDebug';
-
 const MAX_DIMENSION_AVATAR = 800; // px — for profile avatars
 const MAX_DIMENSION_COVER = 1200; // px — for event/voucher cover images
 const JPEG_QUALITY = 0.8;
@@ -181,34 +179,28 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
   //
   // CRITICAL: this read is wrapped in raceTimeout. On Android, file.arrayBuffer()
   // on a flaky content:// URI can hang forever — never resolving, never
-  // rejecting. Without the timeout the whole pick silently stalls: no cropper,
-  // no error, "nothing happens". The timeout guarantees we always fall through
-  // to the slice retry / clear error instead of hanging.
-  logUpload('validate:start', `${file.name} | ${file.size}b | ${file.type || 'no-type'}`);
+  // rejecting. Without the timeout the whole pick silently stalls: no error,
+  // "nothing happens". The timeout guarantees we always fall through to the
+  // slice retry / clear error instead of hanging.
   let buffer: ArrayBuffer | null = null;
   let arrayBufferError: string | undefined;
   try {
     buffer = await raceTimeout(file.arrayBuffer(), PRIMARY_READ_TIMEOUT_MS);
-    logUpload('validate:arrayBuffer-ok', `${buffer.byteLength}b`);
   } catch (err) {
     arrayBufferError = summariseError(err);
-    logUpload('validate:arrayBuffer-fail', arrayBufferError);
   }
 
   if (buffer && buffer.byteLength > 0) {
     const cloned = new File([buffer], file.name, { type: file.type || 'image/jpeg' });
     const format = detectFormatFromBytes(new Uint8Array(buffer, 0, Math.min(16, buffer.byteLength)));
     if (format) {
-      logUpload('validate:ok', `format=${format}`);
       return { ok: true, file: cloned, format, recovered: false };
     }
     if (file.type && ALLOWED_TYPES.has(file.type)) {
       // Unknown header but a trusted MIME — accept and let the canvas pipeline
       // handle it.
-      logUpload('validate:ok', 'trusted-mime, no magic-byte match');
       return { ok: true, file: cloned, format: null, recovered: false };
     }
-    logUpload('validate:reject', 'not-a-valid-image');
     return { ok: false, error: 'File does not appear to be a valid image' };
   }
 
@@ -217,11 +209,9 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
   // different ContentProvider code path that stays open. If this also fails the
   // bytes genuinely aren't reachable — no further read API will change that.
   try {
-    logUpload('validate:slice-retry');
     const sliced = file.slice(0, file.size, file.type);
     buffer = await raceTimeout(sliced.arrayBuffer(), SLICE_REREAD_TIMEOUT_MS);
     if (buffer && buffer.byteLength > 0) {
-      logUpload('validate:slice-ok', `${buffer.byteLength}b`);
       const cloned = new File([buffer], file.name, { type: file.type || 'image/jpeg' });
       const format = detectFormatFromBytes(new Uint8Array(buffer, 0, Math.min(16, buffer.byteLength)));
       return {
@@ -234,7 +224,6 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
       };
     }
   } catch (err) {
-    logUpload('validate:slice-fail', summariseError(err));
     return {
       ok: false,
       error: UNREADABLE_MESSAGE,
@@ -243,7 +232,6 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
     };
   }
 
-  logUpload('validate:slice-empty');
   return {
     ok: false,
     error: UNREADABLE_MESSAGE,
@@ -409,39 +397,3 @@ export function autoCropSquareToBlob(
   });
 }
 
-/**
- * Crop a region of an image to a square (or specified aspect) and return a JPEG blob.
- * Used by the avatar cropper UI.
- */
-export async function cropImageToBlob(
-  src: string,
-  pixelCrop: { x: number; y: number; width: number; height: number },
-  outputDimension = MAX_DIMENSION_AVATAR,
-): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = outputDimension;
-      canvas.height = outputDimension;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Failed to get canvas context'));
-        return;
-      }
-      ctx.drawImage(
-        img,
-        pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
-        0, 0, outputDimension, outputDimension,
-      );
-      canvas.toBlob(
-        (blob) => blob ? resolve(blob) : reject(new Error('Failed to encode cropped image')),
-        'image/jpeg',
-        JPEG_QUALITY,
-      );
-    };
-    img.onerror = () => reject(new Error('Failed to load image for cropping'));
-    img.src = src;
-  });
-}

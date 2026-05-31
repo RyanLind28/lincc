@@ -30,7 +30,5 @@ export { Skeleton, EventCardSkeleton, EventCardGridSkeleton, ChatItemSkeleton, C
 export { WelcomeGuide } from './WelcomeGuide';
 export { SectionHeader } from './SectionHeader';
 export { ImagePickerButtons } from './ImagePickerButtons';
-export { AvatarCropper } from './AvatarCropper';
 export { UploadErrorNotice } from './UploadErrorNotice';
 export { UploadDebugPanel } from './UploadDebugPanel';
-export { CropperErrorBoundary } from './CropperErrorBoundary';

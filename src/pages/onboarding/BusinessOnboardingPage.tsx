@@ -445,7 +445,7 @@ export default function BusinessOnboardingPage() {
                     ref={logoInputRef}
                     id="business-onboarding-logo-input"
                     type="file"
-                    accept="image/*,.heic,.heif"
+                    accept="image/*"
                     onChange={handleLogoSelect}
                     className="sr-only"
                   />

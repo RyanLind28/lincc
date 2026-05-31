@@ -5,10 +5,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
-import { Avatar, Button, Input, TextArea, ChipGroup, ImagePickerButtons, UploadDebugPanel } from '../components/ui';
+import { Avatar, Button, Input, TextArea, ChipGroup, ImagePickerButtons } from '../components/ui';
 import { Camera, Mail, Lock, ChevronRight, Loader2 } from 'lucide-react';
 import { validateImageDetailed, convertHeicIfNeeded, autoCropSquareToBlob } from '../lib/imageCompression';
 import { logUpload } from '../lib/uploadDebug';
+import { UploadDebugPanel } from '../components/ui';
 import * as Sentry from '@sentry/react';
 
 const INTEREST_TAGS = [
@@ -66,6 +67,7 @@ export default function EditProfilePage() {
       logUpload('onChange:no-file');
       return;
     }
+    logUpload('picked', `${file.name} | ${file.size}b | ${file.type || 'no-type'}`);
 
     // Show feedback immediately — the read below is async and can take a moment
     // on a real device; without this the screen looks frozen ("nothing happens").
@@ -80,7 +82,6 @@ export default function EditProfilePage() {
     } catch (err) {
       // Defensive: validateImageDetailed shouldn't throw, but if it ever does
       // we must not leave the user staring at a frozen spinner with no error.
-      logUpload('validate:threw', err instanceof Error ? err.message : String(err));
       Sentry.captureException(err, { tags: { feature: 'avatar', stage: 'validate-threw' } });
       showToast("Couldn't read that photo. Try another, or take one with your camera.", 'error');
       setIsUploadingAvatar(false);
@@ -90,7 +91,6 @@ export default function EditProfilePage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
 
     if (!validation.ok) {
-      logUpload('handler:validation-failed', validation.error);
       Sentry.captureMessage('avatar: validation rejected file', {
         level: 'info',
         extra: {
@@ -144,7 +144,6 @@ export default function EditProfilePage() {
     // Auto center-crop to a square and upload — no crop pop-up. The interactive
     // cropper modal failed to render on mobile (photo read fine, but the pop-up
     // never appeared, stalling the whole flow), so we crop on canvas directly.
-    logUpload('autocrop:start', `${workingFile.size}b`);
     let squareBlob: Blob;
     try {
       squareBlob = await autoCropSquareToBlob(workingFile);
@@ -160,7 +159,6 @@ export default function EditProfilePage() {
   };
 
   const handleCropConfirm = async (croppedBlob: Blob) => {
-    logUpload('upload:enter', `${croppedBlob.size}b`);
     if (!user) return;
     setIsUploadingAvatar(true);
 
@@ -228,7 +226,6 @@ export default function EditProfilePage() {
       logUpload('save:done', 'avatar updated');
       showToast('Photo updated', 'success');
     } catch (err) {
-      logUpload('crop:threw', err instanceof Error ? err.message : String(err));
       Sentry.captureException(err, { tags: { feature: 'avatar', stage: 'flow' } });
       showToast(err instanceof Error ? err.message : 'Failed to update photo', 'error');
     } finally {
@@ -372,7 +369,7 @@ export default function EditProfilePage() {
             ref={fileInputRef}
             id="profile-avatar-input"
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
+            accept="image/*"
             onChange={handlePhotoSelect}
             className="sr-only"
             disabled={isUploadingAvatar}

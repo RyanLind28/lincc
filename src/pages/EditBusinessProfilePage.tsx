@@ -315,7 +315,7 @@ export default function EditBusinessProfilePage() {
             )}
             {/* sr-only keeps the input clickable on iOS Safari, where
                 display:none breaks programmatic file-picker triggers. */}
-            <input ref={fileInputRef} id="business-logo-input" type="file" accept="image/*,.heic,.heif" onChange={handleLogoSelect} className="sr-only" />
+            <input ref={fileInputRef} id="business-logo-input" type="file" accept="image/*" onChange={handleLogoSelect} className="sr-only" />
             {/* Keep this mounted at all times: the camera input lives inside it,
                 and unmounting it mid-read (when logoStatus leaves 'idle' during
                 HEIC conversion) revokes the captured photo's content:// URI on
