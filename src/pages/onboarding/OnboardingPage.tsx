@@ -4,16 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
-import { GradientButton, AvatarCropper } from '../../components/ui';
+import { GradientButton } from '../../components/ui';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { usePWA } from '../../hooks/usePWA';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
 import { PhotoStep, NameStep, BirthdayStep, InterestsStep, BioStep, InstallStep, LocationStep, NotificationStep } from './steps';
 import { GuidelinesIntro } from '../../components/onboarding/GuidelinesIntro';
-import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
+import { validateImageDetailed, convertHeicIfNeeded, autoCropSquareToBlob } from '../../lib/imageCompression';
 import { logUpload } from '../../lib/uploadDebug';
-import { UploadDebugPanel, CropperErrorBoundary } from '../../components/ui';
+import { UploadDebugPanel } from '../../components/ui';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
 
@@ -244,7 +244,6 @@ export default function OnboardingPage() {
   const totalSteps = notificationStep;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [isRecovering, setIsRecovering] = useState(false);
 
@@ -325,23 +324,25 @@ export default function OnboardingPage() {
       setIsLoading(false);
     }
 
-    // Revoke the previous source before opening with a new one — happens when
-    // the user picks again via the cropper's "Choose different" button.
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(URL.createObjectURL(workingFile));
-    logUpload('handler:cropper-open', `${workingFile.size}b`);
-  };
-
-  const handleCropCancel = () => {
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(null);
+    // Auto center-crop to a square and upload — no crop pop-up. The interactive
+    // cropper modal failed to render on mobile, so we crop on canvas directly.
+    logUpload('autocrop:start', `${workingFile.size}b`);
+    let squareBlob: Blob;
+    try {
+      squareBlob = await autoCropSquareToBlob(workingFile);
+    } catch (err) {
+      logUpload('autocrop:failed', err instanceof Error ? err.message : String(err));
+      Sentry.captureException(err, { tags: { feature: 'onboarding-avatar', stage: 'autocrop' } });
+      setPhotoError("Couldn't process that photo. Try another one.");
+      return;
+    }
+    logUpload('autocrop:done', `${squareBlob.size}b`);
+    await handleCropConfirm(squareBlob);
   };
 
   const handleCropConfirm = async (croppedBlob: Blob) => {
-    logUpload('crop:confirm', `${croppedBlob.size}b`);
+    logUpload('upload:enter', `${croppedBlob.size}b`);
     if (!user) return;
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(null);
     setIsLoading(true);
 
     const filePath = `${user.id}/${Date.now()}.jpg`;
@@ -562,19 +563,6 @@ export default function OnboardingPage() {
             />
           )}
 
-          {cropSrc && (
-            <CropperErrorBoundary>
-              <AvatarCropper
-                src={cropSrc}
-                isOpen
-                onClose={handleCropCancel}
-                onConfirm={handleCropConfirm}
-                cropShape="round"
-                aspect={1}
-                pickerInputId="onboarding-avatar-input"
-              />
-            </CropperErrorBoundary>
-          )}
 
           {step === NAME_STEP && (
             <NameStep

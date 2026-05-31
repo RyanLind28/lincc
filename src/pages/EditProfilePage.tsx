@@ -5,9 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
-import { Avatar, Button, Input, TextArea, ChipGroup, AvatarCropper, ImagePickerButtons, UploadDebugPanel, CropperErrorBoundary } from '../components/ui';
+import { Avatar, Button, Input, TextArea, ChipGroup, ImagePickerButtons, UploadDebugPanel } from '../components/ui';
 import { Camera, Mail, Lock, ChevronRight, Loader2 } from 'lucide-react';
-import { validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
+import { validateImageDetailed, convertHeicIfNeeded, autoCropSquareToBlob } from '../lib/imageCompression';
 import { logUpload } from '../lib/uploadDebug';
 import * as Sentry from '@sentry/react';
 
@@ -46,10 +46,10 @@ export default function EditProfilePage() {
   const [bio, setBio] = useState(profile?.bio || '');
   const [tags, setTags] = useState<string[]>(profile?.tags || []);
 
-  // Avatar cropper state
+  // Avatar upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
 
   // Security section state
   const [showEmailChange, setShowEmailChange] = useState(false);
@@ -141,20 +141,27 @@ export default function EditProfilePage() {
       setIsUploadingAvatar(false);
     }
 
-    // Open the cropper. Revoke the previous source first — happens when the
-    // user picked a new file via the cropper's "Choose different" button.
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    const objectUrl = URL.createObjectURL(workingFile);
-    setCropSrc(objectUrl);
-    setIsUploadingAvatar(false);
-    logUpload('handler:cropper-open', `${workingFile.size}b`);
+    // Auto center-crop to a square and upload — no crop pop-up. The interactive
+    // cropper modal failed to render on mobile (photo read fine, but the pop-up
+    // never appeared, stalling the whole flow), so we crop on canvas directly.
+    logUpload('autocrop:start', `${workingFile.size}b`);
+    let squareBlob: Blob;
+    try {
+      squareBlob = await autoCropSquareToBlob(workingFile);
+    } catch (err) {
+      logUpload('autocrop:failed', err instanceof Error ? err.message : String(err));
+      Sentry.captureException(err, { tags: { feature: 'avatar', stage: 'autocrop' } });
+      showToast("Couldn't process that photo. Try another one.", 'error');
+      setIsUploadingAvatar(false);
+      return;
+    }
+    logUpload('autocrop:done', `${squareBlob.size}b`);
+    await handleCropConfirm(squareBlob);
   };
 
   const handleCropConfirm = async (croppedBlob: Blob) => {
-    logUpload('crop:confirm', `${croppedBlob.size}b`);
+    logUpload('upload:enter', `${croppedBlob.size}b`);
     if (!user) return;
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(null);
     setIsUploadingAvatar(true);
 
     try {
@@ -227,11 +234,6 @@ export default function EditProfilePage() {
     } finally {
       setIsUploadingAvatar(false);
     }
-  };
-
-  const handleCropCancel = () => {
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(null);
   };
 
   const validateDob = (dobValue: string): boolean => {
@@ -389,19 +391,6 @@ export default function EditProfilePage() {
           />
         </div>
 
-        {cropSrc && (
-          <CropperErrorBoundary>
-            <AvatarCropper
-              src={cropSrc}
-              isOpen
-              onClose={handleCropCancel}
-              onConfirm={handleCropConfirm}
-              cropShape="round"
-              aspect={1}
-              pickerInputId="profile-avatar-input"
-            />
-          </CropperErrorBoundary>
-        )}
 
         {/* Name */}
         <Input

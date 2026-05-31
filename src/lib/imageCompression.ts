@@ -355,6 +355,61 @@ export function compressImage(file: File | Blob, maxDimension = MAX_DIMENSION_AV
 export { MAX_DIMENSION_COVER, MAX_DIMENSION_AVATAR };
 
 /**
+ * Auto center-crops an image to a square JPEG blob via canvas — no UI.
+ *
+ * Replaces the interactive react-easy-crop modal for avatars, which failed to
+ * render on mobile (photo picked + read fine, but the crop pop-up never
+ * appeared, so uploads silently stalled). The largest centered square is taken
+ * and scaled to `outputDimension`. Avatars display in a circle, so a centered
+ * square is the right default for selfies.
+ *
+ * Takes a File/Blob (not an object URL) so the caller doesn't depend on URL
+ * lifetime. Caller should convert HEIC first via convertHeicIfNeeded.
+ */
+export function autoCropSquareToBlob(
+  file: File | Blob,
+  outputDimension = MAX_DIMENSION_AVATAR,
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const { naturalWidth: w, naturalHeight: h } = img;
+      if (!w || !h) {
+        reject(new Error('Image has no dimensions'));
+        return;
+      }
+      // Largest centered square in the source image.
+      const side = Math.min(w, h);
+      const sx = Math.round((w - side) / 2);
+      const sy = Math.round((h - side) / 2);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = outputDimension;
+      canvas.height = outputDimension;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, outputDimension, outputDimension);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('Failed to encode image'))),
+        'image/jpeg',
+        JPEG_QUALITY,
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image — file may be corrupt or unsupported'));
+    };
+    img.src = url;
+  });
+}
+
+/**
  * Crop a region of an image to a square (or specified aspect) and return a JPEG blob.
  * Used by the avatar cropper UI.
  */
