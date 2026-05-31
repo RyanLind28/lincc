@@ -390,15 +390,17 @@ export default function EditProfilePage() {
         </div>
 
         {cropSrc && (
-          <AvatarCropper
-            src={cropSrc}
-            isOpen
-            onClose={handleCropCancel}
-            onConfirm={handleCropConfirm}
-            cropShape="round"
-            aspect={1}
-            pickerInputId="profile-avatar-input"
-          />
+          <CropperErrorBoundary>
+            <AvatarCropper
+              src={cropSrc}
+              isOpen
+              onClose={handleCropCancel}
+              onConfirm={handleCropConfirm}
+              cropShape="round"
+              aspect={1}
+              pickerInputId="profile-avatar-input"
+            />
+          </CropperErrorBoundary>
         )}
 
         {/* Name */}
