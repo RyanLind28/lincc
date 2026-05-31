@@ -64,9 +64,9 @@ export async function fetchProductionEvents(
   return cached(cacheKey, async () => {
     const statuses = options.status || ['active'];
 
-    // 14-day upcoming-window cap — see recommendationService for rationale.
+    // 30-day upcoming-window cap — see recommendationService for rationale.
     const now = new Date();
-    const maxStart = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const maxStart = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     let query = supabase
       .from('events')

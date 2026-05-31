@@ -42,10 +42,10 @@ export async function fetchActiveEvents(audience?: string): Promise<EventWithDet
   // Hide events scheduled too far in the future to keep the feed fresh and
   // prevent legacy/demo events (e.g. 2027 seed rows) from polluting discovery.
   // PRD strictly says 24h, but a wider window is useful pre-launch when event
-  // volume is low — 14 days keeps the feed populated without showing stale demos.
+  // volume is low — 30 days keeps the feed populated without showing stale demos.
   // Tighten once traffic is higher.
   const now = new Date();
-  const maxStart = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const maxStart = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   let query = supabase
     .from('events')

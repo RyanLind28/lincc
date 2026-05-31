@@ -45,7 +45,7 @@ async function fallbackSearch(query: string, limit: number): Promise<SearchResul
   const searchTerm = `%${query.trim().replace(/[,.()\[\]]/g, '')}%`;
 
   const now = new Date();
-  const maxStart = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const maxStart = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   const { data, error } = await supabase
     .from('events')
     .select('id, title, venue_name, category:categories!category_id(name)')
@@ -78,7 +78,7 @@ export async function getSearchSuggestions(query: string): Promise<string[]> {
   const searchTerm = `%${query.trim().replace(/[,.()\[\]]/g, '')}%`;
 
   const nowIso = new Date().toISOString();
-  const maxStartIso = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+  const maxStartIso = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from('events')
     .select('title, venue_name')

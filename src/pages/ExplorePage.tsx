@@ -48,7 +48,7 @@ export default function ExplorePage() {
         .select('category_id')
         .eq('status', 'active')
         .gte('expires_at', new Date().toISOString())
-        .lte('start_time', new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString());
+        .lte('start_time', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
 
       const countMap: Record<string, number> = {};
       for (const row of countData || []) {
@@ -88,7 +88,7 @@ export default function ExplorePage() {
         `)
         .eq('status', 'active')
         .gte('expires_at', new Date().toISOString())
-        .lte('start_time', new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString())
+        .lte('start_time', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
         .order('start_time', { ascending: true });
 
       if (!error && data) {
