@@ -4,13 +4,13 @@ import * as Sentry from '@sentry/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Header } from '../components/layout';
-import { Input, TextArea, GradientButton, PlacesAutocomplete, AvatarCropper, ImagePickerButtons } from '../components/ui';
+import { Input, TextArea, GradientButton, PlacesAutocomplete, ImagePickerButtons } from '../components/ui';
 import type { PlaceDetails } from '../services/placesService';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { Camera, X, Loader2, AlertTriangle, Settings } from 'lucide-react';
 import { updateBusiness } from '../services/businessService';
 import { supabase } from '../lib/supabase';
-import { compressImage, validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
+import { compressImage, validateImageDetailed, convertHeicIfNeeded, autoCropSquareToBlob } from '../lib/imageCompression';
 import { BUSINESS_CATEGORIES } from '../types';
 import { cn } from '../lib/utils';
 import type { BusinessOpeningHours } from '../types';
@@ -36,7 +36,6 @@ export default function EditBusinessProfilePage() {
   const [address, setAddress] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [hours, setHours] = useState<BusinessOpeningHours>({});
   const [isSaving, setIsSaving] = useState(false);
   const [logoStatus, setLogoStatus] = useState<LogoStatus>('idle');
@@ -133,24 +132,21 @@ export default function EditBusinessProfilePage() {
       }
     }
 
+    // Auto center-crop to a square — the interactive cropper pop-up failed to
+    // render on mobile, so we crop on canvas directly (logos display square).
+    let squareBlob: Blob;
+    try {
+      squareBlob = await autoCropSquareToBlob(workingFile);
+    } catch (err) {
+      Sentry.captureException(err, { tags: { feature: 'business-logo', stage: 'autocrop' } });
+      showToast("Couldn't process that image. Try another one.", 'error');
+      setLogoStatus('idle');
+      return;
+    }
     setLogoStatus('idle');
-    // Revoke the previous source before opening with a new one — happens when
-    // the user picks again via the cropper's "Choose different" button.
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(URL.createObjectURL(workingFile));
-  };
-
-  const handleCropCancel = () => {
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(null);
-  };
-
-  const handleCropConfirm = (croppedBlob: Blob) => {
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(null);
-    const file = new File([croppedBlob], `logo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-    setLogoFile(file);
-    setLogoUrl(URL.createObjectURL(croppedBlob));
+    const logoFileObj = new File([squareBlob], `logo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    setLogoFile(logoFileObj);
+    setLogoUrl(URL.createObjectURL(squareBlob));
   };
 
   const handleRemoveLogo = () => {
@@ -291,18 +287,6 @@ export default function EditBusinessProfilePage() {
         }
       />
 
-      {cropSrc && (
-        <AvatarCropper
-          src={cropSrc}
-          isOpen
-          onClose={handleCropCancel}
-          onConfirm={handleCropConfirm}
-          cropShape="rect"
-          aspect={1}
-          title="Crop your logo"
-          pickerInputId="business-logo-input"
-        />
-      )}
 
       <div className="p-4 space-y-6">
         <h1 className="text-2xl font-bold text-text">Edit Business</h1>

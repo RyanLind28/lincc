@@ -10,12 +10,12 @@ import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 import {
-  GradientButton, Input, TextArea, PlacesAutocomplete, AvatarCropper, UploadErrorNotice,
+  GradientButton, Input, TextArea, PlacesAutocomplete, UploadErrorNotice,
 } from '../../components/ui';
 import { usePWA } from '../../hooks/usePWA';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
 import {
-  compressImage, validateImageDetailed, convertHeicIfNeeded,
+  compressImage, validateImageDetailed, convertHeicIfNeeded, autoCropSquareToBlob,
 } from '../../lib/imageCompression';
 import { updateBusiness } from '../../services/businessService';
 import { GuidelinesIntro } from '../../components/onboarding/GuidelinesIntro';
@@ -70,7 +70,6 @@ export default function BusinessOnboardingPage() {
   // Step 2 — logo + description
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [logoStatus, setLogoStatus] = useState<LogoStatus>('idle');
   const [logoError, setLogoError] = useState<string | null>(null);
   const [description, setDescription] = useState('');
@@ -210,17 +209,21 @@ export default function BusinessOnboardingPage() {
         return;
       }
     }
+    // Auto center-crop to a square — the interactive cropper pop-up failed to
+    // render on mobile, so we crop on canvas directly (logos display square).
+    let squareBlob: Blob;
+    try {
+      squareBlob = await autoCropSquareToBlob(workingFile);
+    } catch (err) {
+      Sentry.captureException(err, { tags: { feature: 'business-onboarding-logo', stage: 'autocrop' } });
+      showToast("Couldn't process that image. Try another one.", 'error');
+      setLogoStatus('idle');
+      return;
+    }
     setLogoStatus('idle');
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(URL.createObjectURL(workingFile));
-  };
-
-  const handleCropConfirm = (croppedBlob: Blob) => {
-    if (cropSrc) URL.revokeObjectURL(cropSrc);
-    setCropSrc(null);
-    const file = new File([croppedBlob], `logo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-    setLogoFile(file);
-    setLogoUrl(URL.createObjectURL(croppedBlob));
+    const logoFileObj = new File([squareBlob], `logo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    setLogoFile(logoFileObj);
+    setLogoUrl(URL.createObjectURL(squareBlob));
   };
 
   const handleRemoveLogo = () => {
@@ -364,18 +367,6 @@ export default function BusinessOnboardingPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {cropSrc && (
-        <AvatarCropper
-          src={cropSrc}
-          isOpen
-          onClose={() => { if (cropSrc) URL.revokeObjectURL(cropSrc); setCropSrc(null); }}
-          onConfirm={handleCropConfirm}
-          cropShape="rect"
-          aspect={1}
-          title="Crop your logo"
-          pickerInputId="business-onboarding-logo-input"
-        />
-      )}
 
       {/* Header */}
       <div className="px-4 pt-4 pb-2">
