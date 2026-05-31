@@ -1,6 +1,60 @@
 # LINCC TODO
 
-Last updated: 2026-05-29
+Last updated: 2026-05-31
+
+---
+
+## Session Changelog — 2026-05-31
+
+Heavy bug-fix day, mostly mobile image upload. App version 0.12.0 → 0.13.7.
+
+### Image upload — fixed on Samsung/Android (root causes, in order found)
+1. **Crop pop-up never rendered on mobile.** `react-easy-crop` modal failed to
+   mount on phones (file read fine, but no UI → flow stalled). Removed it and the
+   dependency; replaced with UI-less auto centre-crop (`autoCropSquareToBlob`).
+   Applied to onboarding avatar, edit profile, business logo (onboarding + edit).
+2. **Gallery button used a programmatic `.click()`** which silently no-ops on
+   Samsung Internet. Switched to the label-wrapped `<input>` pattern (same as camera).
+3. **`accept` mixed wildcard + extensions** (`image/*,.heic,.heif` / `,.pdf`) made
+   the Samsung picker return no file. Normalised to plain `image/*` (photos) and
+   explicit MIME types incl. `application/pdf` (verification docs).
+4. **`file.arrayBuffer()` could hang** on flaky Android `content://` URIs → added
+   an 8s timeout + slice-retry fallback; simplified the over-engineered recovery cascade.
+5. Camera inputs: `sr-only` not `display:none`, stay mounted during upload,
+   `capture="user"` for selfies.
+- Diagnosed with a temporary on-device debug panel (now removed). Verified working
+  on the Samsung tester's device end-to-end.
+
+### Other fixes
+- [x] **Join button hidden on mobile** — event action bar sat under the bottom nav
+  (z-index); now fixed above the menu bar on mobile (`EventDetailPage`).
+- [x] **Onboarding selfie bounce** — taking a selfie reset the guidelines screen;
+  `guidelinesAcknowledged` now persisted to the resume cache.
+- [x] **Home feed empty** — removed the 100km hard discovery cap ("Further Away" is
+  now unbounded; "Near You" respects the slider). Widened upcoming window 14 → 30
+  days across feed/search/explore.
+- [x] **Camera on desktop** — confirmed expected (the `capture` attribute is
+  mobile-only; desktop file inputs can't open a webcam). Left as-is.
+
+### Features
+- [x] **Report a problem** — quick bottom-sheet reporter that auto-captures screen,
+  device, and Sentry event id, writes to `feedback`, and alerts admins via the push
+  pipeline. Admin triage at `/admin/feedback`. Migration `061` applied live.
+
+### Test data (production DB)
+- [x] Renewed all existing events to start within the next 2 weeks.
+- [x] Generated 50 random Sheffield events (14 hosts / 43 categories / 19 venues),
+  tagged `(test event)` in the description for easy cleanup.
+
+### Follow-ups / backlog raised today
+- [ ] **Pre-launch: restore feed limits.** Once local event density is real, put
+  back the ~100km discovery cap and narrow the 30-day window toward the PRD's 24h.
+- [ ] **Verification doc recovery UX** — add the same inline "couldn't read that
+  file, try again" notice to `VerificationSlots` for parity (optional; docs can be PDFs).
+- [ ] **Expiry inconsistency** — DB trigger sets event expiry to start+2h while
+  `eventService` create/edit uses start+24h. Reconcile to one rule.
+- [ ] **Dead code** — `AvatarCropper` / `CropperErrorBoundary` removed; confirm no
+  lingering imports and consider dropping `react-easy-crop` fully if not reused.
 
 ---
 

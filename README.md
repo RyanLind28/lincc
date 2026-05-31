@@ -5,10 +5,19 @@
 Lincc is a local events and discovery platform that surfaces what's happening around you in real time — events, deals, openings, and offers. Personal users discover and host meetups; businesses promote themselves with verified profiles, recurring events, vouchers and (later) ticket sales. Your local pulse.
 
 - **Live**: [lincc.live](https://lincc.live) (also `lincc-six.vercel.app`)
-- **Status**: pre-launch / demo-ready — landing page with waitlist is live, full app builds clean, all 51 page routes wired
+- **Status**: pre-launch / demo-ready — landing page with waitlist is live, full app builds clean, all routes wired
+- **Version**: `0.13.7` (shown at the bottom of Settings; kept in sync in `package.json` + `SettingsPage.tsx`)
 - **PRD**: `PRD/Lincc PRD V1.rtf`
-- **Tasks & changelog**: [`docs/TODO.md`](docs/TODO.md)
+- **Tasks & changelog**: [`docs/TODO.md`](docs/TODO.md) — see the 2026-05-31 session changelog for the latest fixes
 - **Project guide for AI agents**: [`CLAUDE.md`](CLAUDE.md)
+
+### Recent (2026-05-31)
+
+Mobile image upload fixed end-to-end on Samsung/Android (auto centre-crop replaces
+the broken crop modal; gallery uses a label-wrapped input; `accept` normalised;
+read timeout added). Also: Join button no longer hidden under the mobile nav,
+home feed shows distant events ("Further Away" uncapped, 30-day window), and a new
+"Report a problem" reporter (`/admin/feedback`). Full detail in `docs/TODO.md`.
 
 ### Sanity check (last audit: 2026-05-12)
 
@@ -61,7 +70,7 @@ Lincc is a local events and discovery platform that surfaces what's happening ar
 | State / Data | Supabase JS (Auth, DB, Realtime, Storage, Edge Functions) |
 | Maps | Mapbox GL JS |
 | Venues | Google Places (New) JS SDK |
-| Image cropping | react-easy-crop |
+| Image handling | Canvas auto centre-crop + compression (`lib/imageCompression.ts`) |
 | Errors | Sentry |
 | Analytics | Google Analytics 4 (consent-gated) |
 | Hosting | Vercel (auto-deploy from `main`) |
