@@ -387,7 +387,9 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 max-w-5xl mx-auto">
+    // pb clears BOTH the bottom nav and the action bar stacked above it on
+    // mobile; desktop has no nav so less padding is needed.
+    <div className="min-h-screen bg-background pb-44 lg:pb-28 max-w-5xl mx-auto">
       {/* Header — global unified bar */}
       <Header showBack showLogo showCreateEvent showNotifications />
 
@@ -744,8 +746,14 @@ export default function EventDetailPage() {
         />
       </div>
 
-      {/* Action buttons — sticky bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 lg:left-16 z-[var(--z-sticky)] bg-surface/95 backdrop-blur-sm border-t border-border px-4 py-3 safe-bottom">
+      {/* Action buttons — sticky bottom bar.
+          MOBILE BUG FIX: this used z-sticky (20) at bottom-0, but the BottomNav
+          (z-header = 30, also bottom-0, lg:hidden) rendered ON TOP of it, hiding
+          the Join button entirely on phones. Now: on mobile sit ABOVE the nav
+          (offset by the 64px nav height + safe-area) and use z-overlay (40) so
+          it's never covered; on desktop the nav is hidden, so go flush to the
+          bottom. */}
+      <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] lg:bottom-0 left-0 right-0 lg:left-16 z-[var(--z-overlay)] bg-surface/95 backdrop-blur-sm border-t border-border px-4 py-3 lg:safe-bottom">
         <div className="max-w-5xl mx-auto flex gap-3">
           {renderJoinButton()}
         </div>

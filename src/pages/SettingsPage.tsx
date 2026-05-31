@@ -861,7 +861,7 @@ export default function SettingsPage() {
 
         {/* Version */}
         <p className="text-center text-sm text-text-light">
-          Lincc v0.13.5
+          Lincc v0.13.6
         </p>
 
         {/* Delete Account Confirmation Modal */}
