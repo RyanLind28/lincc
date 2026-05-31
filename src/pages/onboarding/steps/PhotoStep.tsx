@@ -52,7 +52,7 @@ export function PhotoStep({
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
               onChange={onPhotoSelect}
-              className="hidden"
+              className="sr-only"
             />
           </label>
 

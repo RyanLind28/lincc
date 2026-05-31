@@ -56,12 +56,16 @@ export function ImagePickerButtons({
             <Camera className={icon} />
           </span>
           {cameraLabel}
+          {/* sr-only, NOT hidden: display:none file inputs don't reliably fire
+              the picker/camera on Android Chrome + iOS Safari (same reason every
+              gallery input in the app uses sr-only). With `hidden` the camera
+              button silently does nothing on mobile. */}
           <input
             type="file"
             accept="image/*"
             capture={capture}
             onChange={onCameraSelect}
-            className="hidden"
+            className="sr-only"
           />
         </label>
       )}

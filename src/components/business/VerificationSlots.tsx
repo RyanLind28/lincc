@@ -208,7 +208,7 @@ function SlotCard({
               accept="image/*"
               capture={slot.key === 'operator_selfie' || slot.key === 'selfie_with_id' ? 'user' : 'environment'}
               onChange={handleFile}
-              className="hidden"
+              className="sr-only"
               disabled={disabled}
             />
           </label>
