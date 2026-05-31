@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
-import { Avatar, Button, Input, TextArea, ChipGroup, AvatarCropper, ImagePickerButtons, UploadDebugPanel } from '../components/ui';
+import { Avatar, Button, Input, TextArea, ChipGroup, AvatarCropper, ImagePickerButtons, UploadDebugPanel, CropperErrorBoundary } from '../components/ui';
 import { Camera, Mail, Lock, ChevronRight, Loader2 } from 'lucide-react';
 import { validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
 import { logUpload } from '../lib/uploadDebug';

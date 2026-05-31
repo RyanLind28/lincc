@@ -13,7 +13,7 @@ import { PhotoStep, NameStep, BirthdayStep, InterestsStep, BioStep, InstallStep,
 import { GuidelinesIntro } from '../../components/onboarding/GuidelinesIntro';
 import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
 import { logUpload } from '../../lib/uploadDebug';
-import { UploadDebugPanel } from '../../components/ui';
+import { UploadDebugPanel, CropperErrorBoundary } from '../../components/ui';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
 
@@ -563,15 +563,17 @@ export default function OnboardingPage() {
           )}
 
           {cropSrc && (
-            <AvatarCropper
-              src={cropSrc}
-              isOpen
-              onClose={handleCropCancel}
-              onConfirm={handleCropConfirm}
-              cropShape="round"
-              aspect={1}
-              pickerInputId="onboarding-avatar-input"
-            />
+            <CropperErrorBoundary>
+              <AvatarCropper
+                src={cropSrc}
+                isOpen
+                onClose={handleCropCancel}
+                onConfirm={handleCropConfirm}
+                cropShape="round"
+                aspect={1}
+                pickerInputId="onboarding-avatar-input"
+              />
+            </CropperErrorBoundary>
           )}
 
           {step === NAME_STEP && (

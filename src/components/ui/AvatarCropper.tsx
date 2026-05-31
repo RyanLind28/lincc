@@ -30,6 +30,10 @@ export function AvatarCropper({
   title = 'Crop your photo',
   pickerInputId,
 }: AvatarCropperProps) {
+  // Render-phase trace: proves the component function is actually invoked. If
+  // the upload trace shows 'cropper-open' but never 'cropper:render', the
+  // component is never even called (a conditional-render/state issue upstream).
+  logUpload('cropper:render', `open=${isOpen} src=${src ? 'set' : 'null'}`);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [pixels, setPixels] = useState<Area | null>(null);

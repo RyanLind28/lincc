@@ -33,3 +33,4 @@ export { ImagePickerButtons } from './ImagePickerButtons';
 export { AvatarCropper } from './AvatarCropper';
 export { UploadErrorNotice } from './UploadErrorNotice';
 export { UploadDebugPanel } from './UploadDebugPanel';
+export { CropperErrorBoundary } from './CropperErrorBoundary';
