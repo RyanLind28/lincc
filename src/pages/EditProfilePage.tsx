@@ -5,9 +5,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
-import { Avatar, Button, Input, TextArea, ChipGroup, AvatarCropper, ImagePickerButtons } from '../components/ui';
+import { Avatar, Button, Input, TextArea, ChipGroup, AvatarCropper, ImagePickerButtons, UploadDebugPanel } from '../components/ui';
 import { Camera, Mail, Lock, ChevronRight, Loader2 } from 'lucide-react';
 import { validateImageDetailed, convertHeicIfNeeded } from '../lib/imageCompression';
+import { logUpload } from '../lib/uploadDebug';
 import * as Sentry from '@sentry/react';
 
 const INTEREST_TAGS = [
@@ -59,16 +60,37 @@ export default function EditProfilePage() {
   const [isSecurityLoading, setIsSecurityLoading] = useState(false);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    logUpload('onChange:fired', `files=${e.target.files?.length ?? 0}`);
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      logUpload('onChange:no-file');
+      return;
+    }
+
+    // Show feedback immediately — the read below is async and can take a moment
+    // on a real device; without this the screen looks frozen ("nothing happens").
+    setIsUploadingAvatar(true);
 
     // Validate (and read bytes into a JS-owned File) BEFORE clearing the
     // input — clearing `input.value` can revoke the picker's Content URI
     // permission on Samsung Android, breaking the read.
-    const validation = await validateImageDetailed(file);
+    let validation;
+    try {
+      validation = await validateImageDetailed(file);
+    } catch (err) {
+      // Defensive: validateImageDetailed shouldn't throw, but if it ever does
+      // we must not leave the user staring at a frozen spinner with no error.
+      logUpload('validate:threw', err instanceof Error ? err.message : String(err));
+      Sentry.captureException(err, { tags: { feature: 'avatar', stage: 'validate-threw' } });
+      showToast("Couldn't read that photo. Try another, or take one with your camera.", 'error');
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
 
     if (!validation.ok) {
+      logUpload('handler:validation-failed', validation.error);
       Sentry.captureMessage('avatar: validation rejected file', {
         level: 'info',
         extra: {
@@ -81,6 +103,7 @@ export default function EditProfilePage() {
         },
       });
       showToast(validation.error, 'error');
+      setIsUploadingAvatar(false);
       return;
     }
     if (validation.recovered) {
@@ -123,6 +146,8 @@ export default function EditProfilePage() {
     if (cropSrc) URL.revokeObjectURL(cropSrc);
     const objectUrl = URL.createObjectURL(workingFile);
     setCropSrc(objectUrl);
+    setIsUploadingAvatar(false);
+    logUpload('handler:cropper-open', `${workingFile.size}b`);
   };
 
   const handleCropConfirm = async (croppedBlob: Blob) => {
@@ -315,6 +340,7 @@ export default function EditProfilePage() {
 
   return (
     <div className="min-h-screen bg-background pb-8 max-w-2xl mx-auto">
+      <UploadDebugPanel />
       <Header title="Edit Profile" showBack />
 
       <div className="p-4 space-y-6">

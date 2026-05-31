@@ -12,6 +12,8 @@ import { useLocationName } from '../../hooks/useLocationName';
 import { PhotoStep, NameStep, BirthdayStep, InterestsStep, BioStep, InstallStep, LocationStep, NotificationStep } from './steps';
 import { GuidelinesIntro } from '../../components/onboarding/GuidelinesIntro';
 import { validateImageDetailed, convertHeicIfNeeded } from '../../lib/imageCompression';
+import { logUpload } from '../../lib/uploadDebug';
+import { UploadDebugPanel } from '../../components/ui';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
 
@@ -247,8 +249,12 @@ export default function OnboardingPage() {
   const [isRecovering, setIsRecovering] = useState(false);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    logUpload('onChange:fired', `files=${e.target.files?.length ?? 0}`);
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user) {
+      logUpload('onChange:no-file-or-user', `file=${!!file} user=${!!user}`);
+      return;
+    }
     setPhotoError(null);
 
     // Validate (and read bytes into a JS-owned File) BEFORE clearing the
@@ -259,6 +265,13 @@ export default function OnboardingPage() {
     let validation;
     try {
       validation = await validateImageDetailed(file);
+    } catch (err) {
+      logUpload('validate:threw', err instanceof Error ? err.message : String(err));
+      Sentry.captureException(err, { tags: { feature: 'onboarding-avatar', stage: 'validate-threw' } });
+      setPhotoError("Couldn't read that photo. Try another, or take one with your camera.");
+      setIsRecovering(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
     } finally {
       setIsRecovering(false);
     }
@@ -316,6 +329,7 @@ export default function OnboardingPage() {
     // the user picks again via the cropper's "Choose different" button.
     if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(URL.createObjectURL(workingFile));
+    logUpload('handler:cropper-open', `${workingFile.size}b`);
   };
 
   const handleCropCancel = () => {
@@ -509,6 +523,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      <UploadDebugPanel />
       {/* Background decoration */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
       <div className="max-w-sm mx-auto px-4 py-12 relative">

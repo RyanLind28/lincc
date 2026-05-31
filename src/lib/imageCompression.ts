@@ -1,3 +1,5 @@
+import { logUpload } from './uploadDebug';
+
 const MAX_DIMENSION_AVATAR = 800; // px — for profile avatars
 const MAX_DIMENSION_COVER = 1200; // px — for event/voucher cover images
 const JPEG_QUALITY = 0.8;
@@ -5,6 +7,11 @@ const JPEG_QUALITY = 0.8;
 // Output is canvas-recompressed to ~150KB regardless of input size.
 const MAX_INPUT_SIZE = 25 * 1024 * 1024;
 const MAX_INPUT_SIZE_LABEL = '25MB';
+
+// Timeout for the PRIMARY file.arrayBuffer() read. On Android a flaky content://
+// URI can make this hang indefinitely (no resolve, no reject) — this cap turns
+// that hang into a fast, recoverable failure.
+const PRIMARY_READ_TIMEOUT_MS = 8_000;
 
 // Timeout for the single slice-reread fallback. Short on purpose — if the first
 // direct read failed, a cloud-backed file won't materialise no matter how long
@@ -171,23 +178,37 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
   // from magic bytes. A single read is friendlier to Samsung's ContentProvider
   // than multiple slice reads, and the clone decouples downstream code from
   // the original Content URI.
+  //
+  // CRITICAL: this read is wrapped in raceTimeout. On Android, file.arrayBuffer()
+  // on a flaky content:// URI can hang forever — never resolving, never
+  // rejecting. Without the timeout the whole pick silently stalls: no cropper,
+  // no error, "nothing happens". The timeout guarantees we always fall through
+  // to the slice retry / clear error instead of hanging.
+  logUpload('validate:start', `${file.name} | ${file.size}b | ${file.type || 'no-type'}`);
   let buffer: ArrayBuffer | null = null;
   let arrayBufferError: string | undefined;
   try {
-    buffer = await file.arrayBuffer();
+    buffer = await raceTimeout(file.arrayBuffer(), PRIMARY_READ_TIMEOUT_MS);
+    logUpload('validate:arrayBuffer-ok', `${buffer.byteLength}b`);
   } catch (err) {
     arrayBufferError = summariseError(err);
+    logUpload('validate:arrayBuffer-fail', arrayBufferError);
   }
 
   if (buffer && buffer.byteLength > 0) {
     const cloned = new File([buffer], file.name, { type: file.type || 'image/jpeg' });
     const format = detectFormatFromBytes(new Uint8Array(buffer, 0, Math.min(16, buffer.byteLength)));
-    if (format) return { ok: true, file: cloned, format, recovered: false };
+    if (format) {
+      logUpload('validate:ok', `format=${format}`);
+      return { ok: true, file: cloned, format, recovered: false };
+    }
     if (file.type && ALLOWED_TYPES.has(file.type)) {
       // Unknown header but a trusted MIME — accept and let the canvas pipeline
       // handle it.
+      logUpload('validate:ok', 'trusted-mime, no magic-byte match');
       return { ok: true, file: cloned, format: null, recovered: false };
     }
+    logUpload('validate:reject', 'not-a-valid-image');
     return { ok: false, error: 'File does not appear to be a valid image' };
   }
 
@@ -196,9 +217,11 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
   // different ContentProvider code path that stays open. If this also fails the
   // bytes genuinely aren't reachable — no further read API will change that.
   try {
+    logUpload('validate:slice-retry');
     const sliced = file.slice(0, file.size, file.type);
     buffer = await raceTimeout(sliced.arrayBuffer(), SLICE_REREAD_TIMEOUT_MS);
     if (buffer && buffer.byteLength > 0) {
+      logUpload('validate:slice-ok', `${buffer.byteLength}b`);
       const cloned = new File([buffer], file.name, { type: file.type || 'image/jpeg' });
       const format = detectFormatFromBytes(new Uint8Array(buffer, 0, Math.min(16, buffer.byteLength)));
       return {
@@ -211,6 +234,7 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
       };
     }
   } catch (err) {
+    logUpload('validate:slice-fail', summariseError(err));
     return {
       ok: false,
       error: UNREADABLE_MESSAGE,
@@ -219,6 +243,7 @@ export async function validateImageDetailed(file: File): Promise<ImageValidation
     };
   }
 
+  logUpload('validate:slice-empty');
   return {
     ok: false,
     error: UNREADABLE_MESSAGE,
