@@ -29,6 +29,9 @@ export default function UserProfilePage() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [hostedEvents, setHostedEvents] = useState<EventWithDetails[]>([]);
+  const [upcomingCount, setUpcomingCount] = useState(0);
+  const [showAllEvents, setShowAllEvents] = useState(false);
+  const [loadingAllEvents, setLoadingAllEvents] = useState(false);
   const [userVouchers, setUserVouchers] = useState<VoucherWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +105,15 @@ export default function UserProfilePage() {
       setFollowerCount(followers);
       setFollowingCount(followingCnt);
 
+      // Count upcoming hosted events (drives the "View All" toggle)
+      const { count: upcomingEventsCount } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('host_id', id)
+        .eq('status', 'active')
+        .gte('start_time', new Date().toISOString());
+      setUpcomingCount(upcomingEventsCount || 0);
+
       // Fetch user's upcoming hosted events (limit 3)
       const { data: eventsData } = await supabase
         .from('events')
@@ -141,6 +153,43 @@ export default function UserProfilePage() {
   }, [id, user, isOwnProfile]);
 
   const age = profile?.dob ? calculateAge(profile.dob) : null;
+
+  // Toggle between the first 3 upcoming events and the full list.
+  const handleToggleAllEvents = async () => {
+    if (showAllEvents) {
+      setHostedEvents((prev) => prev.slice(0, 3));
+      setShowAllEvents(false);
+      return;
+    }
+
+    if (!id) return;
+    setLoadingAllEvents(true);
+
+    const { data: eventsData } = await supabase
+      .from('events')
+      .select(`
+        *,
+        host:profiles!host_id(*),
+        category:categories!category_id(*),
+        participant_count:event_participants(count)
+      `)
+      .eq('host_id', id)
+      .eq('status', 'active')
+      .gte('start_time', new Date().toISOString())
+      .order('start_time', { ascending: true });
+
+    if (eventsData) {
+      setHostedEvents(
+        eventsData.map((e) => ({
+          ...e,
+          participant_count: e.participant_count?.[0]?.count || 0,
+        }))
+      );
+      setShowAllEvents(true);
+    }
+
+    setLoadingAllEvents(false);
+  };
 
   const formatEventTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -412,8 +461,14 @@ export default function UserProfilePage() {
               <h2 className="text-lg font-semibold text-text">
                 {isOwnProfile ? 'Your Upcoming Events' : 'Upcoming Events'}
               </h2>
-              {(profile.events_hosted_count || 0) > 3 && (
-                <button className="text-coral text-sm font-medium">View All</button>
+              {upcomingCount > 3 && (
+                <button
+                  onClick={handleToggleAllEvents}
+                  disabled={loadingAllEvents}
+                  className="text-coral text-sm font-medium disabled:opacity-50"
+                >
+                  {loadingAllEvents ? 'Loading...' : showAllEvents ? 'Show Less' : 'View All'}
+                </button>
               )}
             </div>
 
