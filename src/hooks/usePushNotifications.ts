@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { subscribeToPush, unsubscribeFromPush, getSubscription } from '../services/pushService';
+import { subscribeToPush, unsubscribeFromPush, getSubscription, syncPushSubscription } from '../services/pushService';
 
 interface UsePushNotificationsResult {
   permission: NotificationPermission;
@@ -25,6 +25,12 @@ export function usePushNotifications(): UsePushNotificationsResult {
     let cancelled = false;
 
     async function check() {
+      // Self-heal any browser/DB desync before reporting state: if permission
+      // is already granted, make sure the DB holds our current subscription so
+      // the edge function can actually find it. No-op (and no prompt) otherwise.
+      if (user?.id && 'Notification' in window && Notification.permission === 'granted') {
+        await syncPushSubscription(user.id);
+      }
       const sub = await getSubscription();
       if (!cancelled) {
         setIsSubscribed(sub !== null);

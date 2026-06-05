@@ -10,7 +10,7 @@ import { useNow } from '../hooks/useNow';
 import { ChatStatusPill } from '../components/features/ChatStatusPill';
 import { ReportMessageDialog } from '../components/social/ReportMessageDialog';
 import { supabase } from '../lib/supabase';
-import { getDisplayName } from '../lib/utils';
+import { getChatIdentity } from '../lib/utils';
 import type { EventWithDetails } from '../types';
 
 export default function ChatRoomPage() {
@@ -239,6 +239,7 @@ export default function ChatRoomPage() {
                     const sameSenderAsPrev = prevMsg?.sender_id === msg.sender_id;
                     const showAvatar = !isMe && !sameSenderAsPrev;
                     const showName = showAvatar;
+                    const senderIdentity = getChatIdentity(msg.sender);
 
                     return (
                       <div
@@ -251,8 +252,8 @@ export default function ChatRoomPage() {
                             {showAvatar && (
                               <Link to={`/user/${msg.sender_id}`}>
                                 <Avatar
-                                  src={msg.sender?.avatar_url}
-                                  name={getDisplayName(msg.sender)}
+                                  src={senderIdentity.avatarUrl}
+                                  name={senderIdentity.name}
                                   size="sm"
                                 />
                               </Link>
@@ -267,7 +268,7 @@ export default function ChatRoomPage() {
                           {showName && (
                             <Link to={`/user/${msg.sender_id}`} className="hover:underline">
                               <p className="text-xs text-text-muted mb-1 ml-1">
-                                {getDisplayName(msg.sender)}
+                                {senderIdentity.name}
                               </p>
                             </Link>
                           )}
@@ -288,7 +289,7 @@ export default function ChatRoomPage() {
                                 onClick={() => setReportingMessage({
                                   id: msg.id,
                                   senderId: msg.sender_id,
-                                  senderName: getDisplayName(msg.sender, 'this user'),
+                                  senderName: getChatIdentity(msg.sender, 'this user').name,
                                   content: msg.content,
                                 })}
                                 aria-label="Report message"

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, CheckCircle, ChevronRight, Clock, Download, Globe,
-  ImageIcon, ImagePlus, Loader2, MapPin, Store, X,
+  ImageIcon, Loader2, MapPin, Store, X,
 } from 'lucide-react';
 import * as Sentry from '@sentry/react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,7 +10,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 import {
-  GradientButton, Input, TextArea, PlacesAutocomplete, UploadErrorNotice,
+  GradientButton, Input, TextArea, PlacesAutocomplete, UploadErrorNotice, ImagePickerButtons,
 } from '../../components/ui';
 import { usePWA } from '../../hooks/usePWA';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
@@ -441,6 +441,9 @@ export default function BusinessOnboardingPage() {
                     {logoUrl ? 'Looking good' : 'Add your logo'}
                   </p>
                   <p className="text-xs text-text-muted mb-3">Square image works best. PNG or JPG.</p>
+                  {/* Hidden input kept so the UploadErrorNotice retry below can
+                      re-open the gallery picker via the ref. The two buttons use
+                      their own label-wrapped inputs (reliable on Samsung). */}
                   <input
                     ref={logoInputRef}
                     id="business-onboarding-logo-input"
@@ -449,15 +452,12 @@ export default function BusinessOnboardingPage() {
                     onChange={handleLogoSelect}
                     className="sr-only"
                   />
-                  <button
-                    type="button"
-                    onClick={() => logoInputRef.current?.click()}
-                    disabled={logoStatus !== 'idle'}
-                    className="inline-flex items-center gap-2 h-[var(--height-button-sm)] px-4 rounded-2xl border border-border bg-surface text-xs font-semibold text-text hover:border-coral hover:bg-coral/5 hover:text-coral transition-all duration-200 press-effect disabled:opacity-50"
-                  >
-                    <ImagePlus className="h-3.5 w-3.5" />
-                    {logoUrl ? 'Change logo' : 'Choose logo'}
-                  </button>
+                  <ImagePickerButtons
+                    onCameraSelect={handleLogoSelect}
+                    galleryLabel={logoUrl ? 'Change logo' : 'Choose logo'}
+                    cameraLabel="Take a photo"
+                    size="sm"
+                  />
                 </div>
               </div>
             </div>

@@ -224,8 +224,20 @@ export interface Message {
   created_at: string;
 }
 
+// Minimal business identity embedded alongside a message/DM sender so business
+// accounts appear as the venue (logo + name) rather than a personal initial.
+export interface SenderBusiness {
+  id: string;
+  name: string;
+  logo_url: string | null;
+}
+
+export interface SenderProfile extends Profile {
+  business?: SenderBusiness | null;
+}
+
 export interface MessageWithSender extends Message {
-  sender: Profile;
+  sender: SenderProfile;
 }
 
 // Report Types
@@ -269,7 +281,8 @@ export type NotificationType =
   | 'participant_rejoined'
   | 'review_prompt'
   | 'business_approved'
-  | 'business_rejected';
+  | 'business_rejected'
+  | 'admin_broadcast';
 
 // Notification preference keys (toggleable push types)
 export interface NotificationPreferences {
@@ -351,7 +364,7 @@ export interface Conversation {
 }
 
 export interface ConversationWithDetails extends Conversation {
-  other_user: Profile;
+  other_user: SenderProfile;
   last_message: DirectMessage | null;
 }
 
@@ -366,7 +379,7 @@ export interface DirectMessage {
 }
 
 export interface DirectMessageWithSender extends DirectMessage {
-  sender: Profile;
+  sender: SenderProfile;
 }
 
 // Voucher Types

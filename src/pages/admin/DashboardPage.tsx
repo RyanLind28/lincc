@@ -5,7 +5,7 @@ import { Card, CardContent, Skeleton } from '../../components/ui';
 import {
   Users, Calendar, Flag, Tag, Shield, Megaphone, Zap,
   UserPlus, Handshake, MessageSquare, Ticket, Building2, Gift, Store, Image as ImageIcon,
-  ClipboardList, MessageSquareWarning,
+  ClipboardList, MessageSquareWarning, Bell,
 } from 'lucide-react';
 import {
   getAdminStats, getDashboardMetrics, getAdminActionCounts,
@@ -36,7 +36,8 @@ const menuItems: Array<{
   { to: '/admin/feedback', label: 'User Feedback', icon: MessageSquareWarning, description: 'Bug reports & problem reports from users' },
   { to: '/admin/categories', label: 'Categories', icon: Tag, description: 'Manage event categories' },
   { to: '/admin/images', label: 'Images', icon: ImageIcon, description: 'Browse and remove uploaded images' },
-  { to: '/admin/announcements', label: 'Announcements', icon: Megaphone, description: 'Broadcast to all users' },
+  { to: '/admin/announcements', label: 'Announcements', icon: Megaphone, description: 'In-app banner broadcast' },
+  { to: '/admin/push', label: 'Push Notifications', icon: Bell, description: 'Send push to users, businesses, or both' },
   { to: '/admin/feature-flags', label: 'Feature Flags', icon: Zap, description: 'Toggle features on/off' },
   { to: '/admin/audit-log', label: 'Audit Log', icon: Shield, description: 'View admin action history' },
 ];

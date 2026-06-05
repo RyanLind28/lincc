@@ -80,7 +80,7 @@ export function useDMChat(conversationId: string | undefined): UseDMChatResult {
             .from('direct_messages')
             .select(`
               *,
-              sender:profiles!sender_id(*)
+              sender:profiles!sender_id(*, business:businesses!businesses_owner_id_fkey(id, name, logo_url))
             `)
             .eq('id', newMessage.id)
             .single();

@@ -204,6 +204,10 @@ export function getNotificationPath(notification: Notification): string {
       return '/business/dashboard';
     case 'business_rejected':
       return '/pending-approval';
+    case 'admin_broadcast': {
+      const url = data?.url as string | undefined;
+      return url && url.startsWith('/') ? url : '/';
+    }
     default:
       return '/';
   }

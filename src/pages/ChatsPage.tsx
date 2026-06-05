@@ -8,7 +8,7 @@ import { useUserChats } from '../hooks/useEventChat';
 import { useUserDMs } from '../hooks/useDMChat';
 import { useAuth } from '../contexts/AuthContext';
 import { useNow } from '../hooks/useNow';
-import { formatRelativeTime, getDisplayName } from '../lib/utils';
+import { formatRelativeTime, getChatIdentity } from '../lib/utils';
 import { ChatStatusPill } from '../components/features/ChatStatusPill';
 
 type ChatTab = 'events' | 'friends';
@@ -228,15 +228,15 @@ export default function ChatsPage() {
                     className="flex items-center gap-3 p-4 bg-surface rounded-xl border border-border hover:border-coral/50 transition-colors group"
                   >
                     <Avatar
-                      src={convo.other_user.avatar_url}
-                      name={getDisplayName(convo.other_user)}
+                      src={getChatIdentity(convo.other_user).avatarUrl}
+                      name={getChatIdentity(convo.other_user).name}
                       size="lg"
                       className="flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
                         <h3 className="font-semibold text-text truncate group-hover:text-coral transition-colors">
-                          {getDisplayName(convo.other_user)}
+                          {getChatIdentity(convo.other_user).name}
                         </h3>
                         {convo.last_message && (
                           <span className="text-xs text-text-light flex-shrink-0 ml-2">

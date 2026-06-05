@@ -3,7 +3,7 @@ import {
   Camera, IdCard, FileText, UserCircle, Loader2, Upload, X,
 } from 'lucide-react';
 import * as Sentry from '@sentry/react';
-import { Badge } from '../ui';
+import { Badge, UploadErrorNotice } from '../ui';
 import { useToast } from '../../contexts/ToastContext';
 import {
   uploadVerificationDoc,
@@ -60,6 +60,8 @@ function SlotCard({
   onRemove,
   isUploading,
   locked,
+  error,
+  onClearError,
 }: {
   slot: SlotConfig;
   path: string | null;
@@ -67,6 +69,8 @@ function SlotCard({
   onRemove?: () => void;
   isUploading: boolean;
   locked: boolean;
+  error: string | null;
+  onClearError: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -219,6 +223,19 @@ function SlotCard({
           </label>
         )}
       </div>
+
+      {error && (
+        <div className="mt-3">
+          <UploadErrorNotice
+            message={error}
+            retryLabel="Try again"
+            skipLabel="Dismiss"
+            onRetry={() => { onClearError(); inputRef.current?.click(); }}
+            onSkip={onClearError}
+            reportSource="verification-doc"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -235,10 +252,16 @@ export function useVerificationUpload(
 ) {
   const { showToast } = useToast();
   const [uploadingSlot, setUploadingSlot] = useState<VerificationDocSlot | null>(null);
+  // Inline failure state per slot — surfaced as a persistent UploadErrorNotice
+  // (with retry) rather than a transient toast, matching the avatar/logo flows.
+  // Only one upload runs at a time, so a single {slot, message} is enough.
+  const [uploadError, setUploadError] = useState<{ slot: VerificationDocSlot; message: string } | null>(null);
+  const clearUploadError = useCallback(() => setUploadError(null), []);
 
   const handleUpload = useCallback(async (slot: VerificationDocSlot, file: File) => {
     if (!ownerId || !businessId) return;
     setUploadingSlot(slot);
+    setUploadError(null);
 
     // Image files (the three photo slots) get the same hardening as the rest
     // of the app: validation reads bytes through a recovery cascade so flaky
@@ -262,7 +285,7 @@ export function useVerificationUpload(
           },
         });
         setUploadingSlot(null);
-        showToast(validation.error, 'error');
+        setUploadError({ slot, message: validation.error });
         return;
       }
       if (validation.recovered) {
@@ -288,10 +311,10 @@ export function useVerificationUpload(
             extra: { slot, fileType: workingFile.type, fileSize: workingFile.size },
           });
           setUploadingSlot(null);
-          showToast(
-            "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",
-            'error',
-          );
+          setUploadError({
+            slot,
+            message: "Couldn't convert this iPhone photo. Try saving it as a JPEG and uploading again.",
+          });
           return;
         }
       }
@@ -311,7 +334,7 @@ export function useVerificationUpload(
         level: 'error',
         extra: { slot, error: result.error, fileType: file.type, fileSize: file.size },
       });
-      showToast(result.error || 'Upload failed', 'error');
+      setUploadError({ slot, message: result.error || 'Upload failed. Please try again.' });
     }
   }, [ownerId, businessId, onUploaded, showToast]);
 
@@ -329,7 +352,7 @@ export function useVerificationUpload(
     }
   }, [businessId, onUploaded, showToast]);
 
-  return { uploadingSlot, handleUpload, handleRemove };
+  return { uploadingSlot, uploadError, clearUploadError, handleUpload, handleRemove };
 }
 
 interface VerificationSlotsProps {
@@ -338,6 +361,8 @@ interface VerificationSlotsProps {
   locked: boolean;
   onUpload: (slot: VerificationDocSlot, file: File) => void;
   onRemove?: (slot: VerificationDocSlot, currentPath: string) => void;
+  uploadError?: { slot: VerificationDocSlot; message: string } | null;
+  onClearError?: () => void;
 }
 
 export function VerificationSlots({
@@ -346,6 +371,8 @@ export function VerificationSlots({
   locked,
   onUpload,
   onRemove,
+  uploadError,
+  onClearError,
 }: VerificationSlotsProps) {
   return (
     <div className="space-y-3">
@@ -360,6 +387,8 @@ export function VerificationSlots({
             locked={locked}
             onUpload={(file) => onUpload(slot.key, file)}
             onRemove={path && onRemove ? () => onRemove(slot.key, path) : undefined}
+            error={uploadError?.slot === slot.key ? uploadError.message : null}
+            onClearError={onClearError ?? (() => {})}
           />
         );
       })}

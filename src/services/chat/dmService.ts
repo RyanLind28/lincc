@@ -8,7 +8,7 @@ import type {
   Conversation,
   ConversationWithDetails,
   DMMessageType,
-  Profile,
+  SenderProfile,
 } from '../../types';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -93,7 +93,7 @@ export async function getDirectMessages(
     .from('direct_messages')
     .select(`
       *,
-      sender:profiles!sender_id(*)
+      sender:profiles!sender_id(*, business:businesses!businesses_owner_id_fkey(id, name, logo_url))
     `)
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
@@ -131,7 +131,7 @@ export async function getUserConversations(
       // Fetch other user profile
       const { data: otherUser } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, business:businesses!businesses_owner_id_fkey(id, name, logo_url)')
         .eq('id', otherUserId)
         .single();
 
@@ -146,7 +146,7 @@ export async function getUserConversations(
 
       return {
         ...convo,
-        other_user: otherUser as Profile,
+        other_user: otherUser as SenderProfile,
         last_message: (lastMsg as DirectMessage) || null,
       } as ConversationWithDetails;
     })

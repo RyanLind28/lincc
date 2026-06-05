@@ -340,6 +340,47 @@ export async function deleteAnnouncement(id: string) {
   return { success: !error, error: error?.message };
 }
 
+// Push notifications
+
+export interface PushStats {
+  total_devices: number;
+  subscribed_users: number;
+  subscribed_personal: number;
+  subscribed_business: number;
+  total_active_personal: number;
+  total_active_business: number;
+}
+
+/** Subscription counts for the admin push panel (admin-gated RPC). */
+export async function getPushStats(): Promise<{ data: PushStats | null; error?: string }> {
+  const { data, error } = await supabase.rpc('get_push_stats');
+  // The RPC returns a single-row table.
+  const row = Array.isArray(data) ? data[0] : data;
+  return { data: (row as PushStats) ?? null, error: error?.message };
+}
+
+export type BroadcastAudience = 'users' | 'businesses' | 'all';
+
+/**
+ * Send a notification (in-app row + web push) to all active personal users,
+ * all businesses, or everyone. Returns the recipient count. `url` is an optional
+ * in-app path opened when the notification is tapped.
+ */
+export async function broadcastPushNotification(
+  audience: BroadcastAudience,
+  title: string,
+  body: string,
+  url: string | null,
+): Promise<{ success: boolean; recipients: number; error?: string }> {
+  const { data, error } = await supabase.rpc('admin_broadcast_notification', {
+    p_audience: audience,
+    p_title: title,
+    p_body: body,
+    p_url: url,
+  });
+  return { success: !error, recipients: (data as number) ?? 0, error: error?.message };
+}
+
 // Feature flags
 export async function fetchFeatureFlags() {
   const { data, error } = await supabase
@@ -361,7 +402,7 @@ export async function toggleFeatureFlag(id: string, isEnabled: boolean, updatedB
 export async function logAdminAction(
   adminId: string,
   action: string,
-  targetType: 'user' | 'event' | 'report' | 'category' | 'business' | 'business_verification' | 'image',
+  targetType: 'user' | 'event' | 'report' | 'category' | 'business' | 'business_verification' | 'image' | 'broadcast',
   targetId?: string,
   details?: Record<string, unknown>
 ) {

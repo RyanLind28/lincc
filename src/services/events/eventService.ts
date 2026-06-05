@@ -182,11 +182,9 @@ export async function createEvent(
       eventData.category_name = categoryData.id;
     }
 
-    // Calculate expires_at (24 hours after start_time)
-    const startTime = new Date(eventData.start_time);
-    const expiresAt = new Date(startTime.getTime() + 24 * 60 * 60 * 1000);
-
-    // Create the event
+    // expires_at is owned by the DB trigger `set_event_expires_at` (start_time +
+    // 2 hours, per the PRD). Don't set it here — the trigger overrides any value
+    // we send on INSERT, so writing it would only invite drift.
     const { data, error } = await supabase
       .from('events')
       .insert({
@@ -208,7 +206,6 @@ export async function createEvent(
         allow_dms: eventData.allow_dms ?? true,
         business_id: eventData.business_id || null,
         status: eventData.status ?? 'active',
-        expires_at: expiresAt.toISOString(),
       })
       .select()
       .single();
@@ -252,12 +249,9 @@ export async function updateEvent(
   updates: UpdateEventData
 ): Promise<CreateEventResult> {
   try {
-    // Recalculate expires_at if start_time changed
+    // When start_time changes, the DB trigger `set_event_expires_at` recalculates
+    // expires_at (start_time + 2 hours) automatically — no need to set it here.
     const patchData: Record<string, unknown> = { ...updates };
-    if (updates.start_time) {
-      const startTime = new Date(updates.start_time);
-      patchData.expires_at = new Date(startTime.getTime() + 24 * 60 * 60 * 1000).toISOString();
-    }
 
     const { data, error } = await supabase
       .from('events')

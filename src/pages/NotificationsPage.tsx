@@ -19,6 +19,7 @@ import {
   Star,
   Store,
   Settings,
+  Megaphone,
 } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { getNotificationPath } from '../services/notificationService';
@@ -42,6 +43,7 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
   review_prompt: <Star className="h-5 w-5 text-warning" />,
   business_approved: <Store className="h-5 w-5 text-success" />,
   business_rejected: <Store className="h-5 w-5 text-error" />,
+  admin_broadcast: <Megaphone className="h-5 w-5 text-coral" />,
 };
 
 // Background colors for notification types
@@ -61,6 +63,7 @@ const notificationBgColors: Record<NotificationType, string> = {
   review_prompt: 'bg-warning/10',
   business_approved: 'bg-success/10',
   business_rejected: 'bg-error/10',
+  admin_broadcast: 'bg-coral/10',
 };
 
 export default function NotificationsPage() {

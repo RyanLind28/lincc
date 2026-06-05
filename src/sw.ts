@@ -135,6 +135,10 @@ function getNotificationUrl(
   type: string,
   data: Record<string, unknown> | undefined
 ): string {
+  // An explicit in-app URL (e.g. admin broadcasts) wins over type-based routing.
+  const explicit = data?.url as string | undefined;
+  if (explicit && explicit.startsWith('/')) return explicit;
+
   const eventId = data?.event_id as string | undefined;
   switch (type) {
     case 'join_request':

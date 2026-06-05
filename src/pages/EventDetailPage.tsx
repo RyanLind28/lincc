@@ -24,7 +24,7 @@ import type { EventWithDetails } from '../types';
 export default function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { showToast } = useToast();
   const { location: userLocation } = useUserLocation();
 
@@ -101,6 +101,10 @@ export default function EventDetailPage() {
   };
 
   const handleJoin = async () => {
+    if (profile?.account_type === 'business') {
+      showToast('Please join events using your personal profile. Business accounts are for hosting events and offering deals to customers.', 'info');
+      return;
+    }
     const result = await join();
     if (result.success) {
       hapticSuccess();
@@ -252,6 +256,19 @@ export default function EventDetailPage() {
 
   // Render join button based on status
   const renderJoinButton = () => {
+    if (profile?.account_type === 'business' && !isHost) {
+      return (
+        <div className="flex-1">
+          <GradientButton fullWidth size="lg" disabled className="opacity-70">
+            For personal profiles
+          </GradientButton>
+          <p className="mt-2 text-xs text-text-muted text-center">
+            Join events using your personal profile. Business accounts are for hosting events and offering deals to customers.
+          </p>
+        </div>
+      );
+    }
+
     if (isHost) {
       return (
         <>

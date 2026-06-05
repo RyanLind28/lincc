@@ -3,16 +3,21 @@ import { Bell, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 
-const DISMISSED_KEY = 'lincc-push-dismissed';
+// Snooze rather than permanently dismiss: a one-time "Not now" used to hide the
+// prompt forever, which is a big reason so few people have push enabled. Re-ask
+// after a week (the next genuine moment they might want it) without nagging.
+const DISMISSED_UNTIL_KEY = 'lincc-push-dismissed-until';
+const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function NotificationPermissionPrompt() {
   const { user } = useAuth();
   const { permission, isSubscribed, subscribe } = usePushNotifications();
-  const [dismissed, setDismissed] = useState(() =>
-    localStorage.getItem(DISMISSED_KEY) === 'true'
-  );
+  const [dismissed, setDismissed] = useState(() => {
+    const until = Number(localStorage.getItem(DISMISSED_UNTIL_KEY) ?? 0);
+    return Date.now() < until;
+  });
 
-  // Don't show if: no user, already subscribed, already decided, or dismissed
+  // Don't show if: no user, already subscribed, already decided, or snoozed
   if (!user || isSubscribed || permission !== 'default' || dismissed) return null;
 
   // Don't show if push is not supported
@@ -20,7 +25,7 @@ export function NotificationPermissionPrompt() {
 
   const handleDismiss = () => {
     setDismissed(true);
-    localStorage.setItem(DISMISSED_KEY, 'true');
+    localStorage.setItem(DISMISSED_UNTIL_KEY, String(Date.now() + SNOOZE_MS));
   };
 
   const handleEnable = async () => {

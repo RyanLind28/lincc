@@ -75,6 +75,7 @@ const AdminBusinessDetailPage = lazy(() => import('./pages/admin/BusinessDetailP
 const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
 const AnnouncementsPage = lazy(() => import('./pages/admin/AnnouncementsPage'));
 const FeatureFlagsPage = lazy(() => import('./pages/admin/FeatureFlagsPage'));
+const AdminPushNotificationsPage = lazy(() => import('./pages/admin/PushNotificationsPage'));
 const AdminWaitlistPage = lazy(() => import('./pages/admin/WaitlistPage'));
 const AdminFeedbackPage = lazy(() => import('./pages/admin/FeedbackPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
@@ -207,6 +208,7 @@ function App() {
             <Route path="/people" element={<ErrorBoundary><SearchPeoplePage /></ErrorBoundary>} />
             <Route path="/businesses" element={<ErrorBoundary><BusinessDirectoryPage /></ErrorBoundary>} />
             <Route path="/business/:id" element={<ErrorBoundary><BusinessPage /></ErrorBoundary>} />
+            <Route path="/business/dashboard" element={<ErrorBoundary><BusinessDashboardPage /></ErrorBoundary>} />
           </Route>
 
           {/* Full-screen routes — keep the desktop sidebar but drop the mobile bottom nav */}
@@ -219,7 +221,6 @@ function App() {
           >
             <Route path="/event/new" element={<ErrorBoundary><CreateEventPage /></ErrorBoundary>} />
             <Route path="/voucher/new" element={<ErrorBoundary><CreateVoucherPage /></ErrorBoundary>} />
-            <Route path="/business/dashboard" element={<ErrorBoundary><BusinessDashboardPage /></ErrorBoundary>} />
             <Route path="/feedback" element={<FeedbackPage />} />
             <Route path="/event/:id/chat" element={<ChatRoomPage />} />
             <Route path="/dm/:id" element={<DMChatRoomPage />} />
@@ -350,6 +351,14 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <FeatureFlagsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/push"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminPushNotificationsPage />
               </ProtectedRoute>
             }
           />

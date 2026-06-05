@@ -56,7 +56,7 @@ export async function getMessages(eventId: string): Promise<MessagesResult> {
     .from('messages')
     .select(`
       *,
-      sender:profiles!sender_id(*)
+      sender:profiles!sender_id(*, business:businesses!businesses_owner_id_fkey(id, name, logo_url))
     `)
     .eq('event_id', eventId)
     .order('created_at', { ascending: true });

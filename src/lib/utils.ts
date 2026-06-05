@@ -74,6 +74,28 @@ export function getDisplayName(
   return name || fallback;
 }
 
+// Resolve the name + avatar to show for a chat/DM sender. Business accounts
+// speak as their venue (logo + business name), everyone else uses their
+// personal profile name + avatar.
+export function getChatIdentity(
+  sender:
+    | {
+        profile_name?: string | null;
+        first_name?: string | null;
+        avatar_url?: string | null;
+        account_type?: string | null;
+        business?: { name: string; logo_url: string | null } | null;
+      }
+    | null
+    | undefined,
+  fallback = 'User',
+): { name: string; avatarUrl: string | null } {
+  if (sender?.account_type === 'business' && sender.business?.name) {
+    return { name: sender.business.name, avatarUrl: sender.business.logo_url ?? null };
+  }
+  return { name: getDisplayName(sender, fallback), avatarUrl: sender?.avatar_url ?? null };
+}
+
 // Calculate age from date of birth
 export function calculateAge(dob: Date | string): number {
   const birthDate = typeof dob === 'string' ? new Date(dob) : dob;

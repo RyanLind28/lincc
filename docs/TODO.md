@@ -67,6 +67,16 @@ Follow-ups from the admin System Status widget (`src/components/admin/SystemStat
 
 ---
 
+## Push Notifications (backlog, P2)
+
+Raised 2026-06-05 while building the admin push panel + broadcast (`/admin/push`, migration `062_admin_push_broadcast`). The pipeline works at current scale; these are scale/observability follow-ups.
+
+- [ ] **Batch broadcast delivery (do before scaling).** `admin_broadcast_notification` loops `create_notification` per recipient, and each call fires its own `pg_net` HTTP POST to `send-push-notification` (one user_id per request). Fine for ~dozens of accounts; at thousands this is thousands of individual HTTP calls per broadcast. Refactor to a batch path: extend `send-push-notification` to accept a list of user_ids (or an audience) and fan out subscriptions server-side in one (or a few chunked) invocation(s), so a broadcast is a handful of edge-function calls instead of one-per-user. Keep the in-app `notifications` insert per user, but decouple it from the push HTTP fan-out.
+- [ ] **pg_net response timeout / observability.** `create_notification`'s `net.http_post` uses the default 5s response window; cold-start + web-push round-trips sometimes exceed it, so the response (incl. send/fail counts) is lost from `net._http_response` even though the request was sent. Bump `timeout_milliseconds` and/or log delivery outcomes somewhere durable so we can actually see push success rates.
+- [ ] **Higher-intent subscribe asks.** Adoption is the real lever (businesses at 0% push). The 7-day re-prompt helps, but consider asking at high-intent moments — e.g. right after a user hosts their first event, or a business publishes its first voucher — rather than only the generic banner.
+
+---
+
 ## UI/UX Overhaul (P1, COMPLETE — 2026-05-25)
 
 Big polish + key-screen rework pass. 80+ files changed across foundations, component unification, screen rework, desktop layout, accessibility, and visual verification.

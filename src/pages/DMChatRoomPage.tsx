@@ -7,15 +7,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDMChat } from '../hooks/useDMChat';
 import { ReportMessageDialog } from '../components/social/ReportMessageDialog';
 import { supabase } from '../lib/supabase';
-import { getDisplayName } from '../lib/utils';
-import type { Profile, DirectMessageWithSender } from '../types';
+import { getChatIdentity } from '../lib/utils';
+import type { SenderProfile, DirectMessageWithSender } from '../types';
 
 export default function DMChatRoomPage() {
   const { id: conversationId } = useParams();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState('');
-  const [otherUser, setOtherUser] = useState<Profile | null>(null);
+  const [otherUser, setOtherUser] = useState<SenderProfile | null>(null);
   const [otherUserLoading, setOtherUserLoading] = useState(true);
 
   const { messages, isLoading, isSending, error, sendMessage } =
@@ -44,12 +44,12 @@ export default function DMChatRoomPage() {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*')
+          .select('*, business:businesses!businesses_owner_id_fkey(id, name, logo_url)')
           .eq('id', otherUserId)
           .single();
 
         if (profile) {
-          setOtherUser(profile as Profile);
+          setOtherUser(profile as SenderProfile);
         }
       }
       setOtherUserLoading(false);
@@ -106,6 +106,8 @@ export default function DMChatRoomPage() {
     );
   }
 
+  const otherUserIdentity = getChatIdentity(otherUser, 'your friend');
+
   return (
     <div className="h-dvh flex flex-col overflow-hidden bg-background max-w-3xl mx-auto">
       {/* Header with user info */}
@@ -115,11 +117,11 @@ export default function DMChatRoomPage() {
           otherUser ? (
             <Link to={`/user/${otherUser.id}`} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
               <Avatar
-                src={otherUser.avatar_url}
-                name={getDisplayName(otherUser)}
+                src={otherUserIdentity.avatarUrl}
+                name={otherUserIdentity.name}
                 size="sm"
               />
-              <span className="font-semibold text-text text-sm">{getDisplayName(otherUser)}</span>
+              <span className="font-semibold text-text text-sm">{otherUserIdentity.name}</span>
             </Link>
           ) : (
             <span className="text-sm font-semibold text-text">Chat</span>
@@ -136,7 +138,7 @@ export default function DMChatRoomPage() {
             </div>
             <p className="font-medium text-text mb-1">Start the conversation</p>
             <p className="text-sm text-text-muted">
-              Send a message to {getDisplayName(otherUser, 'your friend')}!
+              Send a message to {otherUserIdentity.name}!
             </p>
           </div>
         ) : (
@@ -158,6 +160,7 @@ export default function DMChatRoomPage() {
                       !isMe &&
                       (index === 0 ||
                         dateMessages[index - 1].sender_id !== msg.sender_id);
+                    const senderIdentity = getChatIdentity(msg.sender);
 
                     return (
                       <div
@@ -170,8 +173,8 @@ export default function DMChatRoomPage() {
                             {showAvatar && (
                               <Link to={`/user/${msg.sender_id}`}>
                                 <Avatar
-                                  src={msg.sender?.avatar_url}
-                                  name={getDisplayName(msg.sender)}
+                                  src={senderIdentity.avatarUrl}
+                                  name={senderIdentity.name}
                                   size="sm"
                                 />
                               </Link>
@@ -206,7 +209,7 @@ export default function DMChatRoomPage() {
                                 onClick={() => setReportingMessage({
                                   id: msg.id,
                                   senderId: msg.sender_id,
-                                  senderName: getDisplayName(msg.sender, 'this user'),
+                                  senderName: getChatIdentity(msg.sender, 'this user').name,
                                   content: msg.content,
                                 })}
                                 aria-label="Report message"
