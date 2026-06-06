@@ -11,6 +11,7 @@ import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useLocationName } from '../../hooks/useLocationName';
 import { PhotoStep, NameStep, BirthdayStep, InterestsStep, BioStep, InstallStep, LocationStep, NotificationStep } from './steps';
 import { GuidelinesIntro } from '../../components/onboarding/GuidelinesIntro';
+import { OnboardingHelpButton } from '../../components/onboarding/OnboardingHelpButton';
 import { validateImageDetailed, convertHeicIfNeeded, autoCropSquareToBlob } from '../../lib/imageCompression';
 import * as Sentry from '@sentry/react';
 import type { Gender, Coordinates } from '../../types';
@@ -89,12 +90,26 @@ export default function OnboardingPage() {
 
   // Prefill from existing profile (email signup already wrote first_name +
   // last_name + profile_name via the handle_new_user trigger) and OAuth
-  // metadata (Google provides full_name + avatar).
+  // metadata (Google provides full_name + avatar). Also hydrates dob, gender,
+  // tags, and bio so a "replay" of onboarding (preview mode or partially-
+  // complete profile) shows what's already saved instead of empty inputs.
   useEffect(() => {
     if (profile?.first_name && !firstName) setFirstName(profile.first_name);
     if (profile?.last_name && !lastName) setLastName(profile.last_name);
     if (profile?.profile_name && !profileName) setProfileName(profile.profile_name);
     if (profile?.avatar_url && !avatarUrl) setAvatarUrl(profile.avatar_url);
+    // dob is stored as 'YYYY-MM-DD'; split into the three picker inputs.
+    if (profile?.dob && !dobYear && !dobMonth && !dobDay) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(profile.dob);
+      if (match) {
+        setDobYear(match[1]);
+        setDobMonth(match[2]);
+        setDobDay(match[3]);
+      }
+    }
+    if (profile?.gender && !gender) setGender(profile.gender);
+    if (profile?.tags && profile.tags.length > 0 && tags.length === 0) setTags(profile.tags);
+    if (profile?.bio && !bio) setBio(profile.bio);
     if (!user) return;
     const meta = user.user_metadata;
     if (meta) {
@@ -518,6 +533,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
+      <OnboardingHelpButton source={`onboarding-step-${step}`} className="absolute top-4 right-4 z-20 safe-top" />
       <div className="max-w-sm mx-auto px-4 py-12 relative">
         {/* Logo */}
         <div className="flex justify-center mb-6">

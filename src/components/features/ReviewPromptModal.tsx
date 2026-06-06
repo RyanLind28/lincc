@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Star } from 'lucide-react';
-import { Avatar, GradientButton, Modal, TextArea } from '../ui';
+import { Avatar, CoverImage, GradientButton, Modal, TextArea } from '../ui';
 import { getDisplayName } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -150,15 +150,11 @@ export function ReviewPromptModal({ items, onClose, onItemHandled }: ReviewPromp
       <div className="space-y-4">
         {/* Event header */}
         <div className="flex items-center gap-3 bg-background rounded-xl p-3">
-          {current.event.cover_image_url ? (
-            <img
-              src={current.event.cover_image_url}
-              alt={current.event.title}
-              className="w-12 h-12 rounded-lg object-cover"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-lg gradient-primary" />
-          )}
+          <CoverImage
+            src={current.event.cover_image_url}
+            alt={current.event.title}
+            className="w-12 h-12 rounded-lg object-cover"
+          />
           <div className="flex-1 min-w-0">
             <p className="font-medium text-text truncate">{current.event.title}</p>
             {current.event.venue_name && (

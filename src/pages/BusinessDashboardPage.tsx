@@ -6,7 +6,7 @@ import {
   Globe, ExternalLink, ShieldCheck,
 } from 'lucide-react';
 import { Header } from '../components/layout';
-import { GradientButton, Badge, PlacesAutocomplete, Avatar } from '../components/ui';
+import { GradientButton, Badge, PlacesAutocomplete, Avatar, CoverImage } from '../components/ui';
 import { VerifiedTick } from '../components/business/VerifiedTick';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -83,13 +83,11 @@ function EventRow({ event }: { event: BusinessDashboardEvent }) {
       to={`/event/${event.id}`}
       className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border hover:border-coral/40 transition-colors"
     >
-      {event.cover_image_url ? (
-        <img src={event.cover_image_url} alt={event.title} loading="lazy" className="w-14 h-14 rounded-lg object-cover" />
-      ) : (
-        <div className="w-14 h-14 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
-          <Calendar className="h-5 w-5 text-white" />
-        </div>
-      )}
+      <CoverImage
+        src={event.cover_image_url}
+        alt={event.title}
+        className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+      />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className={`font-medium truncate ${isPast ? 'text-text-muted' : 'text-text'}`}>{event.title}</p>
@@ -499,13 +497,12 @@ export default function BusinessDashboardPage() {
                       to={`/voucher/${v.id}`}
                       className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border hover:border-coral/40 transition-colors"
                     >
-                      {v.cover_image_url ? (
-                        <img src={v.cover_image_url} alt={v.title} loading="lazy" className="w-14 h-14 rounded-lg object-cover" />
-                      ) : (
-                        <div className="w-14 h-14 rounded-lg gradient-secondary flex items-center justify-center flex-shrink-0">
-                          <Ticket className="h-5 w-5 text-white" />
-                        </div>
-                      )}
+                      <CoverImage
+                        src={v.cover_image_url}
+                        categoryName={business.category}
+                        alt={v.title}
+                        className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium text-text truncate">{v.title}</p>

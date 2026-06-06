@@ -4,6 +4,7 @@ import { cn, getDisplayName } from '../../lib/utils';
 import { Avatar } from './Avatar';
 import { GradientButton } from './GradientButton';
 import { CategoryIcon } from './CategoryIcon';
+import { CoverImage } from './CoverImage';
 import { VerifiedTick } from '../business/VerifiedTick';
 
 export interface EventCardEvent {
@@ -214,18 +215,13 @@ export function EventCardMini({ event, className }: { event: EventCardEvent; cla
     >
       {/* Cover image — large, prominent (matches chat row cover treatment) */}
       <div className="relative flex-shrink-0">
-        {event.cover_image_url ? (
-          <img
-            src={event.cover_image_url}
-            alt={event.title}
-            loading="lazy"
-            className="w-16 h-16 rounded-xl object-cover"
-          />
-        ) : (
-          <div className="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center">
-            <CategoryIcon icon={event.category.icon} size="lg" className="text-white" />
-          </div>
-        )}
+        <CoverImage
+          src={event.cover_image_url}
+          categoryIcon={event.category.icon}
+          categoryName={event.category.name}
+          alt={event.title}
+          className="w-16 h-16 rounded-xl object-cover"
+        />
         {isPast && (
           <span className="absolute -top-1 -right-1 text-[9px] font-semibold text-white bg-black/70 px-1.5 py-0.5 rounded-full shadow-sm">
             Past

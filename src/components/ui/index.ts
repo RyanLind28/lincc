@@ -11,6 +11,7 @@ export { FilterPills, ActiveFilters, type FilterPillsProps, type FilterOption, t
 export { ViewToggle, type ViewToggleProps, type ViewMode } from './ViewToggle';
 export { EventCard, EventCardMini, type EventCardProps, type EventCardEvent } from './EventCard';
 export { EventCardGrid, EventCardTile, type EventCardGridProps, type GridEventData } from './EventCardGrid';
+export { CoverImage, resolveStockImage, type CoverImageProps } from './CoverImage';
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, type CardProps } from './Card';
 export { Avatar, type AvatarProps } from './Avatar';
 export { Badge, type BadgeProps } from './Badge';

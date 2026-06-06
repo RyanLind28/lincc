@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Clock } from 'lucide-react';
 import type { VoucherWithDetails } from '../../types';
 import { VerifiedTick } from '../business/VerifiedTick';
+import { CoverImage } from './CoverImage';
 
 export interface VoucherTileProps {
   voucher: VoucherWithDetails;
@@ -41,16 +42,12 @@ export function VoucherTile({ voucher }: VoucherTileProps) {
       <div className="relative bg-surface rounded-xl border border-border overflow-hidden transition-all group-hover:border-coral group-hover:shadow-md press-effect">
         {/* Cover */}
         <div className="relative aspect-[5/3] bg-muted overflow-hidden">
-          {voucher.cover_image_url ? (
-            <img
-              src={voucher.cover_image_url}
-              alt=""
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <div className="absolute inset-0 gradient-primary" />
-          )}
+          <CoverImage
+            src={voucher.cover_image_url}
+            categoryName={voucher.business?.category}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-black/0" />
 
           {/* Discount badge */}

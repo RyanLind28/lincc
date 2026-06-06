@@ -167,13 +167,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (data ?? null) as Business | null;
   }, []);
 
+  // Fetches the owner's business row and stashes it in state. Used after a
+  // freshly-converted personal account to load the just-created business
+  // record. We deliberately do NOT gate on profile.account_type here: when
+  // BecomeBusinessPage calls this right after convertToBusiness, the captured
+  // profile in this closure is still 'personal' (state hasn't propagated yet),
+  // so the previous account_type guard would silently no-op and leave the
+  // onboarding wizard stuck on its !business loader. fetchBusinessForOwner
+  // returns null if no row exists, so it's safe to call for any user.
   const refreshBusiness = useCallback(async () => {
-    if (!user?.id || profile?.account_type !== 'business') {
+    if (!user?.id) {
       setBusiness(null);
       return;
     }
     setBusiness(await fetchBusinessForOwner(user.id));
-  }, [user?.id, profile?.account_type, fetchBusinessForOwner]);
+  }, [user?.id, fetchBusinessForOwner]);
+
+  // Defensive: whenever the profile flips to a business account but we don't
+  // yet have a business loaded (e.g. converted in another tab, or a refresh
+  // race), pull it in. This guarantees the business record is available before
+  // any business-only route renders.
+  useEffect(() => {
+    if (DEV_MODE) return;
+    if (!user?.id) return;
+    if (profile?.account_type === 'business' && !business) {
+      fetchBusinessForOwner(user.id).then((biz) => {
+        if (biz) setBusiness(biz);
+      });
+    }
+  }, [user?.id, profile?.account_type, business, fetchBusinessForOwner]);
 
   // Effect 1: Listen for auth state changes (session/user only, no async work)
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { GradientButton } from '../ui';
 import { personalGuidelines, businessGuidelines } from '../../data/guidelines';
+import { OnboardingHelpButton } from './OnboardingHelpButton';
 
 const LOGO_URL = 'https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp';
 
@@ -18,6 +19,7 @@ export function GuidelinesIntro({ variant, onContinue }: GuidelinesIntroProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12 relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-coral/5 to-purple/5 blur-3xl pointer-events-none" />
+      <OnboardingHelpButton source={`guidelines-${variant}`} className="absolute top-4 right-4 z-20 safe-top" />
       <div className="w-full max-w-sm relative">
         <div className="flex justify-center mb-6">
           <img src={LOGO_URL} alt="Lincc" className="h-8" />

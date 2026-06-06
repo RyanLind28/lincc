@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Clock, Flame, Sparkles, BadgeCheck } from 'lucide-react';
 import type { VoucherWithDetails } from '../../types';
 import { VerifiedTick } from '../business/VerifiedTick';
+import { CoverImage } from './CoverImage';
 
 export interface VoucherCardProps {
   voucher: VoucherWithDetails;
@@ -51,18 +52,12 @@ export function VoucherCard({ voucher, variant = 'default', className = '' }: Vo
     >
       {/* Cover image */}
       <div className={`relative w-full bg-muted overflow-hidden ${featured ? 'aspect-[16/9]' : 'aspect-[4/3]'}`}>
-        {voucher.cover_image_url ? (
-          <img
-            src={voucher.cover_image_url}
-            alt={voucher.title}
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="absolute inset-0 gradient-primary flex items-center justify-center text-white text-3xl font-extrabold">
-            {voucher.discount_text}
-          </div>
-        )}
+        <CoverImage
+          src={voucher.cover_image_url}
+          categoryName={voucher.business?.category}
+          alt={voucher.title}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
         {/* Bottom shading for legibility of overlays */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-black/30" />
 

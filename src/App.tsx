@@ -81,6 +81,9 @@ const AdminFeedbackPage = lazy(() => import('./pages/admin/FeedbackPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
 const SearchPeoplePage = lazy(() => import('./pages/SearchPeoplePage'));
 const BusinessDirectoryPage = lazy(() => import('./pages/BusinessDirectoryPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
 
 // Lazy-loaded landing/demo
 const DemoPage = lazy(() => import('./pages/DemoPage'));
@@ -209,6 +212,9 @@ function App() {
             <Route path="/businesses" element={<ErrorBoundary><BusinessDirectoryPage /></ErrorBoundary>} />
             <Route path="/business/:id" element={<ErrorBoundary><BusinessPage /></ErrorBoundary>} />
             <Route path="/business/dashboard" element={<ErrorBoundary><BusinessDashboardPage /></ErrorBoundary>} />
+            <Route path="/about" element={<ErrorBoundary><AboutPage /></ErrorBoundary>} />
+            <Route path="/contact" element={<ErrorBoundary><ContactPage /></ErrorBoundary>} />
+            <Route path="/changelog" element={<ErrorBoundary><ChangelogPage /></ErrorBoundary>} />
           </Route>
 
           {/* Full-screen routes — keep the desktop sidebar but drop the mobile bottom nav */}

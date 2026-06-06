@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../lib/utils';
 import { X } from 'lucide-react';
@@ -28,11 +28,23 @@ function Modal({
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  // Keep latest onClose in a ref so the keydown handler stays stable across
+  // parent re-renders. Otherwise an inline `onClose={() => ...}` retriggers
+  // the setup/teardown effect on every keystroke and yanks focus to the X.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    previousFocusRef.current = document.activeElement as HTMLElement;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab' || !dialogRef.current) return;
@@ -54,28 +66,22 @@ function Modal({
           first.focus();
         }
       }
-    },
-    [onClose]
-  );
+    };
 
-  useEffect(() => {
-    if (isOpen) {
-      previousFocusRef.current = document.activeElement as HTMLElement;
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
 
-      requestAnimationFrame(() => {
-        const first = dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE);
-        first?.focus();
-      });
-    }
+    requestAnimationFrame(() => {
+      const first = dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE);
+      first?.focus();
+    });
 
+    const previousFocus = previousFocusRef.current;
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
-      previousFocusRef.current?.focus();
+      previousFocus?.focus();
     };
-  }, [isOpen, handleKeyDown]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

@@ -3,6 +3,7 @@ import { Clock, Bookmark } from 'lucide-react';
 import { cn, getDisplayName } from '../../lib/utils';
 import { Avatar } from './Avatar';
 import { CategoryIcon } from './CategoryIcon';
+import { CoverImage } from './CoverImage';
 import { CATEGORIES } from '../../data/categories';
 
 export interface GridEventData {
@@ -118,21 +119,13 @@ function EventCardTile({
     >
       {/* Cover Image */}
       <div className="relative aspect-[4/3] bg-background overflow-hidden">
-        {coverImage ? (
-          <img
-            src={coverImage}
-            alt={event.title}
-            loading="lazy"
-            width={400}
-            height={300}
-            decoding="async"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full gradient-primary flex items-center justify-center">
-            <CategoryIcon icon={event.category.icon} size="xl" className="text-white" />
-          </div>
-        )}
+        <CoverImage
+          src={coverImage}
+          categoryIcon={event.category.icon}
+          categoryName={event.category.name}
+          alt={event.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
 
         {/* Bookmark button */}
         {onToggleSave && (

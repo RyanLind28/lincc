@@ -685,7 +685,7 @@ export default function SettingsPage() {
           </h2>
           <div className="bg-surface rounded-2xl border border-border divide-y divide-border">
             <button
-              onClick={() => navigate('/landing/about')}
+              onClick={() => navigate('/about')}
               className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
             >
               <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -726,14 +726,15 @@ export default function SettingsPage() {
             </button>
 
             <button
-              onClick={() => navigate('/landing/contact')}
+              onClick={() => navigate('/contact')}
               className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
             >
               <div className="w-10 h-10 bg-purple/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                <HelpCircle className="h-5 w-5 text-purple" />
+                <Mail className="h-5 w-5 text-purple" />
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-text">Help & Support</h3>
+                <h3 className="font-medium text-text">Contact us</h3>
+                <p className="text-sm text-text-muted">Email, Instagram, TikTok</p>
               </div>
               <ChevronRight className="h-5 w-5 text-text-muted" />
             </button>
@@ -859,10 +860,14 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {/* Version */}
-        <p className="text-center text-sm text-text-light">
-          Lincc v0.14.0
-        </p>
+        {/* Version — tap to view changelog */}
+        <button
+          type="button"
+          onClick={() => navigate('/changelog')}
+          className="block mx-auto text-center text-sm text-text-light hover:text-coral transition-colors"
+        >
+          Lincc v0.15.0
+        </button>
 
         {/* Delete Account Confirmation Modal */}
         <Modal

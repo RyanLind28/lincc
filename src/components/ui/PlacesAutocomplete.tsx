@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin, Loader2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { searchPlaces, getPlaceDetails, type PlacePrediction, type PlaceDetails } from '../../services/placesService';
+import { searchPlaces, getPlaceDetails, getUserCountryCode, type PlacePrediction, type PlaceDetails } from '../../services/placesService';
 
 export interface PlacesAutocompleteProps {
   onSelect: (place: PlaceDetails) => void;
@@ -26,9 +26,23 @@ export function PlacesAutocomplete({
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<PlaceDetails | null>(null);
+  const [countryCode, setCountryCode] = useState<string | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Resolve user's country from their lat/lng once and use it as a hard
+  // restriction on autocomplete. Without this, Google's New Places API treats
+  // the lat/lng bias as a soft hint and globally-popular brand matches still
+  // rank above local ones.
+  useEffect(() => {
+    if (!userLocation) return;
+    let cancelled = false;
+    getUserCountryCode({ lat: userLocation.lat, lng: userLocation.lng }).then((code) => {
+      if (!cancelled && code) setCountryCode(code);
+    });
+    return () => { cancelled = true; };
+  }, [userLocation?.lat, userLocation?.lng]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -56,13 +70,14 @@ export function PlacesAutocomplete({
         const results = await searchPlaces(
           value,
           userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : undefined,
+          countryCode ? [countryCode] : undefined,
         );
         setPredictions(results);
         setIsOpen(results.length > 0);
         setIsSearching(false);
       }, 300);
     },
-    [userLocation],
+    [userLocation, countryCode],
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

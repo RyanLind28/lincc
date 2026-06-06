@@ -85,6 +85,10 @@ export function ReportProblemProvider({ children }: { children: ReactNode }) {
             Tell us what happened. We'll attach your screen and device details automatically so we can fix it faster.
           </p>
 
+          <div className="rounded-xl bg-coral/5 border border-coral/20 p-3 text-sm text-text">
+            We're sorry for the trouble. We aim to get back to you within 24 hours of your report.
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
             {CATEGORIES.map((c) => {
               const Icon = c.icon;

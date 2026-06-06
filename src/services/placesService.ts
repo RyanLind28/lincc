@@ -99,6 +99,7 @@ function resetSessionToken(): void {
 export async function searchPlaces(
   query: string,
   location?: { lat: number; lng: number },
+  regionCodes?: string[],
 ): Promise<PlacePrediction[]> {
   if (!API_KEY || !query.trim() || query.trim().length < 2) {
     if (!API_KEY && import.meta.env.DEV) console.warn('[Places] No API key found');
@@ -125,6 +126,14 @@ export async function searchPlaces(
         };
       }
 
+      // Hard filter to ISO 3166-1 alpha-2 country codes. This is what stops
+      // "Coffee" returning Bangladesh / NYC results when the user is in the UK:
+      // locationBias is only a soft hint, but includedRegionCodes is a hard
+      // restriction. Max 15 codes per the New Places API.
+      if (regionCodes && regionCodes.length > 0) {
+        request.includedRegionCodes = regionCodes.slice(0, 15).map((c) => c.toLowerCase());
+      }
+
       const { suggestions } = await placesLib.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
 
       return (suggestions || [])
@@ -149,6 +158,11 @@ export async function searchPlaces(
         center: { lat: location.lat, lng: location.lng },
         radius: 50000,
       };
+    }
+
+    // Legacy API uses componentRestrictions.country (max 5).
+    if (regionCodes && regionCodes.length > 0) {
+      request.componentRestrictions = { country: regionCodes.slice(0, 5).map((c) => c.toLowerCase()) };
     }
 
     const response = await service.getPlacePredictions(request);
@@ -286,4 +300,93 @@ export function getPlacePhotoUrl(
 ): string {
   if (!photoNameOrUrl) return '';
   return photoNameOrUrl;
+}
+
+// --- Country code (for includedRegionCodes) ---
+//
+// Resolves the user's ISO 3166-1 alpha-2 country code from lat/lng. Used to
+// hard-restrict Places autocomplete to the user's country so the New API
+// stops surfacing globally-popular irrelevant matches (e.g. NYC coffee when
+// you're in the UK).
+//
+// Strategy:
+//   1. Bucket the lat/lng to ~1° (~111 km) so two nearby calls share a cache
+//      entry — country boundaries are coarse enough that this is safe.
+//   2. localStorage cache keyed by the bucket. Country code virtually never
+//      changes for a given lat/lng so we cache for 30 days.
+//   3. Reverse-geocode via the Google JS SDK Geocoder (cheap, runs in the
+//      same billing session as the autocomplete call).
+//   4. On any failure, fall back to navigator.language (e.g. 'en-GB' → 'GB').
+
+const COUNTRY_CACHE_PREFIX = 'lincc:places:country:';
+const COUNTRY_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+function bucketKey(lat: number, lng: number): string {
+  return `${COUNTRY_CACHE_PREFIX}${Math.round(lat)},${Math.round(lng)}`;
+}
+
+function localeCountryFallback(): string | null {
+  try {
+    const lang = navigator.language || (navigator.languages && navigator.languages[0]);
+    if (!lang) return null;
+    const parts = lang.split('-');
+    if (parts.length < 2) return null;
+    const cc = parts[1].toUpperCase();
+    return /^[A-Z]{2}$/.test(cc) ? cc : null;
+  } catch {
+    return null;
+  }
+}
+
+const inFlight = new Map<string, Promise<string | null>>();
+
+export async function getUserCountryCode(location: { lat: number; lng: number } | null | undefined): Promise<string | null> {
+  if (!location) return localeCountryFallback();
+  const key = bucketKey(location.lat, location.lng);
+
+  // Cache hit
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const { code, at } = JSON.parse(raw) as { code: string; at: number };
+      if (code && Date.now() - at < COUNTRY_CACHE_TTL_MS) return code;
+    }
+  } catch {
+    // Corrupt or unavailable storage — fall through
+  }
+
+  if (!API_KEY) return localeCountryFallback();
+
+  // Deduplicate in-flight requests for the same bucket
+  const existing = inFlight.get(key);
+  if (existing) return existing;
+
+  const promise = (async (): Promise<string | null> => {
+    try {
+      await loadGoogleMapsApi();
+      const geocoder = new google.maps.Geocoder();
+      const response = await geocoder.geocode({ location: { lat: location.lat, lng: location.lng } });
+      const results = response.results || [];
+      for (const result of results) {
+        for (const component of result.address_components || []) {
+          if (component.types.includes('country') && component.short_name) {
+            const code = component.short_name.toUpperCase();
+            try {
+              localStorage.setItem(key, JSON.stringify({ code, at: Date.now() }));
+            } catch { /* quota — fine */ }
+            return code;
+          }
+        }
+      }
+      return localeCountryFallback();
+    } catch (err) {
+      logger.error('getUserCountryCode failed:', err);
+      return localeCountryFallback();
+    } finally {
+      inFlight.delete(key);
+    }
+  })();
+
+  inFlight.set(key, promise);
+  return promise;
 }

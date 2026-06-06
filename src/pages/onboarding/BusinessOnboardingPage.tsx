@@ -13,12 +13,14 @@ import {
   GradientButton, Input, TextArea, PlacesAutocomplete, UploadErrorNotice, ImagePickerButtons,
 } from '../../components/ui';
 import { usePWA } from '../../hooks/usePWA';
+import { useUserLocation } from '../../hooks/useUserLocation';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../components/pwa/installInstructions';
 import {
   compressImage, validateImageDetailed, convertHeicIfNeeded, autoCropSquareToBlob,
 } from '../../lib/imageCompression';
 import { updateBusiness } from '../../services/businessService';
 import { GuidelinesIntro } from '../../components/onboarding/GuidelinesIntro';
+import { OnboardingHelpButton } from '../../components/onboarding/OnboardingHelpButton';
 import type { PlaceDetails } from '../../services/placesService';
 import type { BusinessOpeningHours } from '../../types';
 
@@ -62,6 +64,7 @@ export default function BusinessOnboardingPage() {
   const { user, profile, business, refreshProfile, refreshBusiness } = useAuth();
   const { showToast } = useToast();
   const { isInstallable, isInstalled, promptInstall } = usePWA();
+  const { location: userLocation } = useUserLocation();
 
   const [step, setStep] = useState(1);
   const [guidelinesAcknowledged, setGuidelinesAcknowledged] = useState(false);
@@ -369,10 +372,13 @@ export default function BusinessOnboardingPage() {
     <div className="min-h-screen bg-background flex flex-col">
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-3">
+      <div className="px-4 pt-4 pb-2 safe-top">
+        <div className="flex items-center justify-between gap-3 mb-3">
           <img src={LOGO_URL} alt="Lincc" className="h-7" />
-          <span className="text-xs text-text-muted">Step {step} of {TOTAL_STEPS}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-muted">Step {step} of {TOTAL_STEPS}</span>
+            <OnboardingHelpButton source={`business-onboarding-step-${step}`} />
+          </div>
         </div>
         <div className="h-1 bg-border rounded-full overflow-hidden">
           <div
@@ -498,6 +504,7 @@ export default function BusinessOnboardingPage() {
               <label className="block text-sm font-medium text-text mb-1.5">Address</label>
               <PlacesAutocomplete
                 defaultValue={address}
+                userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
                 onSelect={(place: PlaceDetails) => setAddress(place.address || place.name || '')}
                 placeholder="Start typing your address"
               />

@@ -23,7 +23,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getVoucherById, redeemVoucher, hasUserRedeemed, getActiveVouchersByBusiness } from '../services/voucherService';
 import { getLocationsByBusiness } from '../services/businessService';
-import { GradientButton, Spinner, ScratchCard, SwipeToRedeem, Avatar, Badge } from '../components/ui';
+import { GradientButton, Spinner, ScratchCard, SwipeToRedeem, Avatar, Badge, CoverImage } from '../components/ui';
 import { VoucherTile } from '../components/ui/VoucherTile';
 import { VerifiedTick } from '../components/business/VerifiedTick';
 import { ShareVoucherSheet } from '../components/vouchers/ShareVoucherSheet';
@@ -151,7 +151,13 @@ export default function VoucherDetailPage() {
       <div className="relative">
         {voucher.cover_image_url ? (
           <div className="relative h-56 overflow-hidden">
-            <img src={voucher.cover_image_url} alt={voucher.title} loading="lazy" className="w-full h-full object-cover" />
+            <CoverImage
+              src={voucher.cover_image_url}
+              categoryName={voucher.business?.category}
+              alt={voucher.title}
+              loading="eager"
+              className="w-full h-full object-cover"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           </div>
         ) : (

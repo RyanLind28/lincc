@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Avatar, GradientButton, CategoryIcon, BottomSheet, EventDetailSkeleton, Input, TextArea } from '../components/ui';
+import { Avatar, GradientButton, CategoryIcon, BottomSheet, CoverImage, EventDetailSkeleton, Input, TextArea } from '../components/ui';
 import { MapPin, Clock, MessageCircle, Share2, ChevronRight, Users, Check, X, Loader2, Pencil, Trash2, AlertTriangle, Bookmark, MoreVertical, Ban, ShieldAlert, Navigation, Copy } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 import { useAuth } from '../contexts/AuthContext';
@@ -415,8 +415,10 @@ export default function EventDetailPage() {
         <div className="bg-surface rounded-2xl shadow-lg overflow-hidden mb-4 lg:mb-6">
           {/* Cover image */}
           <div className="relative h-44 lg:h-64 bg-muted overflow-hidden">
-            <img
-              src={event.cover_image_url || CATEGORIES.find(c => c.label === event.category?.name)?.image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=450&fit=crop'}
+            <CoverImage
+              src={event.cover_image_url}
+              categoryIcon={event.category?.icon}
+              categoryName={event.category?.name}
               alt={event.category?.name || 'Event'}
               className="w-full h-full object-cover"
               loading="eager"
