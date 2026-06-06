@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Header } from '../components/layout';
 import { Slider, Toggle, Modal, Input, Button } from '../components/ui';
-import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Monitor, Mail, Lock, HelpCircle, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus, Sparkles, FlaskConical, Share, Shield } from 'lucide-react';
+import { LogOut, Users, MapPin, Download, Trash2, ChevronRight, Bell, UserPlus, MessageCircle, AlertCircle, Clock, Moon, CheckCircle, XCircle, Tag, Loader2, Store, Monitor, Mail, Lock, Info, RefreshCw, ExternalLink, Sun, MessageSquarePlus, Sparkles, FlaskConical, Share, Shield } from 'lucide-react';
 import { useReportProblem } from '../contexts/ReportProblemContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useUserLocation } from '../hooks/useUserLocation';
