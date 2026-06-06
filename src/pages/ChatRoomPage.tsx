@@ -6,6 +6,7 @@ import { Send, Lock, ChevronRight, MapPin, Clock, Flag } from 'lucide-react';
 import { hapticLight } from '../lib/haptics';
 import { useAuth } from '../contexts/AuthContext';
 import { useEventChat } from '../hooks/useEventChat';
+import { markChatsSeen } from '../hooks/useUnreadChats';
 import { useNow } from '../hooks/useNow';
 import { ChatStatusPill } from '../components/features/ChatStatusPill';
 import { ReportMessageDialog } from '../components/social/ReportMessageDialog';
@@ -21,6 +22,9 @@ export default function ChatRoomPage() {
   const [message, setMessage] = useState('');
   const [event, setEvent] = useState<EventWithDetails | null>(null);
   const [eventLoading, setEventLoading] = useState(true);
+
+  // Opening a chat room counts as catching up — clear the bottom-nav dot.
+  useEffect(() => { markChatsSeen(); }, []);
 
   const { messages, isLoading, isSending, hasAccess, error, sendMessage } =
     useEventChat(eventId);

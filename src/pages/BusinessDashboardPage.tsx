@@ -46,11 +46,13 @@ function StarRow({ rating }: { rating: number }) {
   );
 }
 
-function StatCard({ label, value, accent, icon: Icon }: {
+function StatCard({ label, value, accent, icon: Icon, onClick }: {
   label: string;
   value: string | number;
   accent?: 'coral' | 'purple' | 'success' | 'warning';
   icon?: React.ComponentType<{ className?: string }>;
+  /** When provided, the card becomes a button — used to jump to the related tab. */
+  onClick?: () => void;
 }) {
   const tones: Record<string, string> = {
     coral: 'text-coral bg-coral/10',
@@ -58,8 +60,14 @@ function StatCard({ label, value, accent, icon: Icon }: {
     success: 'text-success bg-success/10',
     warning: 'text-warning bg-warning/10',
   };
+  const baseClass = 'bg-surface rounded-xl border border-border p-4';
+  const interactiveClass = onClick ? ' w-full text-left hover:border-coral/40 hover:shadow-sm transition-all press-effect' : '';
+  const Wrapper: 'button' | 'div' = onClick ? 'button' : 'div';
   return (
-    <div className="bg-surface rounded-xl border border-border p-4">
+    <Wrapper
+      {...(onClick ? { type: 'button' as const, onClick } : {})}
+      className={baseClass + interactiveClass}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-2xl font-bold text-text">{value}</p>
@@ -71,7 +79,7 @@ function StatCard({ label, value, accent, icon: Icon }: {
           </div>
         )}
       </div>
-    </div>
+    </Wrapper>
   );
 }
 
@@ -113,6 +121,18 @@ export default function BusinessDashboardPage() {
   const { location: userLocation } = useUserLocation();
 
   const [tab, setTab] = useState<Tab>('overview');
+
+  // Switch to the target tab and scroll the tab bar into view. Used by the
+  // Overview stat cards so tapping "Active events" both flips to the events
+  // tab and surfaces it on screen (otherwise the user has to scroll manually).
+  const jumpToTab = (target: Tab) => {
+    setTab(target);
+    // Wait a tick so the new tab content has mounted before scrolling.
+    requestAnimationFrame(() => {
+      document.getElementById('dashboard-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   const [data, setData] = useState<BusinessDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddLocation, setShowAddLocation] = useState(false);
@@ -290,14 +310,15 @@ export default function BusinessDashboardPage() {
 
         {/* Stat cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Active events" value={stats.activeEvents} accent="coral" icon={Calendar} />
-          <StatCard label="Active vouchers" value={stats.activeVouchers} accent="purple" icon={Ticket} />
-          <StatCard label="Total redemptions" value={stats.totalRedemptions} accent="success" icon={TrendingUp} />
+          <StatCard label="Active events" value={stats.activeEvents} accent="coral" icon={Calendar} onClick={() => jumpToTab('events')} />
+          <StatCard label="Active vouchers" value={stats.activeVouchers} accent="purple" icon={Ticket} onClick={() => jumpToTab('vouchers')} />
+          <StatCard label="Total redemptions" value={stats.totalRedemptions} accent="success" icon={TrendingUp} onClick={() => jumpToTab('vouchers')} />
           <StatCard
             label={stats.hostRatingCount > 0 ? `Avg rating · ${stats.hostRatingCount} reviews` : 'No reviews yet'}
             value={stats.hostRatingAvg ? stats.hostRatingAvg.toFixed(1) : '–'}
             accent="warning"
             icon={Star}
+            onClick={() => jumpToTab('reviews')}
           />
         </div>
 
@@ -361,7 +382,7 @@ export default function BusinessDashboardPage() {
         )}
 
         {/* Tab nav */}
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide border-b border-border">
+        <div id="dashboard-tabs" className="scroll-mt-20 flex gap-1 overflow-x-auto scrollbar-hide border-b border-border">
           {(['overview', 'events', 'vouchers', 'locations', 'reviews', 'profile'] as Tab[]).map((t) => (
             <button
               key={t}

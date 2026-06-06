@@ -23,7 +23,7 @@ interface UseEventChatResult {
 }
 
 export function useEventChat(eventId: string | undefined): UseEventChatResult {
-  const { user, profile } = useAuth();
+  const { user, profile, business } = useAuth();
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -134,10 +134,15 @@ export function useEventChat(eventId: string | undefined): UseEventChatResult {
         const result = await sendMessageService(eventId, user.id, trimmedContent);
 
         if (result.success && result.data) {
-          // Optimistically add the message with the current user's profile
+          // Optimistically add the message with the current user's profile.
+          // Business owners also need their business attached so getChatIdentity
+          // surfaces the venue name + logo instead of their personal first name.
           const newMessage: MessageWithSender = {
             ...result.data,
-            sender: profile as Profile,
+            sender: {
+              ...(profile as Profile),
+              business: business ? { id: business.id, name: business.name, logo_url: business.logo_url } : null,
+            } as Profile,
           };
           setMessages((prev) => [...prev, newMessage]);
         } else {
@@ -153,7 +158,7 @@ export function useEventChat(eventId: string | undefined): UseEventChatResult {
         setIsSending(false);
       }
     },
-    [eventId, user?.id, profile, hasAccess]
+    [eventId, user?.id, profile, business, hasAccess]
   );
 
   return {

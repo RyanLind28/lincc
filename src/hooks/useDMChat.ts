@@ -33,7 +33,7 @@ interface UseDMChatResult {
 }
 
 export function useDMChat(conversationId: string | undefined): UseDMChatResult {
-  const { user, profile } = useAuth();
+  const { user, profile, business } = useAuth();
   const [messages, setMessages] = useState<DirectMessageWithSender[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -131,9 +131,15 @@ export function useDMChat(conversationId: string | undefined): UseDMChatResult {
         );
 
         if (result.success && result.data) {
+          // Optimistic insert: include business so a business owner's own
+          // sent message shows venue name + logo immediately, matching the
+          // fetched/realtime path.
           const newMessage: DirectMessageWithSender = {
             ...result.data,
-            sender: profile as Profile,
+            sender: {
+              ...(profile as Profile),
+              business: business ? { id: business.id, name: business.name, logo_url: business.logo_url } : null,
+            } as Profile,
           };
           setMessages((prev) => [...prev, newMessage]);
         } else {
@@ -149,7 +155,7 @@ export function useDMChat(conversationId: string | undefined): UseDMChatResult {
         setIsSending(false);
       }
     },
-    [conversationId, user?.id, profile]
+    [conversationId, user?.id, profile, business]
   );
 
   return {

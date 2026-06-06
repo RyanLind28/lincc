@@ -3,8 +3,9 @@ import { Map, List, MessageCircle, Calendar, User, Plus, Bell, Ticket } from 'lu
 import { cn } from '../../lib/utils';
 import { useViewMode } from '../../contexts/ViewModeContext';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
+import { useUnreadChats } from '../../hooks/useUnreadChats';
 
-function NavIcon({ icon: Icon, isActive, badge }: { icon: typeof Map; isActive: boolean; badge?: number }) {
+function NavIcon({ icon: Icon, isActive, badge, dot }: { icon: typeof Map; isActive: boolean; badge?: number; dot?: boolean }) {
   return (
     <div className="relative flex-shrink-0">
       <Icon className={cn('h-6 w-6', isActive ? 'text-coral' : 'text-text-muted')} />
@@ -12,6 +13,8 @@ function NavIcon({ icon: Icon, isActive, badge }: { icon: typeof Map; isActive: 
         <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-error rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
           {badge > 99 ? '99+' : badge}
         </span>
+      ) : dot ? (
+        <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-error ring-2 ring-surface" />
       ) : null}
     </div>
   );
@@ -22,13 +25,14 @@ export function SideNav() {
   const { viewMode, toggleViewMode } = useViewMode();
   const isOnHomePage = location.pathname === '/';
   const unreadCount = useUnreadNotificationCount();
+  const hasUnreadChats = useUnreadChats();
 
   const navItems = [
-    { to: '/chats', icon: MessageCircle, label: 'Chats', badge: 0, tourId: 'chats' },
-    { to: '/my-events', icon: Calendar, label: 'Events', badge: 0, tourId: 'my-events' },
-    { to: '/vouchers', icon: Ticket, label: 'Vouchers', badge: 0, tourId: undefined },
-    { to: '/notifications', icon: Bell, label: 'Notifications', badge: unreadCount, tourId: undefined },
-    { to: '/profile', icon: User, label: 'Profile', badge: 0, tourId: undefined },
+    { to: '/chats', icon: MessageCircle, label: 'Chats', badge: 0, dot: hasUnreadChats, tourId: 'chats' },
+    { to: '/my-events', icon: Calendar, label: 'Events', badge: 0, dot: false, tourId: 'my-events' },
+    { to: '/vouchers', icon: Ticket, label: 'Vouchers', badge: 0, dot: false, tourId: undefined },
+    { to: '/notifications', icon: Bell, label: 'Notifications', badge: unreadCount, dot: false, tourId: undefined },
+    { to: '/profile', icon: User, label: 'Profile', badge: 0, dot: false, tourId: undefined },
   ];
 
   return (
@@ -81,14 +85,14 @@ export function SideNav() {
                   'flex items-center justify-center w-10 h-10 rounded-full transition-all group-hover/sidebar:hidden mx-auto',
                   isActive ? 'bg-coral/10' : 'hover:bg-background'
                 )}>
-                  <NavIcon icon={item.icon} isActive={isActive} badge={item.badge || undefined} />
+                  <NavIcon icon={item.icon} isActive={isActive} badge={item.badge || undefined} dot={item.dot} />
                 </div>
                 {/* Expanded: row */}
                 <div className={cn(
                   'hidden group-hover/sidebar:flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all',
                   isActive ? 'bg-coral/10' : 'hover:bg-background'
                 )}>
-                  <NavIcon icon={item.icon} isActive={isActive} badge={item.badge || undefined} />
+                  <NavIcon icon={item.icon} isActive={isActive} badge={item.badge || undefined} dot={item.dot} />
                   <span className={cn('text-sm font-medium whitespace-nowrap', isActive ? 'text-coral' : 'text-text-muted')}>{item.label}</span>
                 </div>
               </>

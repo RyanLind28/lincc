@@ -2,11 +2,13 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Compass, Map, Tag, MessageCircle, Calendar, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useViewMode } from '../../contexts/ViewModeContext';
+import { useUnreadChats } from '../../hooks/useUnreadChats';
 
 type NavSlotProps = {
   isActive: boolean;
   label: string;
   children: React.ReactNode;
+  showDot?: boolean;
 };
 
 /**
@@ -14,16 +16,22 @@ type NavSlotProps = {
  * way more reliable than the old SVG-gradient stroke trick which failed on some icons.
  * Shows a small label + an active dot for clear state feedback.
  */
-function NavSlot({ isActive, label, children }: NavSlotProps) {
+function NavSlot({ isActive, label, children, showDot }: NavSlotProps) {
   return (
     <div className="flex flex-col items-center justify-center gap-0.5 py-1 px-2 min-w-[56px]">
       <span
         className={cn(
-          'flex items-center justify-center h-6 w-6 transition-colors',
+          'relative flex items-center justify-center h-6 w-6 transition-colors',
           isActive ? 'text-coral' : 'text-text-muted'
         )}
       >
         {children}
+        {showDot && (
+          <span
+            aria-hidden="true"
+            className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-error ring-2 ring-surface"
+          />
+        )}
       </span>
       <span
         className={cn(
@@ -40,6 +48,7 @@ function NavSlot({ isActive, label, children }: NavSlotProps) {
 export function BottomNav() {
   const location = useLocation();
   const { viewMode, toggleViewMode } = useViewMode();
+  const hasUnreadChats = useUnreadChats();
 
   const isOnHomePage = location.pathname === '/';
   // The Discover slot is "active" when we're on the home route regardless of list/map
@@ -91,7 +100,11 @@ export function BottomNav() {
             aria-label={item.label}
           >
             {({ isActive }) => (
-              <NavSlot isActive={isActive} label={item.label}>
+              <NavSlot
+                isActive={isActive}
+                label={item.label}
+                showDot={item.to === '/chats' && hasUnreadChats}
+              >
                 <item.icon className="h-6 w-6" strokeWidth={2} />
               </NavSlot>
             )}

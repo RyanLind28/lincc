@@ -16,6 +16,22 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.3',
+    date: '2026-06-06',
+    summary: 'Notifications, reviews, and chat polish.',
+    changes: [
+      { kind: 'added', text: 'New Reviews page that opens straight from the rating notification, with a clear "all caught up" view when there\'s nothing to do.' },
+      { kind: 'added', text: 'Red dot on the Chats tab when you have new messages, clears as soon as you open the chats list or a thread.' },
+      { kind: 'added', text: 'Stat cards on the business dashboard now tap-through to the matching tab and scroll it into view.' },
+      { kind: 'added', text: 'If neither side rates within 72 hours, we auto-fill a positive 5-star review on their behalf so profiles stay welcoming.' },
+      { kind: 'fixed', text: 'Tapping any notification now reliably opens the right page on iPhone (previously some taps were being silently swallowed).' },
+      { kind: 'fixed', text: 'Business owners now see their venue name and logo on their own messages immediately, not their personal name.' },
+      { kind: 'fixed', text: 'Chat list preview shows the right business identity on the most recent message too.' },
+      { kind: 'fixed', text: 'Users with a completed profile no longer get stuck on the onboarding screen after logging in.' },
+      { kind: 'changed', text: 'The "Add to home screen" step in onboarding always shows now, with a friendly "you\'re all set" if Lincc is already installed.' },
+    ],
+  },
+  {
     version: '0.15.2',
     date: '2026-06-06',
     summary: 'Place search location fix and account tidy-up.',

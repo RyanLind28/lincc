@@ -83,6 +83,7 @@ const BusinessDirectoryPage = lazy(() => import('./pages/BusinessDirectoryPage')
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
+const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
 
 // Lazy-loaded landing/demo
 const DemoPage = lazy(() => import('./pages/DemoPage'));
@@ -214,6 +215,7 @@ function App() {
             <Route path="/about" element={<ErrorBoundary><AboutPage /></ErrorBoundary>} />
             <Route path="/contact" element={<ErrorBoundary><ContactPage /></ErrorBoundary>} />
             <Route path="/changelog" element={<ErrorBoundary><ChangelogPage /></ErrorBoundary>} />
+            <Route path="/reviews" element={<ErrorBoundary><ReviewsPage /></ErrorBoundary>} />
           </Route>
 
           {/* Full-screen routes — keep the desktop sidebar but drop the mobile bottom nav */}

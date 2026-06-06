@@ -200,11 +200,11 @@ export function getNotificationPath(notification: Notification): string {
     case 'participant_rejoined':
       return eventId ? `/event/${eventId}` : '/';
     case 'review_prompt':
-      // The review modal is hosted on HomePage. Routing here triggers it via
-      // the ?reviewPrompt=1 deep link. If the user has already submitted all
-      // their reviews, the modal opens, sees nothing pending, and renders
-      // nothing — they just land on home (which is fine).
-      return '/?reviewPrompt=1';
+      // Dedicated reviews page that fetches pending items and opens the
+      // rating modal directly. The optional ?event=<id> param prefers the
+      // specific event the notification was about; if none are pending for
+      // that event the page falls through to anything else.
+      return eventId ? `/reviews?event=${eventId}` : '/reviews';
     case 'business_approved':
       return '/business/dashboard';
     case 'business_rejected':

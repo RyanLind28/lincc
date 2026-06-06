@@ -5,6 +5,7 @@ import { Avatar, GradientButton, Input, Spinner } from '../components/ui';
 import { Send, Ticket, Calendar, ChevronRight, Clock, MapPin, Users, Flag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDMChat } from '../hooks/useDMChat';
+import { markChatsSeen } from '../hooks/useUnreadChats';
 import { ReportMessageDialog } from '../components/social/ReportMessageDialog';
 import { supabase } from '../lib/supabase';
 import { getChatIdentity } from '../lib/utils';
@@ -17,6 +18,9 @@ export default function DMChatRoomPage() {
   const [message, setMessage] = useState('');
   const [otherUser, setOtherUser] = useState<SenderProfile | null>(null);
   const [otherUserLoading, setOtherUserLoading] = useState(true);
+
+  // Opening a DM counts as catching up — clear the bottom-nav dot.
+  useEffect(() => { markChatsSeen(); }, []);
 
   const { messages, isLoading, isSending, error, sendMessage } =
     useDMChat(conversationId);

@@ -206,10 +206,23 @@ export default function NotificationsPage() {
 
             <div className="space-y-2">
               {dateNotifications.map((notification) => (
-                <button
+                // Row uses div+role=button (not <button>) so the nested
+                // delete <button> below is valid HTML. Nested buttons cause
+                // iOS Safari (and some Android browsers) to silently swallow
+                // the outer click, which made notifications appear to "not
+                // route" anywhere when tapped.
+                <div
                   key={notification.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleNotificationClick(notification)}
-                  className={`w-full flex items-start gap-3 p-4 rounded-xl border transition-colors text-left ${
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleNotificationClick(notification);
+                    }
+                  }}
+                  className={`w-full flex items-start gap-3 p-4 rounded-xl border transition-colors text-left cursor-pointer ${
                     notification.is_read
                       ? 'bg-surface border-border hover:border-border-dark'
                       : 'bg-coral/5 border-coral/20 hover:border-coral/40'
@@ -256,7 +269,7 @@ export default function NotificationsPage() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
-                </button>
+                </div>
               ))}
             </div>
           </div>

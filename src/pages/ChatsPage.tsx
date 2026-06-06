@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { GradientButton, CategoryIcon, Avatar, ChatListSkeleton } from '../components/ui';
@@ -6,6 +6,7 @@ import { MessageCircle, ChevronRight, Users, Loader2, Settings } from 'lucide-re
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useUserChats } from '../hooks/useEventChat';
 import { useUserDMs } from '../hooks/useDMChat';
+import { markChatsSeen } from '../hooks/useUnreadChats';
 import { useAuth } from '../contexts/AuthContext';
 import { useNow } from '../hooks/useNow';
 import { formatRelativeTime, getChatIdentity } from '../lib/utils';
@@ -16,6 +17,10 @@ type ChatTab = 'events' | 'friends';
 export default function ChatsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ChatTab>('events');
+
+  // Clear the bottom-nav red dot — landing on the chats list counts as seen.
+  useEffect(() => { markChatsSeen(); }, []);
+
   const { chats, isLoading: eventsLoading, error: eventsError, refresh: refreshEvents } = useUserChats();
   const { conversations, isLoading: dmsLoading, error: dmsError, refresh: refreshDMs } = useUserDMs();
   const nowMs = useNow();

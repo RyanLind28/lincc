@@ -169,16 +169,20 @@ export default function OnboardingPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileName, user?.id, profile?.profile_name]);
 
-  // If profile is already complete on mount (before user starts), redirect to home.
-  // Don't redirect once user is actively going through onboarding (step > 1)
-  // or after saving profile (post-save steps) — let them see the final setup screen.
-  // ?preview=true bypasses this for testing.
+  // If profile is already complete on mount, redirect to home. Gate only on
+  // step === 1 — once the user has advanced (or hit the post-save steps),
+  // isProfileComplete flips to true legitimately and we want them to finish
+  // the install / location / notifications screens. ?preview=true bypasses
+  // this for testing. (Previously also gated on !avatarUrl, which broke for
+  // users who already had an avatar in their profile: the prefill effect
+  // populated avatarUrl immediately and the safety net never fired, leaving
+  // them stuck on the onboarding screen on every login.)
   useEffect(() => {
     if (window.location.search.includes('preview=true')) return;
-    if (isProfileComplete && step === 1 && !avatarUrl) {
+    if (isProfileComplete && step === 1) {
       navigate('/', { replace: true });
     }
-  }, [isProfileComplete, navigate, step, avatarUrl]);
+  }, [isProfileComplete, navigate, step]);
 
   // Resume onboarding after interruption (call/text on mobile backgrounds the
   // PWA and clears in-memory state). We persist the current step and form
