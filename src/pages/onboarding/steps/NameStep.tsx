@@ -51,7 +51,7 @@ export function NameStep({
 
         <div>
           <Input
-            label="Username"
+            label="Add username please"
             value={profileName}
             onChange={(e) => onProfileNameChange(e.target.value)}
             placeholder="How others see you on Lincc"

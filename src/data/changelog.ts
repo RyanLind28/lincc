@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.2',
+    date: '2026-06-06',
+    summary: 'Place search location fix and account tidy-up.',
+    changes: [
+      { kind: 'fixed', text: 'Place search no longer locks to the UK when your GPS is off or denied.' },
+      { kind: 'fixed', text: 'Tapping a review prompt notification opens the review pop-up again.' },
+      { kind: 'changed', text: 'Personal accounts can no longer be converted to business in place. The Settings tile now signs you out and takes you to business signup with a different email.' },
+      { kind: 'changed', text: 'Username field in onboarding now reads "Add username please".' },
+    ],
+  },
+  {
     version: '0.15.1',
     date: '2026-06-06',
     summary: 'Notifications now take you to the right place.',

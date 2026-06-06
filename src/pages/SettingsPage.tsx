@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [showEmailChange, setShowEmailChange] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [showBusinessSignupConfirm, setShowBusinessSignupConfirm] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const defaultPrefs: NotificationPreferences = {
@@ -321,7 +322,9 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Business */}
+        {/* Business — existing business accounts see the dashboard tile.
+            Personal accounts see a "sign out and sign up as a business" tile,
+            since accounts cannot be converted in place. */}
         <section>
           <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3 px-1">
             Business
@@ -343,15 +346,15 @@ export default function SettingsPage() {
               </button>
             ) : (
               <button
-                onClick={() => navigate('/become-a-business')}
+                onClick={() => setShowBusinessSignupConfirm(true)}
                 className="w-full p-4 flex items-center gap-3 text-left hover:bg-background transition-colors"
               >
                 <div className="w-10 h-10 bg-coral/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Store className="h-5 w-5 text-coral" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-medium text-text">Become a business</h3>
-                  <p className="text-sm text-text-muted">Post deals and offers to people nearby</p>
+                  <h3 className="font-medium text-text">Want a business account?</h3>
+                  <p className="text-sm text-text-muted">Sign out and create one with a different email</p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-text-muted" />
               </button>
@@ -860,13 +863,63 @@ export default function SettingsPage() {
           </button>
         </div>
 
+        {/* Business signup confirm — signs out and lands on the business
+            signup form. Personal accounts can't convert in place. */}
+        <Modal
+          isOpen={showBusinessSignupConfirm}
+          onClose={() => setShowBusinessSignupConfirm(false)}
+          title="Sign out and create a business account?"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-xl bg-coral/10 text-coral flex items-center justify-center flex-shrink-0">
+                <Store className="h-5 w-5" />
+              </div>
+              <div className="space-y-2 text-sm text-text-muted">
+                <p>
+                  Business accounts are separate from personal accounts. To create one
+                  you'll need to <span className="font-semibold text-text">sign out</span> and
+                  sign up again with a different email address.
+                </p>
+                <p>
+                  Your personal account stays exactly as it is. You can switch back any time
+                  by signing in again.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowBusinessSignupConfirm(false)}
+                className="inline-flex items-center justify-center h-11 px-4 rounded-xl border border-border text-sm font-medium text-text hover:bg-background transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowBusinessSignupConfirm(false);
+                  await signOut();
+                  navigate('/signup?business=true');
+                }}
+                className="inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 transition-all"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            </div>
+          </div>
+        </Modal>
+
         {/* Version — tap to view changelog */}
         <button
           type="button"
           onClick={() => navigate('/changelog')}
           className="block mx-auto text-center text-sm text-text-light hover:text-coral transition-colors"
         >
-          Lincc v0.15.1
+          Lincc v0.15.2
         </button>
 
         {/* Delete Account Confirmation Modal */}

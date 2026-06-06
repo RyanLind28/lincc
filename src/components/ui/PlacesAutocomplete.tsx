@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin, Loader2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { searchPlaces, getPlaceDetails, getUserCountryCode, type PlacePrediction, type PlaceDetails } from '../../services/placesService';
+import { useUserLocation } from '../../hooks/useUserLocation';
 
 export interface PlacesAutocompleteProps {
   onSelect: (place: PlaceDetails) => void;
@@ -28,21 +29,33 @@ export function PlacesAutocomplete({
   const [selectedPlace, setSelectedPlace] = useState<PlaceDetails | null>(null);
   const [countryCode, setCountryCode] = useState<string | null>(null);
 
+  // The location store falls back to London when GPS is denied / unavailable
+  // / times out. We must not derive a country code or apply a location bias
+  // from that fake fallback — otherwise users in other countries get pinned
+  // to the UK. hasPermission is true only after a successful GPS reading.
+  const { hasPermission: hasRealLocation } = useUserLocation();
+
+  // Only use the caller's userLocation when we actually have a real GPS fix.
+  const effectiveLocation = hasRealLocation ? userLocation : null;
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Resolve user's country from their lat/lng once and use it as a hard
   // restriction on autocomplete. Without this, Google's New Places API treats
   // the lat/lng bias as a soft hint and globally-popular brand matches still
-  // rank above local ones.
+  // rank above local ones. Skip entirely when the location is the fallback.
   useEffect(() => {
-    if (!userLocation) return;
+    if (!effectiveLocation) {
+      setCountryCode(null);
+      return;
+    }
     let cancelled = false;
-    getUserCountryCode({ lat: userLocation.lat, lng: userLocation.lng }).then((code) => {
+    getUserCountryCode({ lat: effectiveLocation.lat, lng: effectiveLocation.lng }).then((code) => {
       if (!cancelled && code) setCountryCode(code);
     });
     return () => { cancelled = true; };
-  }, [userLocation?.lat, userLocation?.lng]);
+  }, [effectiveLocation?.lat, effectiveLocation?.lng]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -69,7 +82,7 @@ export function PlacesAutocomplete({
       debounceRef.current = setTimeout(async () => {
         const results = await searchPlaces(
           value,
-          userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : undefined,
+          effectiveLocation ? { lat: effectiveLocation.lat, lng: effectiveLocation.lng } : undefined,
           countryCode ? [countryCode] : undefined,
         );
         setPredictions(results);
@@ -77,7 +90,7 @@ export function PlacesAutocomplete({
         setIsSearching(false);
       }, 300);
     },
-    [userLocation, countryCode],
+    [effectiveLocation, countryCode],
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -318,7 +318,9 @@ export function getPlacePhotoUrl(
 //      same billing session as the autocomplete call).
 //   4. On any failure, fall back to navigator.language (e.g. 'en-GB' → 'GB').
 
-const COUNTRY_CACHE_PREFIX = 'lincc:places:country:';
+// v2 prefix: invalidates old entries from before we knew the location might
+// have been the London fallback (GB cached for 30d on anyone whose GPS failed).
+const COUNTRY_CACHE_PREFIX = 'lincc:places:country:v2:';
 const COUNTRY_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function bucketKey(lat: number, lng: number): string {
