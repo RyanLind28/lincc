@@ -282,7 +282,8 @@ export type NotificationType =
   | 'review_prompt'
   | 'business_approved'
   | 'business_rejected'
-  | 'admin_broadcast';
+  | 'admin_broadcast'
+  | 'feedback';
 
 // Notification preference keys (toggleable push types)
 export interface NotificationPreferences {

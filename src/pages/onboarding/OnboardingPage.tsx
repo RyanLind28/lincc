@@ -250,10 +250,14 @@ export default function OnboardingPage() {
 
   // Skip the install step entirely if the app is already installed. These sit
   // after BIO_STEP (the save point).
-  const showInstallStep = !isInstalled;
-  const installStep = showInstallStep ? BIO_STEP + 1 : -1;
-  const locationStep = showInstallStep ? BIO_STEP + 2 : BIO_STEP + 1;
-  const notificationStep = showInstallStep ? BIO_STEP + 3 : BIO_STEP + 2;
+  // Always show the install step. The browser only tells us "is the app
+  // currently running standalone" — it can't tell us "is the user already
+  // installed somewhere", so skipping based on that fooled users who
+  // installed previously but opened the app in a regular tab. InstallStep
+  // already softens itself when isInstalled is true.
+  const installStep = BIO_STEP + 1;
+  const locationStep = BIO_STEP + 2;
+  const notificationStep = BIO_STEP + 3;
   const totalSteps = notificationStep;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -493,7 +497,7 @@ export default function OnboardingPage() {
       if (resumeKey) {
         try { localStorage.removeItem(resumeKey); } catch { /* ignore */ }
       }
-      setStep(showInstallStep ? installStep : locationStep);
+      setStep(installStep);
     }
 
     setIsLoading(false);

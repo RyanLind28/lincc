@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.1',
+    date: '2026-06-06',
+    summary: 'Notifications now take you to the right place.',
+    changes: [
+      { kind: 'fixed', text: 'Tapping a notification now opens the matching event, voucher, or page instead of dropping you on home.' },
+      { kind: 'fixed', text: 'Review prompts land you on My Events so you can pick which event to review.' },
+      { kind: 'fixed', text: 'Voucher redeemed and problem-report notifications now have proper icons and tap-through actions.' },
+      { kind: 'changed', text: 'Install step in onboarding now always shows. If Lincc is already on your home screen, it confirms you\'re set instead of pushing you to install again.' },
+    ],
+  },
+  {
     version: '0.15.0',
     date: '2026-06-06',
     summary: 'Polish across onboarding, contact, places, and broken images.',

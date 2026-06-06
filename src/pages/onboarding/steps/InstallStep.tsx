@@ -1,4 +1,4 @@
-import { Download, ChevronRight } from 'lucide-react';
+import { Download, ChevronRight, Check } from 'lucide-react';
 import { detectInstallPlatform, getInstallInstructions, InstallSteps } from '../../../components/pwa/installInstructions';
 
 interface InstallStepProps {
@@ -8,20 +8,31 @@ interface InstallStepProps {
 }
 
 export function InstallStep({ isInstalled, isInstallable, onInstall }: InstallStepProps) {
+  // Note: we always show this step in onboarding even when isInstalled is
+  // true. The browser only knows "is this tab running standalone right now",
+  // not "has the user added the app somewhere", so we play it safe and
+  // re-offer the instructions while softening the copy for the standalone
+  // case below.
   return (
     <div className="text-center">
-      <h1 className="text-2xl font-bold gradient-text mb-2">Add to Home Screen</h1>
+      <h1 className="text-2xl font-bold gradient-text mb-2">
+        {isInstalled ? "You're all set" : 'Add to Home Screen'}
+      </h1>
       <p className="text-text-muted mb-8">
-        Install Lincc for the best experience. Instant access, just like a native app.
+        {isInstalled
+          ? "Lincc is already on your home screen on this device — nothing to do here."
+          : 'Install Lincc for the best experience. Instant access, just like a native app.'}
       </p>
 
       <div className="space-y-3 text-left">
         {isInstalled && (
           <div className="text-center py-4">
             <div className="w-14 h-14 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Download className="h-7 w-7 text-success" />
+              <Check className="h-7 w-7 text-success" />
             </div>
-            <p className="text-text-muted text-sm">Lincc is already installed!</p>
+            <p className="text-text-muted text-sm">
+              If you use Lincc on another device, you can add it there too — instructions are in Settings.
+            </p>
           </div>
         )}
 

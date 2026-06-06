@@ -866,7 +866,7 @@ export default function SettingsPage() {
           onClick={() => navigate('/changelog')}
           className="block mx-auto text-center text-sm text-text-light hover:text-coral transition-colors"
         >
-          Lincc v0.15.0
+          Lincc v0.15.1
         </button>
 
         {/* Delete Account Confirmation Modal */}

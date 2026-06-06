@@ -193,13 +193,19 @@ export function getNotificationPath(notification: Notification): string {
     case 'nearby_event':
       return eventId ? `/event/${eventId}` : '/';
     case 'voucher_shared':
+    case 'voucher_redeemed':
       return (data?.voucher_id as string) ? `/voucher/${data.voucher_id}` : '/';
     case 'participant_removed':
     case 'participant_left':
     case 'participant_rejoined':
       return eventId ? `/event/${eventId}` : '/';
     case 'review_prompt':
-      return '/?reviewPrompt=1';
+      // Land on My Events (Past section) where they can pick which event to
+      // review. HomePage auto-opens the review modal whenever there are
+      // pending reviews, so the user still sees it organically on next visit
+      // — but tapping the notification no longer dumps them on home with a
+      // no-op modal when their reviews have already been submitted.
+      return '/my-events';
     case 'business_approved':
       return '/business/dashboard';
     case 'business_rejected':
@@ -208,6 +214,9 @@ export function getNotificationPath(notification: Notification): string {
       const url = data?.url as string | undefined;
       return url && url.startsWith('/') ? url : '/';
     }
+    case 'feedback':
+      // Admin-side notification: a user filed a problem report.
+      return '/admin/feedback';
     default:
       return '/';
   }
