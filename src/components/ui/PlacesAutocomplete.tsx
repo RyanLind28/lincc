@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { MapPin, Loader2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { searchPlaces, getPlaceDetails, getUserCountryCode, type PlacePrediction, type PlaceDetails } from '../../services/placesService';
+import { searchPlaces, getPlaceDetails, getUserCountryCode, localeCountryFallback, type PlacePrediction, type PlaceDetails } from '../../services/placesService';
 import { useUserLocation } from '../../hooks/useUserLocation';
+import { useAuth } from '../../contexts/AuthContext';
 
 export interface PlacesAutocompleteProps {
   onSelect: (place: PlaceDetails) => void;
@@ -27,29 +28,39 @@ export function PlacesAutocomplete({
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<PlaceDetails | null>(null);
-  const [countryCode, setCountryCode] = useState<string | null>(null);
+  // Seed synchronously from navigator.language (e.g. en-BH → BH) so the very
+  // first keystroke already carries a hard region restriction. Reverse-geocode
+  // upgrades this once GPS resolves.
+  const [countryCode, setCountryCode] = useState<string | null>(() => localeCountryFallback());
 
   // The location store falls back to London when GPS is denied / unavailable
   // / times out. We must not derive a country code or apply a location bias
   // from that fake fallback — otherwise users in other countries get pinned
   // to the UK. hasPermission is true only after a successful GPS reading.
   const { hasPermission: hasRealLocation } = useUserLocation();
+  const { profile } = useAuth();
 
-  // Only use the caller's userLocation when we actually have a real GPS fix.
-  const effectiveLocation = hasRealLocation ? userLocation : null;
+  // Prefer real GPS; fall back to the user's last known coords from their
+  // profile when GPS is denied/timed out. Both are real signals; the London
+  // default inside useUserLocation is the only thing we refuse to trust.
+  const effectiveLocation = useMemo(() => {
+    if (hasRealLocation && userLocation) return userLocation;
+    if (profile?.last_lat != null && profile?.last_lng != null) {
+      return { lat: profile.last_lat, lng: profile.last_lng };
+    }
+    return null;
+  }, [hasRealLocation, userLocation, profile?.last_lat, profile?.last_lng]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Resolve user's country from their lat/lng once and use it as a hard
-  // restriction on autocomplete. Without this, Google's New Places API treats
-  // the lat/lng bias as a soft hint and globally-popular brand matches still
-  // rank above local ones. Skip entirely when the location is the fallback.
+  // Resolve user's country from their lat/lng and use it as a hard restriction
+  // on autocomplete. Without this, Google's New Places API treats the lat/lng
+  // bias as a soft hint and globally-popular brand matches still rank above
+  // local ones. We already seeded from navigator.language above, so this only
+  // upgrades the value — never clears it back to null.
   useEffect(() => {
-    if (!effectiveLocation) {
-      setCountryCode(null);
-      return;
-    }
+    if (!effectiveLocation) return;
     let cancelled = false;
     getUserCountryCode({ lat: effectiveLocation.lat, lng: effectiveLocation.lng }).then((code) => {
       if (!cancelled && code) setCountryCode(code);

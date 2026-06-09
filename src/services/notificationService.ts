@@ -155,19 +155,30 @@ export async function createNotification(
 }
 
 /**
- * Delete a notification
+ * Delete a notification.
+ *
+ * Uses .select() so we can detect RLS silent-no-ops: without a matching
+ * DELETE policy the request returns success but affects zero rows, and the
+ * deleted notification reappears on the next refetch. Treat zero rows as
+ * a failure so the caller doesn't update local state optimistically.
  */
 export async function deleteNotification(
   notificationId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('notifications')
     .delete()
-    .eq('id', notificationId);
+    .eq('id', notificationId)
+    .select('id');
 
   if (error) {
     logger.error('Error deleting notification:', error);
     return { success: false, error: error.message };
+  }
+
+  if (!data || data.length === 0) {
+    logger.error('Notification delete affected 0 rows — likely RLS', notificationId);
+    return { success: false, error: 'Not permitted to delete this notification' };
   }
 
   return { success: true };

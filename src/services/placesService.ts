@@ -122,7 +122,7 @@ export async function searchPlaces(
       if (location) {
         request.locationBias = {
           center: { lat: location.lat, lng: location.lng },
-          radius: 50000,
+          radius: 10000,
         };
       }
 
@@ -156,7 +156,7 @@ export async function searchPlaces(
     if (location) {
       request.locationBias = {
         center: { lat: location.lat, lng: location.lng },
-        radius: 50000,
+        radius: 10000,
       };
     }
 
@@ -327,7 +327,7 @@ function bucketKey(lat: number, lng: number): string {
   return `${COUNTRY_CACHE_PREFIX}${Math.round(lat)},${Math.round(lng)}`;
 }
 
-function localeCountryFallback(): string | null {
+export function localeCountryFallback(): string | null {
   try {
     const lang = navigator.language || (navigator.languages && navigator.languages[0]);
     if (!lang) return null;

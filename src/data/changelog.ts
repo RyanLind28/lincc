@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.4',
+    date: '2026-06-09',
+    summary: 'Smarter venue search and notification deletes that stick.',
+    changes: [
+      { kind: 'fixed', text: 'Venue search now uses your country instead of defaulting to the UK when GPS is off, so people in Bahrain see Bahrain results.' },
+      { kind: 'fixed', text: 'Deleted notifications stay deleted — they no longer reappear after refreshing the page.' },
+      { kind: 'changed', text: 'Tightened the venue search radius so nearby places rank higher than globally popular ones.' },
+    ],
+  },
+  {
     version: '0.15.3',
     date: '2026-06-06',
     summary: 'Notifications, reviews, and chat polish.',
