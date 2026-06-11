@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.5',
+    date: '2026-06-11',
+    summary: 'Venue search now follows your real location.',
+    changes: [
+      { kind: 'fixed', text: 'Fixed venue search returning no results when your browser language did not match where you are. It now uses your real location instead of guessing from your language.' },
+      { kind: 'changed', text: 'Venue search uses your live GPS first, falls back to your last known location, and still works even when location is switched off.' },
+    ],
+  },
+  {
     version: '0.15.4',
     date: '2026-06-09',
     summary: 'Smarter venue search and notification deletes that stick.',

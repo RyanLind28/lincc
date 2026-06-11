@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { MapPin, Loader2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { searchPlaces, getPlaceDetails, getUserCountryCode, localeCountryFallback, type PlacePrediction, type PlaceDetails } from '../../services/placesService';
+import { searchPlaces, getPlaceDetails, getUserCountryCode, type PlacePrediction, type PlaceDetails } from '../../services/placesService';
 import { useUserLocation } from '../../hooks/useUserLocation';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -28,28 +28,35 @@ export function PlacesAutocomplete({
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<PlaceDetails | null>(null);
-  // Seed synchronously from navigator.language (e.g. en-BH → BH) so the very
-  // first keystroke already carries a hard region restriction. Reverse-geocode
-  // upgrades this once GPS resolves.
-  const [countryCode, setCountryCode] = useState<string | null>(() => localeCountryFallback());
+  // The country code is a HARD restriction on autocomplete results, so we only
+  // ever derive it from the user's REAL location — never from navigator.language,
+  // which is frequently wrong (e.g. an en-US browser in London) and would silently
+  // return zero results. Stays null until a real location reverse-geocodes, and
+  // null means "no region restriction" so search still works everywhere.
+  const [countryCode, setCountryCode] = useState<string | null>(null);
 
   // The location store falls back to London when GPS is denied / unavailable
   // / times out. We must not derive a country code or apply a location bias
   // from that fake fallback — otherwise users in other countries get pinned
   // to the UK. hasPermission is true only after a successful GPS reading.
-  const { hasPermission: hasRealLocation } = useUserLocation();
+  const { location: gpsLocation, hasPermission: hasRealLocation } = useUserLocation();
   const { profile } = useAuth();
 
-  // Prefer real GPS; fall back to the user's last known coords from their
-  // profile when GPS is denied/timed out. Both are real signals; the London
-  // default inside useUserLocation is the only thing we refuse to trust.
+  // Prefer real GPS (read straight from the hook so we always get the freshest
+  // fix, even if the parent didn't pass userLocation); fall back to the user's
+  // last known coords from their profile when GPS is denied/timed out. Both are
+  // real signals; the London default inside useUserLocation is the only thing
+  // we refuse to trust.
   const effectiveLocation = useMemo(() => {
-    if (hasRealLocation && userLocation) return userLocation;
+    if (hasRealLocation) {
+      if (userLocation) return userLocation;
+      if (gpsLocation) return { lat: gpsLocation.latitude, lng: gpsLocation.longitude };
+    }
     if (profile?.last_lat != null && profile?.last_lng != null) {
       return { lat: profile.last_lat, lng: profile.last_lng };
     }
     return null;
-  }, [hasRealLocation, userLocation, profile?.last_lat, profile?.last_lng]);
+  }, [hasRealLocation, userLocation, gpsLocation, profile?.last_lat, profile?.last_lng]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
