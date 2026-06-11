@@ -340,10 +340,94 @@ export function localeCountryFallback(): string | null {
   }
 }
 
+// --- IP-based country lookup ---
+//
+// Resolves the user's ISO 3166-1 alpha-2 country code from their IP address.
+// This is the reliable fallback when GPS is denied or hasn't resolved yet: it
+// needs no permission, returns instantly, and is accurate to country level —
+// which is exactly the granularity the autocomplete region filter needs. A UK
+// user searching "Costa" gets Costa Coffee branches instead of Costa Mesa, CA.
+//
+// Cached for 1 day (IPs change more often than physical location, but country
+// rarely flips). Falls back to navigator.language on any failure.
+
+const IP_COUNTRY_CACHE_KEY = 'lincc:places:ipcountry:v1';
+const IP_COUNTRY_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
+
+let ipCountryInFlight: Promise<string | null> | null = null;
+
+export async function getCountryFromIP(): Promise<string | null> {
+  // Cache hit
+  try {
+    const raw = localStorage.getItem(IP_COUNTRY_CACHE_KEY);
+    if (raw) {
+      const { code, at } = JSON.parse(raw) as { code: string; at: number };
+      if (code && Date.now() - at < IP_COUNTRY_CACHE_TTL_MS) return code;
+    }
+  } catch {
+    // Corrupt or unavailable storage — fall through
+  }
+
+  if (ipCountryInFlight) return ipCountryInFlight;
+
+  ipCountryInFlight = (async (): Promise<string | null> => {
+    try {
+      // Try each provider in turn. Both are CORS-enabled, key-free, and return
+      // a 2-letter code. geojs is plaintext ("GB"); country.is is JSON. We keep
+      // a fallback chain because any single free endpoint can rate-limit or be
+      // blocked. (Avoid ipapi.co — it sits behind a Cloudflare bot challenge.)
+      const code =
+        (await fetchIpCountry('https://get.geojs.io/v1/ip/country', 'text')) ||
+        (await fetchIpCountry('https://api.country.is/', 'json'));
+
+      if (code) {
+        try {
+          localStorage.setItem(IP_COUNTRY_CACHE_KEY, JSON.stringify({ code, at: Date.now() }));
+        } catch { /* quota — fine */ }
+        return code;
+      }
+      return localeCountryFallback();
+    } catch (err) {
+      logger.error('getCountryFromIP failed:', err);
+      return localeCountryFallback();
+    } finally {
+      ipCountryInFlight = null;
+    }
+  })();
+
+  return ipCountryInFlight;
+}
+
+// Fetch a single IP-geolocation provider and pull out a validated 2-letter
+// country code. Tight per-request timeout so one slow provider never holds up
+// the first search. Returns null on any failure so the caller can try the next.
+async function fetchIpCountry(url: string, format: 'text' | 'json'): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    let raw: string | undefined;
+    if (format === 'text') {
+      raw = (await res.text()).trim();
+    } else {
+      const data = (await res.json()) as { country?: string; country_code?: string };
+      raw = data.country || data.country_code;
+    }
+    const code = (raw || '').toUpperCase();
+    return /^[A-Z]{2}$/.test(code) ? code : null;
+  } catch {
+    return null;
+  }
+}
+
 const inFlight = new Map<string, Promise<string | null>>();
 
 export async function getUserCountryCode(location: { lat: number; lng: number } | null | undefined): Promise<string | null> {
-  if (!location) return localeCountryFallback();
+  // No coords to reverse-geocode — go straight to the IP lookup (which itself
+  // falls back to navigator.language only as a last resort).
+  if (!location) return getCountryFromIP();
   const key = bucketKey(location.lat, location.lng);
 
   // Cache hit
@@ -357,7 +441,7 @@ export async function getUserCountryCode(location: { lat: number; lng: number } 
     // Corrupt or unavailable storage — fall through
   }
 
-  if (!API_KEY) return localeCountryFallback();
+  if (!API_KEY) return getCountryFromIP();
 
   // Deduplicate in-flight requests for the same bucket
   const existing = inFlight.get(key);
@@ -380,10 +464,15 @@ export async function getUserCountryCode(location: { lat: number; lng: number } 
           }
         }
       }
-      return localeCountryFallback();
+      // Geocoder returned no country component — fall back to IP.
+      return getCountryFromIP();
     } catch (err) {
-      logger.error('getUserCountryCode failed:', err);
-      return localeCountryFallback();
+      // Most common cause here: the Geocoding API isn't enabled on the Google
+      // Cloud project (REQUEST_DENIED). Fall back to the IP-based country, which
+      // is reliable and needs no extra API — NOT navigator.language, which is
+      // frequently wrong (e.g. an en-US browser used by a UK user).
+      logger.error('getUserCountryCode failed, falling back to IP:', err);
+      return getCountryFromIP();
     } finally {
       inFlight.delete(key);
     }

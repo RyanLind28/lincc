@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { MapPin, Loader2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { searchPlaces, getPlaceDetails, getUserCountryCode, type PlacePrediction, type PlaceDetails } from '../../services/placesService';
+import { searchPlaces, getPlaceDetails, getUserCountryCode, getCountryFromIP, type PlacePrediction, type PlaceDetails } from '../../services/placesService';
 import { useUserLocation } from '../../hooks/useUserLocation';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -61,11 +61,24 @@ export function PlacesAutocomplete({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Resolve user's country from their lat/lng and use it as a hard restriction
-  // on autocomplete. Without this, Google's New Places API treats the lat/lng
-  // bias as a soft hint and globally-popular brand matches still rank above
-  // local ones. We already seeded from navigator.language above, so this only
-  // upgrades the value — never clears it back to null.
+  // Fallback country resolution from the user's IP, on mount. This needs no
+  // permission and returns instantly, so even a user who hasn't granted GPS
+  // (or whose GPS hasn't resolved yet) gets a correct country restriction on
+  // their very first search. Only fills the value if GPS hasn't already set a
+  // more accurate one — never clobbers it.
+  useEffect(() => {
+    let cancelled = false;
+    getCountryFromIP().then((code) => {
+      if (!cancelled && code) setCountryCode((prev) => prev ?? code);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Resolve user's country from their real lat/lng and use it as a hard
+  // restriction on autocomplete. Without this, Google's New Places API treats
+  // the lat/lng bias as a soft hint and globally-popular brand matches still
+  // rank above local ones (e.g. "Costa" → Costa Mesa, CA for a UK user). GPS is
+  // the most accurate source, so this overrides the IP fallback when it lands.
   useEffect(() => {
     if (!effectiveLocation) return;
     let cancelled = false;

@@ -20,8 +20,8 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: '2026-06-11',
     summary: 'Venue search now follows your real location.',
     changes: [
-      { kind: 'fixed', text: 'Fixed venue search returning no results when your browser language did not match where you are. It now uses your real location instead of guessing from your language.' },
-      { kind: 'changed', text: 'Venue search uses your live GPS first, falls back to your last known location, and still works even when location is switched off.' },
+      { kind: 'fixed', text: 'Fixed venue search showing far-away places (like US results for a UK search). It now works out your country reliably instead of guessing from your browser language.' },
+      { kind: 'changed', text: 'Venue search uses your live GPS first and falls back to your location automatically, so results stay local even before you grant location access.' },
     ],
   },
   {
