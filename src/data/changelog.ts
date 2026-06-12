@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.6',
+    date: '2026-06-12',
+    summary: 'The full Lincc story, right back to day one.',
+    changes: [
+      { kind: 'added', text: 'This changelog now covers every release since the very first build in January, so you can see how far Lincc has come.' },
+      { kind: 'changed', text: 'Tidied up release dates so the timeline reads in the right order.' },
+    ],
+  },
+  {
     version: '0.15.5',
     date: '2026-06-11',
     summary: 'Venue search now follows your real location.',
@@ -91,7 +100,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     version: '0.14.0',
-    date: '2026-05-25',
+    date: '2026-06-05',
     summary: 'Big visual refresh and desktop polish.',
     changes: [
       { kind: 'changed', text: 'Full UI/UX refresh across landing and the main app.' },
@@ -127,6 +136,151 @@ export const CHANGELOG: ChangelogEntry[] = [
     changes: [
       { kind: 'fixed', text: 'Business signup no longer loses your business details on first login.' },
       { kind: 'fixed', text: 'Image upload reliability on slow phone connections.' },
+    ],
+  },
+  {
+    version: '0.11.0',
+    date: '2026-05-04',
+    summary: 'Easier installs and a smoother signup.',
+    changes: [
+      { kind: 'added', text: 'Step-by-step install instructions tailored to your device, whether you\'re on iPhone, Android, or desktop.' },
+      { kind: 'added', text: 'System status checks behind the scenes so we spot problems before you do.' },
+      { kind: 'changed', text: 'Signup form reworked with clearer fields, and onboarding now pre-fills anything we already know about you.' },
+    ],
+  },
+  {
+    version: '0.10.0',
+    date: '2026-05-01',
+    summary: 'iPhone photos and full account deletion.',
+    changes: [
+      { kind: 'added', text: 'iPhone photos (HEIC format) now upload properly, converted automatically behind the scenes.' },
+      { kind: 'added', text: 'A heads-up banner if you\'re in private browsing, where some features can\'t work.' },
+      { kind: 'added', text: 'Delete your account completely from Settings, everything goes, no traces left.' },
+    ],
+  },
+  {
+    version: '0.9.0',
+    date: '2026-04-29',
+    summary: 'Reviews go both ways and businesses get verified.',
+    changes: [
+      { kind: 'added', text: 'After an event, hosts and guests can now rate each other, so trust builds in both directions.' },
+      { kind: 'added', text: 'Business verification: businesses upload their documents and earn a verified badge once approved.' },
+      { kind: 'added', text: 'A friendly prompt to rate your event once it wraps up.' },
+      { kind: 'added', text: 'Cookie consent banner and privacy-respecting analytics.' },
+      { kind: 'changed', text: 'Clearer split between personal and business accounts.' },
+    ],
+  },
+  {
+    version: '0.8.2',
+    date: '2026-04-27',
+    summary: 'A guided welcome for new users.',
+    changes: [
+      { kind: 'added', text: 'Interactive welcome tour that walks first-timers around the app with spotlights and tips.' },
+      { kind: 'changed', text: 'Onboarding rebuilt step by step: date of birth, location, notifications, and install, each on its own screen.' },
+      { kind: 'added', text: '"Delete your data" section on the Privacy page, your data, your call.' },
+    ],
+  },
+  {
+    version: '0.8.1',
+    date: '2026-04-18',
+    summary: 'Welcome emails and livelier chat.',
+    changes: [
+      { kind: 'added', text: 'You now get a proper welcome email when you join, and waitlist signups get a confirmation too.' },
+      { kind: 'added', text: 'Chat shows when people are online and typing.' },
+      { kind: 'added', text: 'Save an event as a draft or duplicate a past one instead of starting from scratch.' },
+      { kind: 'added', text: 'Follow button on user profiles so it\'s one tap to stay in the loop.' },
+    ],
+  },
+  {
+    version: '0.8.0',
+    date: '2026-04-02',
+    summary: 'Browse businesses and find people.',
+    changes: [
+      { kind: 'added', text: 'Business directory: browse local businesses and their offers in one place.' },
+      { kind: 'added', text: 'Dashboard for business owners to manage their venue, offers, and reach.' },
+      { kind: 'added', text: 'Find people by name and check out their profiles.' },
+    ],
+  },
+  {
+    version: '0.7.0',
+    date: '2026-03-28',
+    summary: 'Dark mode, ratings, and a way to talk back.',
+    changes: [
+      { kind: 'added', text: 'Dark mode. Easy on the eyes, follows your system setting.' },
+      { kind: 'added', text: 'Star ratings and comments on events once they finish.' },
+      { kind: 'added', text: 'In-app feedback form: spot a bug or have an idea, tell us right from the app.' },
+      { kind: 'added', text: 'Announcement banner so we can let everyone know about important updates.' },
+      { kind: 'changed', text: 'Smoother loading with skeleton screens instead of blank pages.' },
+    ],
+  },
+  {
+    version: '0.6.0',
+    date: '2026-03-04',
+    summary: 'Venue search, direct messages, and the first business tools.',
+    changes: [
+      { kind: 'added', text: 'Venue search powered by Google Places: type a few letters and pick the exact spot, photos included.' },
+      { kind: 'added', text: 'Direct messages: chat one-to-one with people outside of events.' },
+      { kind: 'added', text: 'Vouchers: businesses can post offers and you can redeem them with a code at the till.' },
+      { kind: 'added', text: 'Business accounts with their own profiles.' },
+      { kind: 'added', text: 'Cover images on events.' },
+      { kind: 'added', text: 'Forgot your password? You can reset it now.' },
+    ],
+  },
+  {
+    version: '0.5.0',
+    date: '2026-02-26',
+    summary: 'Push notifications arrive.',
+    changes: [
+      { kind: 'added', text: 'Push notifications so you hear about join requests, approvals, and messages even when the app is closed.' },
+      { kind: 'added', text: 'Notification preferences with quiet hours, you decide what gets through and when.' },
+    ],
+  },
+  {
+    version: '0.4.0',
+    date: '2026-02-16',
+    summary: 'Search, saving, and staying safe.',
+    changes: [
+      { kind: 'added', text: 'Search events by keyword.' },
+      { kind: 'added', text: 'Save events for later and find them in your own saved list.' },
+      { kind: 'added', text: 'Explore page for browsing events by category.' },
+      { kind: 'added', text: 'Follow people whose events you like.' },
+      { kind: 'added', text: 'Block and report: tools to keep your experience safe.' },
+      { kind: 'added', text: 'Lincc now works offline and can be installed on your home screen like a proper app.' },
+    ],
+  },
+  {
+    version: '0.3.0',
+    date: '2026-02-07',
+    summary: 'Lincc goes public with its landing page and waitlist.',
+    changes: [
+      { kind: 'added', text: 'Brand new landing page with the waitlist open for early signups.' },
+      { kind: 'added', text: 'About, Privacy, Terms, and Contact pages.' },
+      { kind: 'added', text: 'Demo events across London so you can see Lincc in action.' },
+    ],
+  },
+  {
+    version: '0.2.0',
+    date: '2026-02-03',
+    summary: 'The map comes alive.',
+    changes: [
+      { kind: 'added', text: 'Live map with event pins, location search, and zoom controls.' },
+      { kind: 'added', text: 'Full event pages with participants and chat in one place.' },
+      { kind: 'added', text: 'Hosts can manage join requests from a dedicated screen.' },
+      { kind: 'added', text: 'View other people\'s profiles.' },
+      { kind: 'added', text: 'Notifications page for join requests and event alerts.' },
+      { kind: 'fixed', text: 'You stay signed in after refreshing the page.' },
+    ],
+  },
+  {
+    version: '0.1.0',
+    date: '2026-01-27',
+    summary: 'Lincc is born.',
+    changes: [
+      { kind: 'added', text: 'The first build: create an event in under 30 seconds, set the category, spot, time, and how many can join.' },
+      { kind: 'added', text: 'Discover events near you, ranked by what you\'re into and how close they are.' },
+      { kind: 'added', text: 'Join requests with host approval, or instant auto-join.' },
+      { kind: 'added', text: 'Real-time chat for every event.' },
+      { kind: 'added', text: 'Profiles with photo, interests, and bio.' },
     ],
   },
 ];

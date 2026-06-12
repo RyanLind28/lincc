@@ -58,6 +58,15 @@ Heavy bug-fix day, mostly mobile image upload. App version 0.12.0 → 0.13.7.
 
 ---
 
+## Auth Security Hardening (backlog, P2 — gated on Pro plan)
+
+Raised 2026-06-12 during full app audit (Supabase security advisor). Both are one-call changes via the Management API (`PATCH /v1/projects/srrubyupwiiqnehshszd/config/auth`) or Dashboard → Authentication → Sign In / Up → Passwords. Do both together when the project moves to the Pro plan.
+
+- [ ] **Enable leaked password protection** — set `password_hibp_enabled: true`. Blocks passwords found in known breaches (HaveIBeenPwned). Requires Pro plan; toggle is unavailable on free tier.
+- [ ] **Bump minimum password length 6 → 8** — set `password_min_length: 8`. Not plan-gated, but batched here to change auth config once. Only affects new passwords/signups; existing accounts are untouched.
+
+---
+
 ## Service Monitoring (backlog, P2)
 
 Follow-ups from the admin System Status widget (`src/components/admin/SystemStatus.tsx` + `src/services/statusService.ts`). The live panel is point-in-time only — it shows status now, with no memory. These add persistence and proactive alerting. Raised 2026-05-29.
