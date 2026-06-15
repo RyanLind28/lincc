@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.7',
+    date: '2026-06-15',
+    summary: 'Sign-up emails are friendlier with strict spam filters.',
+    changes: [
+      { kind: 'fixed', text: 'Confirmation and password-reset emails are less likely to land in junk on Outlook and other strict providers — the verify link now opens on app.lincc.live to match the sender domain.' },
+    ],
+  },
+  {
     version: '0.15.6',
     date: '2026-06-12',
     summary: 'The full Lincc story, right back to day one.',

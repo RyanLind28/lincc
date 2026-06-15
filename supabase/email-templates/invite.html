@@ -146,7 +146,7 @@
           You've been invited to join Lincc — the local pulse app that shows
           events, deals, openings, and offers near you, all in real time.
         </p>
-        <a href="{{ .ConfirmationURL }}" class="cta-button" target="_blank">
+        <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next={{ .RedirectTo }}" class="cta-button" target="_blank">
           Accept Invite
         </a>
 
@@ -162,7 +162,7 @@
         <p class="subtle-text">
           If the button above doesn't work, copy and paste this link into your
           browser:<br />
-          <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+          <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next={{ .RedirectTo }}">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next={{ .RedirectTo }}</a>
         </p>
         <p class="subtle-text">
           Questions? Reach us at

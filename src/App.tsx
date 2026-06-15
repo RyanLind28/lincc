@@ -22,6 +22,7 @@ import SignupPage from './pages/auth/SignupPage';
 // Lazy-loaded auth pages
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
+const AuthConfirmPage = lazy(() => import('./pages/auth/AuthConfirmPage'));
 const TermsPage = lazy(() => import('./pages/auth/TermsPage'));
 const PendingApprovalPage = lazy(() => import('./pages/auth/PendingApprovalPage'));
 const OnboardingPage = lazy(() => import('./pages/onboarding/OnboardingPage'));
@@ -142,6 +143,10 @@ function App() {
               </PublicRoute>
             }
           />
+
+          {/* Email confirmation landing — verifies token_hash from email links
+              so the link host matches the sending domain (anti-spam). */}
+          <Route path="/auth/confirm" element={<AuthConfirmPage />} />
 
           {/* Auth but no profile required */}
           <Route

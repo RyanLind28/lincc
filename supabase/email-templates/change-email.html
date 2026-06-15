@@ -122,13 +122,13 @@
           Lincc account to <strong>{{ .Email }}</strong>. Click the button below
           to confirm this change.
         </p>
-        <a href="{{ .ConfirmationURL }}" class="cta-button" target="_blank">
+        <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change&next=/" class="cta-button" target="_blank">
           Confirm Email Change
         </a>
         <p class="subtle-text">
           If the button above doesn't work, copy and paste this link into your
           browser:<br />
-          <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+          <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change&next=/">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change&next=/</a>
         </p>
         <p class="subtle-text">
           If you didn't request this change, please secure your account

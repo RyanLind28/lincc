@@ -132,7 +132,7 @@
           (<strong>{{ .Email }}</strong>). Click the button below to log in
           instantly — no password needed.
         </p>
-        <a href="{{ .ConfirmationURL }}" class="cta-button" target="_blank">
+        <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink&next={{ .RedirectTo }}" class="cta-button" target="_blank">
           Log In to Lincc
         </a>
         <p class="notice">
@@ -142,7 +142,7 @@
         <p class="subtle-text">
           If the button above doesn't work, copy and paste this link into your
           browser:<br />
-          <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+          <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink&next={{ .RedirectTo }}">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink&next={{ .RedirectTo }}</a>
         </p>
         <p class="subtle-text">
           If you didn't request this link, you can safely ignore this email.
