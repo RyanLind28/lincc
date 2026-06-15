@@ -11,6 +11,7 @@ import { useWaitlistStatus } from '../hooks/useWaitlistStatus';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useToast } from '../contexts/ToastContext';
 import { InstallAppCard } from '../components/pwa/InstallAppCard';
+import { RatingBadges } from '../components/features/RatingBadges';
 
 type EventTab = 'hosting' | 'joined' | 'saved';
 type TimeFilter = 'upcoming' | 'past';
@@ -232,6 +233,10 @@ export default function ProfilePage() {
                   ))}
                 </div>
               )}
+
+              <div className="flex justify-center sm:justify-start">
+                <RatingBadges userId={profile.id} />
+              </div>
 
               <div className="flex items-center gap-2 mt-4 flex-wrap justify-center sm:justify-start">
                 <Link to="/profile/edit">

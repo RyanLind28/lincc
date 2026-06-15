@@ -16,11 +16,23 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.8',
+    date: '2026-06-15',
+    summary: 'Marketing site refreshed for the wider rollout.',
+    changes: [
+      { kind: 'changed', text: 'Marketing site no longer leads with Sheffield specifically — copy, SEO and waitlist form now welcome people from any city, with the launch story still front and centre.' },
+    ],
+  },
+  {
     version: '0.15.7',
     date: '2026-06-15',
     summary: 'Sign-up emails are friendlier with strict spam filters.',
     changes: [
       { kind: 'fixed', text: 'Confirmation and password-reset emails are less likely to land in junk on Outlook and other strict providers — the verify link now opens on app.lincc.live to match the sender domain.' },
+      { kind: 'changed', text: '"Need help?" reports from inside the app now also email the support inbox, so we can react to issues faster.' },
+      { kind: 'changed', text: 'On business sign-up, the logo step now uses a single "Choose logo" button — the camera option has been removed for a cleaner flow.' },
+      { kind: 'fixed', text: 'Replaced 5 broken category preview images (gaming, running, spa, park, badminton) that had been removed from the image host and were showing as blank.' },
+      { kind: 'added', text: 'Your own profile now shows your host and guest rating badges, just like everyone else sees them — no more guessing how you\'re doing.' },
     ],
   },
   {

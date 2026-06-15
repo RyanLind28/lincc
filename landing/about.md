@@ -1,8 +1,8 @@
 # About Lincc
 
-> We're building your local pulse, one place to discover everything happening around you. Now launching in Sheffield.
+> We're building your local pulse, one place to discover everything happening around you.
 
-We started Lincc because finding out what's happening around you should not be this hard. You live in a city full of people and plans, yet finding any of it means trawling Instagram, Google and five different group chats, and you still miss half of it. There had to be a better way. We are launching in Sheffield first, then rolling out city by city.
+We started Lincc because finding out what's happening around you should not be this hard. You live in a city full of people and plans, yet finding any of it means trawling Instagram, Google and five different group chats, and you still miss half of it. There had to be a better way. We are rolling out city by city.
 
 Lincc brings everything together in one place. Events, deals, openings, happenings — all live, all local, all at your fingertips. Whether it's a nightclub opening, a restaurant running a limited-time offer, a pop-up market, or a community event — if it's happening near you, it's on Lincc.
 

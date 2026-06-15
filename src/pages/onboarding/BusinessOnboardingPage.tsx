@@ -461,7 +461,7 @@ export default function BusinessOnboardingPage() {
                   <ImagePickerButtons
                     onCameraSelect={handleLogoSelect}
                     galleryLabel={logoUrl ? 'Change logo' : 'Choose logo'}
-                    cameraLabel="Take a photo"
+                    showCamera={false}
                     size="sm"
                   />
                 </div>

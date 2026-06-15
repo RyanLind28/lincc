@@ -2,9 +2,9 @@
 
 > You live in a city full of people, so why is there never anything to do?
 
-**Things to do near you, right now.** Now launching in Sheffield.
+**Things to do near you, right now.**
 
-It is not you. The good stuff is happening all around you, you just never hear about it until it is over. Lincc shows you what's on near you right now: events, deals and plans worth leaving the house for. Sheffield's scene, unlocked.
+It is not you. The good stuff is happening all around you, you just never hear about it until it is over. Lincc shows you what's on near you right now: events, deals and plans worth leaving the house for. Your local scene, unlocked.
 
 [Get Early Access](https://www.lincc.live/#waitlist) — Free to join. Be first through the door when we go live near you.
 
@@ -37,7 +37,7 @@ Thousands of people near you tonight. Gigs, openings, run clubs, quiz nights, la
 
 Put your business in front of people who are nearby, right now, and looking for something to do. Post deals and events in seconds, fill your quiet hours and reach your neighbourhood for a fraction of the cost of traditional advertising.
 
-Learn more and join as a founding Sheffield business: <https://www.lincc.live/business>
+Learn more and join as a founding business: <https://www.lincc.live/business>
 
 ## Categories
 
@@ -45,11 +45,11 @@ Nightlife & Clubs, Food & Dining, Live Music, Happy Hour, Fitness & Wellness, Ma
 
 ## Status
 
-Pre-launch. Now launching in Sheffield, then rolling out city by city. Based in the UK.
+Pre-launch. Rolling out city by city. Based in the UK.
 
 ## Join the waitlist
 
-Be first in line. We are going live in Sheffield first, then expanding by demand.
+Be first in line. We are rolling out city by city, expanding by demand.
 
 - Sign up: <https://www.lincc.live/#waitlist>
 - Businesses: <https://www.lincc.live/business>

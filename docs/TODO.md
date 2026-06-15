@@ -86,6 +86,15 @@ Raised 2026-06-05 while building the admin push panel + broadcast (`/admin/push`
 
 ---
 
+## Category Images (backlog, P3)
+
+Raised 2026-06-15 while fixing 5 dead Unsplash URLs in `src/data/categories.ts` (gaming-videogames, fitness-running, wellness-spa, outdoors-park, sports-badminton). Unsplash silently deletes photos, so any hotlinked ID can rot — we're 5/79 dead today, more will fail over time.
+
+- [ ] **Own the category preview images.** Move the ~79 hotlinked Unsplash URLs in `categories.ts` to our Vercel blob storage (or Supabase Storage `event-images` bucket — already provisioned) so the URLs are permanent. One-time script: download each image at 400×300, upload to a `category-images/<category>-<sub>.jpg` path, swap URLs in `categories.ts`. Keeps the same look but removes the rot.
+- [ ] **`<img onError>` fallback for category previews.** Smaller, complementary fix: when `category.image` / `subcategory.image` fails to load, render a gradient card with the Lucide `CategoryIcon` instead of a broken-image icon. Useful even after we own the images (covers blob outages, slow networks, etc.).
+
+---
+
 ## UI/UX Overhaul (P1, COMPLETE — 2026-05-25)
 
 Big polish + key-screen rework pass. 80+ files changed across foundations, component unification, screen rework, desktop layout, accessibility, and visual verification.

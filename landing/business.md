@@ -1,10 +1,10 @@
 # Lincc for Business
 
-> Be where Sheffield is looking. Reach nearby customers for a fraction of the cost of traditional advertising.
+> Be where your customers are looking. Reach nearby people for a fraction of the cost of traditional advertising.
 
 Lincc is a brand new app putting local events, deals and openings in front of people nearby, right when they are deciding what to do. Get real eyes on your business, fill your quiet hours and launch a deal in seconds.
 
-[Become a Founding Business](https://www.lincc.live/business#biz-waitlist) — Free to join the waitlist. Founding Sheffield businesses get first pick and early perks.
+[Become a Founding Business](https://www.lincc.live/business#biz-waitlist) — Free to join the waitlist. Founding businesses get first pick and early perks.
 
 ## Why Lincc works
 
@@ -24,7 +24,7 @@ Lincc is a brand new app putting local events, deals and openings in front of pe
 
 ## How it works
 
-1. **Claim your spot** — Join the founding waitlist now. When we go live in Sheffield, you will be among the first businesses on the map.
+1. **Claim your spot** — Join the founding waitlist now. When we go live in your city, you will be among the first businesses on the map.
 2. **Post your offer** — Set up your profile and push a deal, voucher or event in seconds, straight from your phone.
 3. **Welcome them in** — Nearby people see it live, head over and redeem.
 
@@ -32,7 +32,7 @@ Lincc is a brand new app putting local events, deals and openings in front of pe
 
 Get in before the crowd does. Founding businesses receive:
 
-- Priority placement when Sheffield launches
+- Priority placement at launch
 - Early-access pricing locked in as we grow
 - A direct line to our team to shape the app
 - A feature in our launch push across the city
