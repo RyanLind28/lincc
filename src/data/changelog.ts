@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.15.9',
+    date: '2026-06-16',
+    summary: 'A new Networking category, plus venue search and waitlist fixes.',
+    changes: [
+      { kind: 'added', text: 'New Networking category so professional meetups, founder and tech events have a home of their own.' },
+      { kind: 'fixed', text: 'Venue search now shows results from other countries. If you are abroad and search for an address back home, it no longer comes up empty.' },
+      { kind: 'fixed', text: 'Everyone who joins the waitlist now gets the confirmation email, including sign-ups from the contact form.' },
+    ],
+  },
+  {
     version: '0.15.8',
     date: '2026-06-15',
     summary: 'Marketing site refreshed for the wider rollout.',

@@ -427,19 +427,9 @@ function WaitlistForm() {
       setEmail('');
       setName('');
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (supabaseUrl) {
-        void fetch(`${supabaseUrl}/functions/v1/send-waitlist-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ email, name }),
-        }).catch((err) => {
-          if (import.meta.env.DEV) console.warn('Waitlist email send failed:', err);
-        });
-      }
+      // The confirmation email is sent server-side by the AFTER INSERT trigger
+      // on `waitlist` (migration 074), so every signup surface is covered without
+      // the client having to call the Edge Function itself.
     } catch {
       setErrorMessage('Something went wrong. Please try again.');
       setStatus('error');

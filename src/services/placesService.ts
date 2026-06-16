@@ -130,20 +130,35 @@ export async function searchPlaces(
       // "Coffee" returning Bangladesh / NYC results when the user is in the UK:
       // locationBias is only a soft hint, but includedRegionCodes is a hard
       // restriction. Max 15 codes per the New Places API.
-      if (regionCodes && regionCodes.length > 0) {
-        request.includedRegionCodes = regionCodes.slice(0, 15).map((c) => c.toLowerCase());
+      const hasRegion = !!(regionCodes && regionCodes.length > 0);
+      if (hasRegion) {
+        request.includedRegionCodes = regionCodes!.slice(0, 15).map((c) => c.toLowerCase());
       }
 
-      const { suggestions } = await placesLib.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+      const mapSuggestions = (suggestions: any[]): PlacePrediction[] =>
+        (suggestions || [])
+          .filter((s: any) => s.placePrediction)
+          .map((s: any) => ({
+            placeId: s.placePrediction.placeId,
+            mainText: s.placePrediction.mainText?.text || '',
+            secondaryText: s.placePrediction.secondaryText?.text || '',
+            description: s.placePrediction.text?.text || '',
+          }));
 
-      return (suggestions || [])
-        .filter((s: any) => s.placePrediction)
-        .map((s: any) => ({
-          placeId: s.placePrediction.placeId,
-          mainText: s.placePrediction.mainText?.text || '',
-          secondaryText: s.placePrediction.secondaryText?.text || '',
-          description: s.placePrediction.text?.text || '',
-        }));
+      let { suggestions } = await placesLib.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+      let results = mapSuggestions(suggestions);
+
+      // The region restriction is right for the common case (searching near
+      // home), but wrong when it returns nothing — e.g. someone in Bahrain
+      // registering a business in Sheffield gets every UK result filtered out.
+      // Retry once without the restriction rather than showing an empty list.
+      if (results.length === 0 && hasRegion) {
+        delete request.includedRegionCodes;
+        ({ suggestions } = await placesLib.AutocompleteSuggestion.fetchAutocompleteSuggestions(request));
+        results = mapSuggestions(suggestions);
+      }
+
+      return results;
     }
 
     // Fallback to legacy AutocompleteService if new API not available
@@ -161,17 +176,31 @@ export async function searchPlaces(
     }
 
     // Legacy API uses componentRestrictions.country (max 5).
-    if (regionCodes && regionCodes.length > 0) {
-      request.componentRestrictions = { country: regionCodes.slice(0, 5).map((c) => c.toLowerCase()) };
+    const hasRegion = !!(regionCodes && regionCodes.length > 0);
+    if (hasRegion) {
+      request.componentRestrictions = { country: regionCodes!.slice(0, 5).map((c) => c.toLowerCase()) };
     }
 
-    const response = await service.getPlacePredictions(request);
-    return (response.predictions || []).map((p: google.maps.places.AutocompletePrediction) => ({
-      placeId: p.place_id,
-      mainText: p.structured_formatting?.main_text || '',
-      secondaryText: p.structured_formatting?.secondary_text || '',
-      description: p.description || '',
-    }));
+    const mapPredictions = (predictions: google.maps.places.AutocompletePrediction[] | undefined): PlacePrediction[] =>
+      (predictions || []).map((p) => ({
+        placeId: p.place_id,
+        mainText: p.structured_formatting?.main_text || '',
+        secondaryText: p.structured_formatting?.secondary_text || '',
+        description: p.description || '',
+      }));
+
+    let response = await service.getPlacePredictions(request);
+    let results = mapPredictions(response.predictions);
+
+    // Same fallback as the New API path: if the country restriction yields
+    // nothing, retry unrestricted so out-of-country searches still work.
+    if (results.length === 0 && hasRegion) {
+      delete request.componentRestrictions;
+      response = await service.getPlacePredictions(request);
+      results = mapPredictions(response.predictions);
+    }
+
+    return results;
   } catch (err) {
     logger.error('Places autocomplete failed:', err);
     return [];

@@ -127,7 +127,7 @@ export const TAG_TO_CATEGORY_MAP: Record<string, string[]> = {
 
   // Social
   social: ['social'],
-  networking: ['social'],
+  networking: ['networking', 'social'],
   party: ['social', 'entertainment'],
   meetup: ['social'],
   travel: ['social', 'outdoors'],
@@ -163,9 +163,10 @@ export const RELATED_CATEGORIES: Record<string, string[]> = {
   wellness: ['fitness', 'outdoors', 'social'],
   entertainment: ['social', 'gaming', 'creative'],
   gaming: ['social', 'entertainment'],
-  creative: ['learning', 'social', 'entertainment'],
-  learning: ['creative', 'social'],
-  social: ['food', 'coffee', 'entertainment', 'gaming', 'sports', 'wellness', 'learning'],
+  creative: ['learning', 'social', 'entertainment', 'networking'],
+  learning: ['creative', 'social', 'networking'],
+  networking: ['social', 'learning', 'creative'],
+  social: ['food', 'coffee', 'entertainment', 'gaming', 'sports', 'wellness', 'learning', 'networking'],
   pets: ['outdoors', 'social', 'wellness'],
   'kids-family': ['outdoors', 'social', 'entertainment', 'creative'],
 };

@@ -152,12 +152,23 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
+    value: 'networking',
+    label: 'Networking',
+    icon: 'Handshake',
+    image: 'https://images.unsplash.com/photo-1515169067868-5387ec356754?w=400&h=300&fit=crop',
+    subcategories: [
+      { value: 'networking-professional', label: 'Professional meetup', image: 'https://images.unsplash.com/photo-1515169067868-5387ec356754?w=400&h=300&fit=crop' },
+      { value: 'networking-startup', label: 'Startup & founders', image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400&h=300&fit=crop' },
+      { value: 'networking-tech', label: 'Tech meetup', image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop' },
+      { value: 'networking-creative', label: 'Creative networking', image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=300&fit=crop' },
+    ],
+  },
+  {
     value: 'social',
     label: 'Social',
     icon: 'PartyPopper',
     image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=300&fit=crop',
     subcategories: [
-      { value: 'social-networking', label: 'Networking', image: 'https://images.unsplash.com/photo-1515169067868-5387ec356754?w=400&h=300&fit=crop' },
       { value: 'social-party', label: 'Party / Night out', image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&h=300&fit=crop' },
       { value: 'social-meetup', label: 'Casual meetup', image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop' },
       { value: 'social-sightseeing', label: 'Sightseeing', image: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=400&h=300&fit=crop' },

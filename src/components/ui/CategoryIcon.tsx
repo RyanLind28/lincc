@@ -24,6 +24,7 @@ import {
   PersonStanding,
   ShoppingBag,
   Footprints,
+  Handshake,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -56,6 +57,7 @@ const iconMap: Record<string, LucideIcon> = {
   PersonStanding,
   ShoppingBag,
   Footprints,
+  Handshake,
 };
 
 interface CategoryIconProps {

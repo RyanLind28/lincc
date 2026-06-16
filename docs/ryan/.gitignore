@@ -1,0 +1,4 @@
+# Local working documents (proposals, drafts) — not tracked in git.
+# Ignore everything in this folder except this .gitignore itself.
+*
+!.gitignore

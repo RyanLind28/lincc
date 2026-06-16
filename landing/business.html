@@ -363,11 +363,8 @@
             form.style.display = 'none';
             successEl.style.display = 'flex';
             if (stickyCta) stickyCta.classList.add('is-hidden');
-            fetch(SUPABASE_URL + '/functions/v1/send-waitlist-email', {
-              method: 'POST',
-              headers: { 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: body.email, name: body.name })
-            }).catch(function (err) { console.warn('Waitlist email:', err); });
+            // Confirmation email is sent server-side by the waitlist INSERT
+            // trigger (migration 074) — no client-side call needed.
           } else {
             var data = await res.json().catch(function () { return {}; });
             errorMsg.textContent = (res.status === 409 || (data.code && data.code === '23505'))
