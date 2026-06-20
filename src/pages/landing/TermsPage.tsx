@@ -102,12 +102,10 @@ function LandingNav() {
           <Link to="/landing" className="flex items-center">
             <img src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp" alt="Lincc" className="h-10" />
           </Link>
-          <Link
-            to="/landing#waitlist"
-            className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all"
-          >
-            Join Waitlist
-          </Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/login" className="px-4 py-2.5 rounded-full text-text font-semibold text-sm hover:text-purple transition-colors">Log in</Link>
+            <Link to="/signup" className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all">Sign up</Link>
+          </div>
         </div>
       </div>
     </nav>

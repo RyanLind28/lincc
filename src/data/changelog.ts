@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 // Most recent first.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.16.0',
+    date: '2026-06-20',
+    summary: 'Lincc is live. Sign up and start exploring.',
+    changes: [
+      { kind: 'added', text: 'Lincc is now live. You can create an account and log in straight from our website, with no more waiting list.' },
+      { kind: 'changed', text: 'The "Join waitlist" buttons across the site are now "Sign up" and "Log in", so you can jump in right away.' },
+      { kind: 'changed', text: 'Businesses can sign up directly too and start posting deals, vouchers and events from day one.' },
+    ],
+  },
+  {
     version: '0.15.9',
     date: '2026-06-16',
     summary: 'A new Networking category, plus venue search and waitlist fixes.',

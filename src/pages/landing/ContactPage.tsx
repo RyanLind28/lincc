@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, MapPin, Check, Loader2, ChevronRight } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { Mail, MapPin, ChevronRight } from 'lucide-react';
 
 export default function ContactPage() {
   return (
@@ -41,14 +39,27 @@ export default function ContactPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-coral/5 via-purple/5 to-blue/5 rounded-2xl p-8 sm:p-12 border border-purple/10">
-            <h2 className="text-2xl font-semibold text-text mb-4 text-center">
-              Want to be first to know when we launch?
+          <div className="bg-gradient-to-br from-coral/5 via-purple/5 to-blue/5 rounded-2xl p-8 sm:p-12 border border-purple/10 text-center">
+            <h2 className="text-2xl font-semibold text-text mb-4">
+              Ready to dive in?
             </h2>
-            <p className="text-text-muted mb-8 text-center max-w-lg mx-auto">
-              Join our waitlist and we'll send you an invite as soon as Lincc is ready.
+            <p className="text-text-muted mb-8 max-w-lg mx-auto">
+              Join Lincc and never miss what's happening around you again. It's free.
             </p>
-            <WaitlistForm />
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                to="/signup"
+                className="w-full sm:w-auto px-8 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+              >
+                Sign up <ChevronRight className="h-5 w-5" />
+              </Link>
+              <Link
+                to="/login"
+                className="w-full sm:w-auto px-8 py-4 rounded-full bg-surface border border-border text-text font-semibold text-lg hover:border-purple hover:text-purple transition-all flex items-center justify-center"
+              >
+                Log in
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -66,109 +77,13 @@ function LandingNav() {
           <Link to="/landing" className="flex items-center">
             <img src="https://qmctlt61dm3jfh0i.public.blob.vercel-storage.com/brand/logo/Lincc_Main_Horizontal%404x.webp" alt="Lincc" className="h-10" />
           </Link>
-          <Link
-            to="/landing#waitlist"
-            className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all"
-          >
-            Join Waitlist
-          </Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/login" className="px-4 py-2.5 rounded-full text-text font-semibold text-sm hover:text-purple transition-colors">Log in</Link>
+            <Link to="/signup" className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all">Sign up</Link>
+          </div>
         </div>
       </div>
     </nav>
-  );
-}
-
-function WaitlistForm() {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('loading');
-    setErrorMessage('');
-
-    try {
-      const { error } = await supabase
-        .from('waitlist')
-        .insert([{ email, name }]);
-
-      if (error) {
-        if (error.code === '23505') {
-          setErrorMessage('This email is already on the waitlist!');
-        } else {
-          setErrorMessage(error.message || 'Something went wrong. Please try again.');
-        }
-        setStatus('error');
-        return;
-      }
-
-      setStatus('success');
-      setEmail('');
-      setName('');
-    } catch {
-      setErrorMessage('Something went wrong. Please try again.');
-      setStatus('error');
-    }
-  };
-
-  if (status === 'success') {
-    return (
-      <div className="bg-surface rounded-2xl p-8 shadow-lg max-w-md mx-auto text-center border border-border">
-        <div className="w-14 h-14 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5">
-          <Check className="h-7 w-7 text-success" />
-        </div>
-        <h3 className="text-2xl font-semibold text-text mb-2">You're on the list!</h3>
-        <p className="text-text-muted">We'll notify you as soon as Lincc is ready.</p>
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-surface rounded-2xl p-8 shadow-lg max-w-md mx-auto border border-border">
-      <div className="space-y-5">
-        <div>
-          <label htmlFor="contact-name" className="block text-sm font-medium text-text mb-2">Name</label>
-          <input
-            type="text"
-            id="contact-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            required
-            className="w-full px-4 py-3.5 rounded-xl border border-border focus:border-purple focus:ring-2 focus:ring-purple/20 outline-none transition-all text-text placeholder:text-text-light"
-          />
-        </div>
-        <div>
-          <label htmlFor="contact-email" className="block text-sm font-medium text-text mb-2">Email</label>
-          <input
-            type="email"
-            id="contact-email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-            className="w-full px-4 py-3.5 rounded-xl border border-border focus:border-purple focus:ring-2 focus:ring-purple/20 outline-none transition-all text-text placeholder:text-text-light"
-          />
-        </div>
-        {status === 'error' && (
-          <p className="text-error text-sm bg-error/10 px-4 py-2 rounded-lg">{errorMessage}</p>
-        )}
-        <button
-          type="submit"
-          disabled={status === 'loading'}
-          className="w-full px-6 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:translate-y-0"
-        >
-          {status === 'loading' ? (
-            <><Loader2 className="h-5 w-5 animate-spin" /> Joining...</>
-          ) : (
-            <><span>Join Waitlist</span> <ChevronRight className="h-5 w-5" /></>
-          )}
-        </button>
-      </div>
-      <p className="mt-5 text-xs text-text-light text-center">We'll only email you when we launch.</p>
-    </form>
   );
 }
 

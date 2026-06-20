@@ -1,12 +1,10 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import {
   MapPin,
   Sparkles,
   Coffee,
   Music,
   Store,
-  ChevronRight,
   Clock,
   Tag,
   PartyPopper,
@@ -20,12 +18,9 @@ import {
   ShoppingBag,
   Drama,
   ArrowRight,
-  Check,
-  Loader2,
   Instagram,
   type LucideIcon,
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 
 function Logo({ className = "h-9" }: { className?: string }) {
   return (
@@ -48,12 +43,20 @@ export default function LandingPage() {
             <Link to="/" className="flex items-center">
               <Logo className="h-10" />
             </Link>
-            <a
-              href="#waitlist"
-              className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all"
-            >
-              Join Waitlist
-            </a>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                to="/login"
+                className="px-4 py-2.5 rounded-full text-text font-semibold text-sm hover:text-purple transition-colors"
+              >
+                Log in
+              </Link>
+              <Link
+                to="/signup"
+                className="px-5 py-2.5 rounded-full gradient-primary text-white text-sm font-semibold hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all"
+              >
+                Sign up
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -81,16 +84,22 @@ export default function LandingPage() {
               No more endless scrolling. Just open Lincc and go.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href="#waitlist"
+              <Link
+                to="/signup"
                 className="w-full sm:w-auto px-8 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-xl hover:shadow-purple/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group"
               >
-                Get Early Access
+                Get started
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </a>
+              </Link>
+              <Link
+                to="/login"
+                className="w-full sm:w-auto px-8 py-4 rounded-full bg-surface border border-border text-text font-semibold text-lg hover:border-purple hover:text-purple transition-all flex items-center justify-center"
+              >
+                Log in
+              </Link>
             </div>
             <p className="text-sm text-text-muted mt-4">
-              Be first to know when we launch.
+              Free to join. See what's on near you in seconds.
             </p>
           </div>
 
@@ -249,29 +258,43 @@ export default function LandingPage() {
                 Reach local customers instantly. Post events, share offers, and drive
                 foot traffic, all from one dashboard.
               </p>
-              <a
-                href="#waitlist"
+              <Link
+                to="/signup"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-surface text-purple font-semibold text-lg hover:shadow-xl transition-all group"
               >
-                Register Interest
+                Get started
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </a>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Waitlist */}
-      <section id="waitlist" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-background">
+      {/* Get started */}
+      <section id="get-started" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-xl mx-auto text-center">
-          <p className="text-purple-dark font-semibold text-sm uppercase tracking-wider mb-3">Join the waitlist</p>
+          <p className="text-purple-dark font-semibold text-sm uppercase tracking-wider mb-3">We're live</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-text mb-4">
-            Be first in line
+            Ready to dive in?
           </h2>
           <p className="text-lg text-text-muted mb-10">
-            We're launching soon. Get early access and never miss what's happening around you again.
+            Join Lincc and never miss what's happening around you again. It's free.
           </p>
-          <WaitlistForm />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/signup"
+              className="w-full sm:w-auto px-8 py-4 rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-xl hover:shadow-purple/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group"
+            >
+              Sign up
+              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link
+              to="/login"
+              className="w-full sm:w-auto px-8 py-4 rounded-full bg-surface border border-border text-text font-semibold text-lg hover:border-purple hover:text-purple transition-all flex items-center justify-center"
+            >
+              Log in
+            </Link>
+          </div>
         </div>
       </section>
       </main>
@@ -394,117 +417,5 @@ function FeatureCard({
       <h3 className="text-lg font-semibold text-text mb-2">{title}</h3>
       <p className="text-text-muted text-sm leading-relaxed">{description}</p>
     </div>
-  );
-}
-
-function WaitlistForm() {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('loading');
-    setErrorMessage('');
-
-    try {
-      const { error } = await supabase
-        .from('waitlist')
-        .insert([{ email, name }]);
-
-      if (error) {
-        if (error.code === '23505') {
-          setErrorMessage('This email is already on the waitlist!');
-        } else {
-          setErrorMessage(error.message || 'Something went wrong. Please try again.');
-        }
-        setStatus('error');
-        return;
-      }
-
-      setStatus('success');
-      setEmail('');
-      setName('');
-
-      // The confirmation email is sent server-side by the AFTER INSERT trigger
-      // on `waitlist` (migration 074), so every signup surface is covered without
-      // the client having to call the Edge Function itself.
-    } catch {
-      setErrorMessage('Something went wrong. Please try again.');
-      setStatus('error');
-    }
-  };
-
-  if (status === 'success') {
-    return (
-      <div className="bg-surface rounded-2xl p-8 shadow-lg max-w-md mx-auto text-center border border-border">
-        <div className="w-14 h-14 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5">
-          <Check className="h-7 w-7 text-success" />
-        </div>
-        <h3 className="text-2xl font-semibold text-text mb-2">You're on the list!</h3>
-        <p className="text-text-muted">
-          We'll notify you as soon as Lincc is ready.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-surface rounded-2xl p-6 sm:p-8 shadow-lg max-w-md mx-auto border border-border">
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="wl-name" className="block text-sm font-medium text-text mb-1.5">
-            Name
-          </label>
-          <input
-            type="text"
-            id="wl-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            required
-            className="w-full h-[var(--height-input)] px-4 rounded-xl border border-border bg-surface text-text placeholder:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:border-transparent transition-colors"
-          />
-        </div>
-        <div>
-          <label htmlFor="wl-email" className="block text-sm font-medium text-text mb-1.5">
-            Email
-          </label>
-          <input
-            type="email"
-            id="wl-email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-            className="w-full h-[var(--height-input)] px-4 rounded-xl border border-border bg-surface text-text placeholder:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:border-transparent transition-colors"
-          />
-        </div>
-        {status === 'error' && (
-          <p className="text-error text-sm bg-error/10 px-4 py-2 rounded-xl">{errorMessage}</p>
-        )}
-        <button
-          type="submit"
-          disabled={status === 'loading'}
-          className="w-full h-[var(--height-button-lg)] rounded-full gradient-primary text-white font-semibold text-lg hover:shadow-lg hover:shadow-purple/25 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:translate-y-0"
-        >
-          {status === 'loading' ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Joining...
-            </>
-          ) : (
-            <>
-              Join Waitlist
-              <ChevronRight className="h-5 w-5" />
-            </>
-          )}
-        </button>
-      </div>
-      <p className="mt-4 text-xs text-text-light text-center">
-        We'll only email you when we launch.
-      </p>
-    </form>
   );
 }
